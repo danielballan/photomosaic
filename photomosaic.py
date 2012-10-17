@@ -133,9 +133,9 @@ def photomosaic(target_filename, tile_size, db_path):
                 match = find_match(tile, db)
                 new_tile = make_tile(match, tile_size)
                 tiles[x][y] = new_tile
-                print "ab_distance {:.2}   l_distance {:.2}   rank {}   usages {}   size {}".format(
-                    sqrt(match['ab_distance']),
-                    match['l_distance'],
+                print "ab_distance {:8.2}   L_distance {:8.2}   rank {:1}   usages {:1}   size {}".format(
+                    sqrt(match['ab_distance_sq']),
+                    match['L_distance'],
                     match['rank'],
                     match['usages'] + 1,
                     str(new_tile.size))
@@ -197,12 +197,12 @@ def tile_position(x, y, this_size, generic_size, randomize=True):
     return pos
 
 
-def find_match(tile, db, max_usages=5):
+def find_match(tile, db, max_usages=1):
     """Query the db for the best match, weighing the color's ab-distance
     in Lab color space, the color's prominence in the image in question
     (its 'rank'), and the image's usage count."""
-    target_l, target_a, target_b = map(rgb2lab, salient_colors(tile))[0]
-    LIMIT = 10
+    target_L, target_a, target_b = map(rgb2lab, salient_colors(tile))[0]
+    LIMIT = 1 # Increase to see runners-up.
     # Here, I am working around sqlite's lack of ^ and sqrt operations.
     try:
         c = db.cursor()
@@ -210,17 +210,20 @@ def find_match(tile, db, max_usages=5):
                      image_id,
                      L, a, b,
                      red, green, blue,
-                     (a-?)*(a-?) + (b-?)*(b-?) as ab_distance,
-                     (L-?) as l_distance,
+                     (a-{target_a})*(a-{target_a}) + (b-{target_b})*(b-{target_b}) as ab_distance_sq,
+                     (L-{target_L}) as L_distance,
+                     (a-{target_a})*(a-{target_a}) + (b-{target_b})*(b-{target_b}) + (L-{target_L})*(L-{target_L}) as E_sq,
                      rank,
                      usages,
                      filename
                      FROM Colors
                      JOIN Images USING (image_id) 
-                     WHERE usages <= ?
-                     ORDER BY ab_distance ASC
-                     LIMIT ?""",
-                  (target_a, target_a, target_b, target_b, target_l, max_usages, LIMIT))
+                     WHERE usages <= {max_usages} 
+                     ORDER BY E_sq ASC
+                     LIMIT {limit}""".format(
+                     target_a=target_a, target_b=target_b,
+                     target_L=target_L, max_usages=max_usages,
+                     limit=LIMIT))
         match = c.fetchone()
         c.execute("""UPDATE Images SET usages=usages+1 WHERE image_id=?""", (match['image_id'],))
     finally:
@@ -231,25 +234,25 @@ def make_tile(match, tile_size,
               vary_size=True):
     "Open and resize the matched image."
     raw = Image.open(match['filename'])
-    if (match['l_distance'] >= 0 or not vary_size):
+    if (match['L_distance'] >= 0 or not vary_size):
         # Match is brighter than target.
         img = crop_to_fit(raw, tile_size)
     else:
         # Match is darker than target.
         # Shrink it to leave white padding.
-        img = shrink_to_brighten(raw, tile_size, match['l_distance'])
+        img = shrink_to_brighten(raw, tile_size, match['L_distance'])
     return img
 
-def shrink_to_brighten(img, tile_size, l_distance):
+def shrink_to_brighten(img, tile_size, L_distance):
     """Return an image smaller than a tile. Its white margins
     will effect lightness. Also, varied tile size looks nice.
-    The greater the greater the lightness discrepancy, l_distance,
+    The greater the greater the lightness discrepancy, L_distance,
     the smaller the tile is shrunk."""
     MAX_L_DISTANCE = 100 # the largest possible distance in Lab space
     MIN = 0.5 # not so close small that it's a speck
     MAX = 0.9 # not so close to unity that is looks accidental
-    assert l_distance < 0, "Only shrink image when tile is too dark."
-    scaling = MAX - (MAX - MIN)*(-l_distance)/MAX_L_DISTANCE
+    assert L_distance < 0, "Only shrink image when tile is too dark."
+    scaling = MAX - (MAX - MIN)*(-L_distance)/MAX_L_DISTANCE
     shrunk_size = [int(scaling*dim) for dim in tile_size]
     img = crop_to_fit(img, shrunk_size) 
     return img 
