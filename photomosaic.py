@@ -1,5 +1,6 @@
 from __future__ import division
 import os
+import random
 import numpy as np
 import scipy
 import scipy.misc
@@ -178,12 +179,22 @@ def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
     mosaic = Image.new('RGB', size, background)
     for y, row in enumerate(tiles):
         for x, tile in enumerate(row):
-            # If this tile is smaller than the generic tile_size, margin != 0.
-            margin = ((tile_size[0] - tile.size[0]) // 2,
-                      (tile_size[1] - tile.size[1]) // 2)
-            pos = x*tile_size[0] + margin[0], y*tile_size[1] + margin[1]
+            pos = tile_position(x, y, tile.size, tile_size, randomize=True)
             mosaic.paste(tile, pos)
     return mosaic # suitable to be saved with imsave
+
+def tile_position(x, y, this_size, generic_size, randomize=True):
+    if this_size == generic_size: 
+        pos = x*generic_size[0], y*generic_size[1]
+    else:
+        margin = ((generic_size[0] - this_size[0]) // 2, 
+                  (generic_size[1] - this_size[1]) // 2)
+        if randomize:
+            # Set left and bottom margins to a random value
+            # bound by 0 and twice their original value.
+            margin = [random.randrange(2*m) for m in margin]
+        pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
+    return pos
 
 
 def find_match(tile, db, max_usages=5):
