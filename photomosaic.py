@@ -134,7 +134,7 @@ def photomosaic(target_filename, tile_size, db_path):
                 new_tile = make_tile(match, tile_size)
                 tiles[x][y] = new_tile
                 print "ab_distance {:8.2}   L_distance {:8.2}   rank {:1}   usages {:1}   size {}".format(
-                    sqrt(match['ab_distance_sq']),
+                    np.sqrt(match['ab_distance_sq']),
                     match['L_distance'],
                     match['rank'],
                     match['usages'] + 1,
@@ -201,29 +201,33 @@ def find_match(tile, db, max_usages=1):
     """Query the db for the best match, weighing the color's ab-distance
     in Lab color space, the color's prominence in the image in question
     (its 'rank'), and the image's usage count."""
-    target_L, target_a, target_b = map(rgb2lab, salient_colors(tile))[0]
+    target_L, target_a, target_b = map(cs.rgb2lab, salient_colors(tile))[0]
     LIMIT = 1 # Increase to see runners-up.
     # Here, I am working around sqlite's lack of ^ and sqrt operations.
     try:
         c = db.cursor()
-        c.execute("""SELECT
-                     image_id,
-                     L, a, b,
-                     red, green, blue,
-                     (a-{target_a})*(a-{target_a}) + (b-{target_b})*(b-{target_b}) as ab_distance_sq,
-                     (L-{target_L}) as L_distance,
-                     (a-{target_a})*(a-{target_a}) + (b-{target_b})*(b-{target_b}) + (L-{target_L})*(L-{target_L}) as E_sq,
-                     rank,
-                     usages,
-                     filename
-                     FROM Colors
-                     JOIN Images USING (image_id) 
-                     WHERE usages <= {max_usages} 
-                     ORDER BY E_sq ASC
-                     LIMIT {limit}""".format(
-                     target_a=target_a, target_b=target_b,
-                     target_L=target_L, max_usages=max_usages,
-                     limit=LIMIT))
+        query = """SELECT
+                   image_id,
+                   L, a, b,
+                   red, green, blue,
+                   (a-({target_a}))*(a-({target_a})) 
+                       + (b-({target_b}))*(b-({target_b})) as ab_distance_sq,
+                   (L-({target_L})) as L_distance,
+                   (a-({target_a}))*(a-({target_a})) 
+                       + (b-({target_b}))*(b-({target_b})) 
+                       + (L-({target_L}))*(L-({target_L})) as E_sq,
+                   rank,
+                   usages,
+                   filename
+                   FROM Colors
+                   JOIN Images USING (image_id) 
+                   WHERE usages <= {max_usages} 
+                   ORDER BY E_sq ASC
+                   LIMIT {limit}""".format(
+                   target_a=target_a, target_b=target_b,
+                   target_L=target_L, max_usages=max_usages,
+                   limit=LIMIT)
+        c.execute(query)
         match = c.fetchone()
         c.execute("""UPDATE Images SET usages=usages+1 WHERE image_id=?""", (match['image_id'],))
     finally:
@@ -288,7 +292,7 @@ def Lab_distance(lab1, lab2):
     """Compute distance in Lab."""
     L1, a1, b1 = lab1
     L2, a2, b2 = lab2
-    E = sqrt((L1 - L2)**2 + (a1 - a2)**2 + (b1 - b2)**2)
+    E = np.sqrt((L1 - L2)**2 + (a1 - a2)**2 + (b1 - b2)**2)
     return E
     
 def ab_distance(lab1, lab2):
