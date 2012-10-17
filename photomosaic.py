@@ -124,7 +124,7 @@ def photomosaic(target_filename, tile_size, db_path):
         for x, row in enumerate(tiles):
             for y, tile in enumerate(row):
                 # Replace target tile with a matched tile.
-                tiles[y][x] = make_tile(find_match(tile, db), tile_size)
+                tiles[x][y] = make_tile(find_match(tile, db), tile_size)
     finally:
         db.close()
     mosaic = assemble_mosaic(tiles, tile_size)
