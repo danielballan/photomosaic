@@ -25,7 +25,7 @@ def salient_colors(img, clusters=4, size=100):
     ranked_colors = colors[(-counts).argsort()]
     return ranked_colors
 
-def create_image_pool(image_dir, db_name='imagepool.db'):
+def catalog(image_dir, db_name='imagepool.db'):
     """Analyze all the images in image_dir, and store the results in
     a sqlite database at db_name."""
     db = connect(os.path.join(image_dir, db_name))
@@ -130,9 +130,14 @@ def photomosaic(target_filename, tile_size, db_path):
             for y, tile in enumerate(row):
                 # Replace target tile with a matched tile.
                 match = find_match(tile, db)
-                print 'ab_distance %f.04   rank %d'.format(
-                    match['ab_distance'], match['rank'])
-                tiles[x][y] = make_tile(match, tile_size)
+                new_tile = make_tile(match, tile_size)
+                tiles[x][y] = new_tile
+                print "ab_distance {:.2}   l_distance {:.2}   rank {}   usages {}   size {}".format(
+                    sqrt(match['ab_distance']),
+                    match['l_distance'],
+                    match['rank'],
+                    match['usages'] + 1,
+                    str(new_tile.size))
     finally:
         db.close()
     mosaic = assemble_mosaic(tiles, tile_size)
@@ -165,15 +170,18 @@ def partition_target(img, tile_size):
             tiles[y][x] = tile
     return tiles
 
-def assemble_mosaic(tiles, tile_size):
+def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
     "Build the final image."
     # Technically, tile_size could be inferred from a tile,
     # but let's not trust it in this case.
     size = len(tiles[0])*tile_size[0], len(tiles)*tile_size[1]
-    mosaic = Image.new('RGB', size)
+    mosaic = Image.new('RGB', size, background)
     for y, row in enumerate(tiles):
         for x, tile in enumerate(row):
-            pos = x*tile_size[0], y*tile_size[1]
+            # If this tile is smaller than the generic tile_size, margin != 0.
+            margin = ((tile_size[0] - tile.size[0]) // 2,
+                      (tile_size[1] - tile.size[1]) // 2)
+            pos = x*tile_size[0] + margin[0], y*tile_size[1] + margin[1]
             mosaic.paste(tile, pos)
     return mosaic # suitable to be saved with imsave
 
@@ -190,7 +198,9 @@ def find_match(tile, db, max_usages=5):
         c.execute("""SELECT
                      image_id,
                      L, a, b,
+                     red, green, blue,
                      (a-?)*(a-?) + (b-?)*(b-?) as ab_distance,
+                     (L-?) as l_distance,
                      rank,
                      usages,
                      filename
@@ -199,18 +209,39 @@ def find_match(tile, db, max_usages=5):
                      WHERE usages <= ?
                      ORDER BY ab_distance ASC
                      LIMIT ?""",
-                  (target_a, target_a, target_b, target_b, max_usages, LIMIT))
+                  (target_a, target_a, target_b, target_b, target_l, max_usages, LIMIT))
         match = c.fetchone()
         c.execute("""UPDATE Images SET usages=usages+1 WHERE image_id=?""", (match['image_id'],))
     finally:
         c.close()
     return match # a sqlite3.Row object
 
-def make_tile(match, tile_size):
+def make_tile(match, tile_size,
+              vary_size=True):
     "Open and resize the matched image."
     raw = Image.open(match['filename'])
-    img = crop_to_fit(raw, tile_size)
+    if (match['l_distance'] >= 0 or not vary_size):
+        # Match is brighter than target.
+        img = crop_to_fit(raw, tile_size)
+    else:
+        # Match is darker than target.
+        # Shrink it to leave white padding.
+        img = shrink_to_brighten(raw, tile_size, match['l_distance'])
     return img
+
+def shrink_to_brighten(img, tile_size, l_distance):
+    """Return an image smaller than a tile. Its white margins
+    will effect lightness. Also, varied tile size looks nice.
+    The greater the greater the lightness discrepancy, l_distance,
+    the smaller the tile is shrunk."""
+    MAX_L_DISTANCE = 100 # the largest possible distance in Lab space
+    MIN = 0.5 # not so close small that it's a speck
+    MAX = 0.9 # not so close to unity that is looks accidental
+    assert l_distance < 0, "Only shrink image when tile is too dark."
+    scaling = MAX - (MAX - MIN)*(-l_distance)/MAX_L_DISTANCE
+    shrunk_size = [int(scaling*dim) for dim in tile_size]
+    img = crop_to_fit(img, shrunk_size) 
+    return img 
 
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
@@ -221,7 +252,7 @@ def crop_to_fit(img, tile_size):
     if img_aspect > tile_aspect:
         crop_h = img_h
         crop_w = crop_h*tile_aspect
-        x_offset = (img_w - crop_width) // 2
+        x_offset = (img_w - crop_w) // 2
         y_offset = 0
     else:
         crop_w = img_w
