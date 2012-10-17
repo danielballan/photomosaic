@@ -46,7 +46,6 @@ def create_image_pool(image_dir, db_name='imagepool.db'):
             lab_colors = map(cs.rgb2lab, rgb_colors)
             insert(filename, w, h, rgb_colors, lab_colors, db)
         db.commit()
-        print '%s commited to database.' % filename
     finally:
         db.close()
 
