@@ -24,7 +24,10 @@ def salient_colors(img, clusters=4, size=100):
     return ranked_colors
 
 def create_image_pool(image_dir, db_name='imagepool.db'):
+    """Analyze all the images in image_dir, and store the results in
+    a sqlite database at db_name."""
     db = connect(os.path.join(image_dir, db_name))
+    create_tables(db)
     walker = DirectoryWalker(image_dir)
     for filename in walker:
         try:
@@ -41,6 +44,7 @@ def create_image_pool(image_dir, db_name='imagepool.db'):
     db.close()
 
 def print_db(db):
+    "Dump the database to the screen."
     c = db.cursor()
     c.execute("SELECT * FROM Images")
     for row in c:
@@ -51,6 +55,7 @@ def print_db(db):
     c.close()
 
 def insert(filename, w, h, rgb, lab, db):
+    "Register an image in Images and its salient colors in Colors."
     c = db.cursor()
     try:
         c.execute("""INSERT INTO Images (usages, w, h, filename)
@@ -69,11 +74,10 @@ def insert(filename, w, h, rgb, lab, db):
         print "Image %s is already in the table. Skipping it." % filename
     c.close()
     
-
 def connect(db_path):
+    "Connect to, and if need be create, a sqlite database at db_path."
     try:
         db = sqlite3.connect(db_path)
-        create_tables(db)
     except IOError:
         print 'Cannot connect to SQLite database at %s' % db_path
         return
@@ -100,6 +104,40 @@ def create_tables(db):
     c.close()
     db.commit()
 
+def reset_usage(db):
+    "Before using the image pool, reset image usage count to 0."
+    try:
+        c = db.cursor()
+        c.execute("UPDATE Images SET usages=0")
+        c.close()
+        db.commit()
+    except sqlite3.OperationalError, e:
+        print e
+
+def partition_target(img, tile_size):
+    "Partition the target image into a 2D list of Images."
+    width = img.size[0] // tile_size[0]
+    height = img.size[1] // tile_size[1]
+    tiles = [[None for w in range(width)] for h in range(height)]
+    for y in range(height):
+        for x in range(width):
+            tile = img.crop((x*tile_size[0], 
+                             y*tile_size[1],
+                             (x + 1)*tile_size[0], 
+                             (y + 1)*tile_size[1]))
+            tiles[y][x] = tile
+    return tiles
+
+def assemble_mosaic(tiles, tile_size):
+    "Build the final image."
+    size = len(tiles[0])*tile_size[0], len(tiles)*tile_size[1]
+    mosaic = Image.new('RGB', size)
+    for y, row in enumerate(tiles):
+        for x, tile in enumerate(row):
+            pos = x*tile_size[0], y*tile_size[1]
+            mosaic.paste(tile, pos)
+    return mosaic # suitable to be saved with imsave
+
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' ''.join(chr(c) for c in color).encode('hex')
@@ -116,10 +154,6 @@ def ab_distance(lab1, lab2):
     L1, a1, b1 = lab1
     L2, a2, b2 = lab2
     return sqrt((a1-a2)**2 + (b1-b2)**2)
-
-def characterize_image(img):
-    colors = salient_colors(img)
-    print [color_hex(c) for c in colors]
 
 def find_match(img):
     # Rank images by their proximinity in h and s ONLY.
