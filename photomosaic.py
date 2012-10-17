@@ -15,6 +15,7 @@ from directory_walker import DirectoryWalker
 def salient_colors(img, clusters=4, size=100):
     """Group the colors in an image into like clusters, and return a list
     of these colors in order of their abundance in the image."""
+    assert img.mode == 'RGB', 'RGB images only!'
     img.thumbnail((size, size))
     imgarr = scipy.misc.fromimage(img)
     imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
@@ -28,24 +29,29 @@ def create_image_pool(image_dir, db_name='imagepool.db'):
     """Analyze all the images in image_dir, and store the results in
     a sqlite database at db_name."""
     db = connect(os.path.join(image_dir, db_name))
-    create_tables(db)
-    walker = DirectoryWalker(image_dir)
-    for filename in walker:
-        try:
-            img = Image.open(filename)
-        except IOError:
-            print 'Cannot open %s as an image. Skipping it.' % filename
-            continue
-        w, h = img.size
-        rgb_colors = salient_colors(img)
-        lab_colors = map(cs.rgb2lab, rgb_colors)
-        insert(filename, w, h, rgb_colors, lab_colors, db)
-    db.commit()
-    print_db(db)
-    db.close()
+    try:
+        create_tables(db)
+        walker = DirectoryWalker(image_dir)
+        for filename in walker:
+            try:
+                img = Image.open(filename)
+            except IOError:
+                print 'Cannot open %s as an image. Skipping it.' % filename
+                continue
+            if img.mode != 'RGB':
+                print 'RGB images only. Skipping %s.' % filename
+                continue
+            w, h = img.size
+            rgb_colors = salient_colors(img)
+            lab_colors = map(cs.rgb2lab, rgb_colors)
+            insert(filename, w, h, rgb_colors, lab_colors, db)
+        db.commit()
+        print '%s commited to database.' % filename
+    finally:
+        db.close()
 
 def print_db(db):
-    "Dump the database to the screen."
+    "Dump the database to the screen, for debugging."
     c = db.cursor()
     c.execute("SELECT * FROM Images")
     for row in c:
