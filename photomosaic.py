@@ -126,8 +126,8 @@ def photomosaic(target_filename, tile_size, db_path):
                 # Replace target tile with a matched tile.
                 tiles[y][x] = make_tile(find_match(tile, db), tile_size)
     finally:
-        mosaic = assemble_mosaic(tiles, tile_size)
-    db.close()
+        db.close()
+    mosaic = assemble_mosaic(tiles, tile_size)
     return mosaic
 
 def reset_usage(db):
@@ -202,7 +202,6 @@ def make_tile(match, tile_size):
     "Open and resize the matched image."
     raw = Image.open(match['filename'])
     img = crop_to_fit(raw, tile_size)
-    print img.size
     return img
 
 def crop_to_fit(img, tile_size):
