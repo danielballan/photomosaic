@@ -31,6 +31,19 @@ def salient_colors(img, clusters=4, size=100):
     assert prominent_colors.size > 0, "No salient colors!"
     return prominent_colors
 
+def dominant_color(img, clusters=5, size=50):
+    """Group the colors in an image into like clusters, and return
+    the central value of the largest cluster -- the dominant color."""
+    assert img.mode == 'RGB', 'RGB images only!'
+    img.thumbnail((size, size))
+    imgarr = scipy.misc.fromimage(img)
+    imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
+    colors, dist = scipy.cluster.vq.kmeans(imgarr, clusters)
+    vecs, dist = scipy.cluster.vq.vq(imgarr, colors)
+    counts, bins = scipy.histogram(vecs, len(colors))
+    dominant_color = colors[counts.argmax()]
+    return dominant_color 
+
 def catalog(image_dir, db_name='imagepool.db'):
     """Analyze all the images in image_dir, and store the results in
     a sqlite database at db_name."""
