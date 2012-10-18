@@ -246,16 +246,6 @@ def target(target_filename, tile_size, db_name):
         db.close()
     return tiles
     
-def reset_usage(db):
-    "Before using the image pool, reset image usage count to 0."
-    try:
-        c = db.cursor()
-        c.execute("UPDATE Images SET usages=0")
-        c.close()
-        db.commit()
-    except sqlite3.OperationalError, e:
-        print e
-
 def join(db):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
@@ -408,3 +398,14 @@ def print_db(db):
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
+
+def reset_usage(db):
+    "Before using the image pool, reset image usage count to 0."
+    try:
+        c = db.cursor()
+        c.execute("UPDATE Images SET usages=0")
+        c.close()
+        db.commit()
+    except sqlite3.OperationalError, e:
+        print e
+
