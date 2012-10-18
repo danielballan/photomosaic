@@ -246,20 +246,20 @@ def target(target_filename, tile_size, db_name):
         db.close()
     return tiles
     
-def join(db):
+def join(db, subscript='dom'):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
     query = """INSERT INTO BigJoin (x, y, region, image_id, Esq, dL)
                SELECT
                x, y, region,
                image_id, 
-               (c.L_{type} - t.L_{type})*(c.L_{type} - t.L_{type})
-               + (c.a_{type} - t.a_{type})*(c.a_{type} - t.a_{type})
-               + (c.b_{type} - t.b_{type})*(c.b_{type} - t.b_{type}) as Esq,
-               c.L_{type} - t.L_{type} as dL
+               (c.L_{s} - t.L_{s})*(c.L_{s} - t.L_{s})
+               + (c.a_{s} - t.a_{s})*(c.a_{s} - t.a_{s})
+               + (c.b_{s} - t.b_{s})*(c.b_{s} - t.b_{s}) as Esq,
+               c.L_{s} - t.L_{s} as dL
                FROM Colors c
                JOIN Target t USING (region)""".format(
-               type='dom')
+               s=subscript)
     c = db.cursor()
     try:
         c.execute("DROP TABLE IF EXISTS BigJoin")
