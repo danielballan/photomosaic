@@ -196,8 +196,8 @@ def create_target_table(db):
         db.commit()
 
 def insert_target_tile(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
-    """Insert image info in the Images table. Insert the dominant and average
-    color of each of its regions in the Colors table."""
+    """Insert the dominant and average color of each a tile's regions
+    in the Target table. Identify each tile by x, y."""
     c = db.cursor()
     try:
         for region in xrange(len(rgb_dom)):
@@ -289,7 +289,7 @@ def matching(db):
                FROM BigJoin
                JOIN Images using (image_id)
                GROUP BY x, y, region
-               ORDER BY avg_Esq"""
+               ORDER BY avg_Esq ASC"""
     c = db.cursor()
     try:
         start_time = time.clock()
