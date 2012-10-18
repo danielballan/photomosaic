@@ -6,8 +6,6 @@ import numpy as np
 import scipy
 import scipy.misc
 import scipy.cluster
-import matplotlib
-matplotlib.use('Agg')
 import Image
 import sqlite3
 from utils import memo
@@ -62,7 +60,6 @@ def average_color(img):
     Lab space, but converting every pixel is expensive."""
     # TODO
     return [0, 0, 0] 
-
 
 def connect(db_path):
     "Connect to, and if need be create, a sqlite database at db_path."
