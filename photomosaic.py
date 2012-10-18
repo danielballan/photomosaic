@@ -16,51 +16,6 @@ from directory_walker import DirectoryWalker
 
 logger = logging.getLogger(__name__)
 
-def dominant_color(img, clusters=5, size=50):
-    """Group the colors in an image into like clusters, and return
-    the central value of the largest cluster -- the dominant color."""
-    assert img.mode == 'RGB', 'RGB images only!'
-    img.thumbnail((size, size))
-    imgarr = scipy.misc.fromimage(img)
-    imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
-    colors, dist = scipy.cluster.vq.kmeans(imgarr, clusters)
-    vecs, dist = scipy.cluster.vq.vq(imgarr, colors)
-    counts, bins = scipy.histogram(vecs, len(colors))
-    dominant_color = colors[counts.argmax()]
-    return map(int, dominant_color) # Avoid returning np.uint8 type.
-
-def average_color(img):
-    #TODO
-    return 0 
-
-def catalog(image_dir, db_name='imagepool.db'):
-    """Analyze all the images in image_dir, and store the results in
-    a sqlite database at db_name."""
-    db = connect(os.path.join(image_dir, db_name))
-    try:
-        create_tables(db)
-        walker = DirectoryWalker(image_dir)
-        for filename in walker:
-            try:
-                img = Image.open(filename)
-            except IOError:
-                print 'Cannot open %s as an image. Skipping it.' % filename
-                continue
-            if img.mode != 'RGB':
-                print 'RGB images only. Skipping %s.' % filename
-                continue
-            w, h = img.size
-            regions = split_quadrants(img)
-            rgb_dom= map(dominant_color, regions) 
-            lab_dom = map(cs.rgb2lab, rgb_dom)
-            rgb_avg= map(dominant_color, regions) 
-            lab_avg = map(cs.rgb2lab, rgb_avg)
-            # Really, a proper avg in Lab space would be best.
-            insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
-        db.commit()
-    finally:
-        db.close()
-
 def split_regions(img, split_dim):
     """Split an image into subregions.
     Use split_dim=2 or (2,2) or (2,3) etc.
@@ -89,43 +44,24 @@ def split_quadrants(img):
         logger.warning("I am quartering an image with odd dimensions.")
     return split_regions(img, 2)
 
-def print_db(db):
-    "Dump the database to the screen, for debugging."
-    c = db.cursor()
-    c.execute("SELECT * FROM Images")
-    for row in c:
-        print row 
-    c.execute("SELECT * FROM Colors")
-    for row in c:
-        print row
-    c.close()
+def dominant_color(img, clusters=5, size=50):
+    """Group the colors in an image into like clusters, and return
+    the central value of the largest cluster -- the dominant color."""
+    assert img.mode == 'RGB', 'RGB images only!'
+    img.thumbnail((size, size))
+    imgarr = scipy.misc.fromimage(img)
+    imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
+    colors, dist = scipy.cluster.vq.kmeans(imgarr, clusters)
+    vecs, dist = scipy.cluster.vq.vq(imgarr, colors)
+    counts, bins = scipy.histogram(vecs, len(colors))
+    dominant_color = colors[counts.argmax()]
+    return map(int, dominant_color) # Avoid returning np.uint8 type.
 
-def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
-    """Insert image info in the Images table. Insert the dominant and average
-    color of each of its regions in the Colors table."""
-    c = db.cursor()
-    try:
-        c.execute("""INSERT INTO Images (usages, w, h, filename)
-                     VALUES (?, ?, ?, ?)""",
-                  (0, w, h, filename))
-        image_id = c.lastrowid
-        for region in xrange(len(rgb)):
-            red_dom, green_dom, blue_dom = rgb 
-            red_avg, green_avg, blue_avg = rgb 
-            L_dom, a_dom, b_dom = lab[region]
-            L_avg, a_avg, b_avg = lab[region]
-            c.execute("""INSERT INTO Colors (image_id, region, 
-                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom) 
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                         (image_id, region, 
-                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
-    except sqlite3.IntegrityError:
-        print "Image %s is already in the table. Skipping it." % filename
-    finally:
-        c.close()
-    
+def average_color(img):
+    #TODO
+    return 0 
+
+
 def connect(db_path):
     "Connect to, and if need be create, a sqlite database at db_path."
     try:
@@ -162,6 +98,141 @@ def create_tables(db):
                   blue_avg INTEGER)""")
     c.close()
     db.commit()
+
+def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
+    """Insert image info in the Images table. Insert the dominant and average
+    color of each of its regions in the Colors table."""
+    c = db.cursor()
+    try:
+        c.execute("""INSERT INTO Images (usages, w, h, filename)
+                     VALUES (?, ?, ?, ?)""",
+                  (0, w, h, filename))
+        image_id = c.lastrowid
+        for region in xrange(len(rgb)):
+            red_dom, green_dom, blue_dom = rgb 
+            red_avg, green_avg, blue_avg = rgb 
+            L_dom, a_dom, b_dom = lab[region]
+            L_avg, a_avg, b_avg = lab[region]
+            c.execute("""INSERT INTO Colors (image_id, region, 
+                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom) 
+                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                         (image_id, region, 
+                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
+                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
+    except sqlite3.IntegrityError:
+        print "Image %s is already in the table. Skipping it." % filename
+    finally:
+        c.close()
+    
+def catalog(image_dir, db_name='imagepool.db'):
+    """Analyze all the images in image_dir, and store the results in
+    a sqlite database at db_name."""
+    db = connect(os.path.join(image_dir, db_name))
+    try:
+        create_tables(db)
+        walker = DirectoryWalker(image_dir)
+        for filename in walker:
+            try:
+                img = Image.open(filename)
+            except IOError:
+                print 'Cannot open %s as an image. Skipping it.' % filename
+                continue
+            if img.mode != 'RGB':
+                print 'RGB images only. Skipping %s.' % filename
+                continue
+            w, h = img.size
+            regions = split_quadrants(img)
+            rgb_dom= map(dominant_color, regions) 
+            lab_dom = map(cs.rgb2lab, rgb_dom)
+            rgb_avg= map(dominant_color, regions) 
+            lab_avg = map(cs.rgb2lab, rgb_avg)
+            # Really, a proper avg in Lab space would be best.
+            insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
+        db.commit()
+    finally:
+        db.close()
+
+def partition_target(img, tile_size):
+    "Partition the target image into a 2D list of Images."
+    # TODO: Allow to tiles are different sizes. 
+    # Merge neighbors that are similar
+    # or that inhabit regions of long spatial wavelength.
+    width = img.size[0] // tile_size[0]
+    height = img.size[1] // tile_size[1]
+    tiles = [[None for w in range(width)] for h in range(height)]
+    for y in range(height):
+        for x in range(width):
+            tile = img.crop((x*tile_size[0], 
+                             y*tile_size[1],
+                             (x + 1)*tile_size[0], 
+                             (y + 1)*tile_size[1]))
+            tiles[y][x] = tile
+    return tiles
+
+def create_target_table(db):
+    c = db.cursor()
+    try:
+        c.execute("DROP TABLE Target")
+        c.execute("CREATE TABLE Target
+                   (id INTEGER PRIMARY KEY,
+                    x INTEGER,
+                    y INTEGER,
+                    region INTEGER,
+                    L_dom REAL,
+                    a_dom REAL,
+                    b_dom REAL,
+                    red_dom INTEGER,
+                    green_dom INTEGER,
+                    blue_dom INTEGER,
+                    L_avg REAL,
+                    a_avg REAL,
+                    b_avg REAL,
+                    red_avg INTEGER,
+                    green_avg INTEGER,
+                    blue_avg INTEGER)""")
+    finally:
+        c.close()
+
+def match_regions(db):
+    query = """SELECT
+               sum(t.L - c.L) over regions
+               FROM Target t
+               OUTER JOIN Colors c USING (region)
+               GROUP BY image_id
+               ORDER BY"""
+    pass
+
+def match_regions(regions, db):
+    # Analyze target, load into SQL, do all analysis there!
+
+def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
+    "Build the final image."
+    # Technically, tile_size could be inferred from a tile,
+    # but let's not trust it in this case.
+    size = len(tiles[0])*tile_size[0], len(tiles)*tile_size[1]
+    mosaic = Image.new('RGB', size, background)
+    for y, row in enumerate(tiles):
+        for x, tile in enumerate(row):
+            pos = tile_position(x, y, tile.size, tile_size, randomize=True)
+            mosaic.paste(tile, pos)
+    return mosaic # suitable to be saved with imsave
+
+def tile_position(x, y, this_size, generic_size, randomize=True):
+    if this_size == generic_size: 
+        pos = x*generic_size[0], y*generic_size[1]
+    else:
+        margin = ((generic_size[0] - this_size[0]) // 2, 
+                  (generic_size[1] - this_size[1]) // 2)
+        if randomize:
+            try:
+                # Set left and bottom margins to a random value
+                # bound by 0 and twice their original value.
+                margin = [random.randrange(2*m) for m in margin]
+            except ValueError:
+                pass
+        pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
+    return pos
 
 def photomosaic(target_filename, tile_size, db_path):
     """Given the filename of the target image,
@@ -200,58 +271,6 @@ def reset_usage(db):
         db.commit()
     except sqlite3.OperationalError, e:
         print e
-
-def partition_target(img, tile_size):
-    "Partition the target image into a 2D list of Images."
-    # TODO: Allow to tiles are different sizes. 
-    # Merge neighbors that are similar
-    # or that inhabit regions of long spatial wavelength.
-    width = img.size[0] // tile_size[0]
-    height = img.size[1] // tile_size[1]
-    tiles = [[None for w in range(width)] for h in range(height)]
-    for y in range(height):
-        for x in range(width):
-            tile = img.crop((x*tile_size[0], 
-                             y*tile_size[1],
-                             (x + 1)*tile_size[0], 
-                             (y + 1)*tile_size[1]))
-            tiles[y][x] = tile
-    return tiles
-
-def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
-    "Build the final image."
-    # Technically, tile_size could be inferred from a tile,
-    # but let's not trust it in this case.
-    size = len(tiles[0])*tile_size[0], len(tiles)*tile_size[1]
-    mosaic = Image.new('RGB', size, background)
-    for y, row in enumerate(tiles):
-        for x, tile in enumerate(row):
-            pos = tile_position(x, y, tile.size, tile_size, randomize=True)
-            mosaic.paste(tile, pos)
-    return mosaic # suitable to be saved with imsave
-
-def tile_position(x, y, this_size, generic_size, randomize=True):
-    if this_size == generic_size: 
-        pos = x*generic_size[0], y*generic_size[1]
-    else:
-        margin = ((generic_size[0] - this_size[0]) // 2, 
-                  (generic_size[1] - this_size[1]) // 2)
-        if randomize:
-            try:
-                # Set left and bottom margins to a random value
-                # bound by 0 and twice their original value.
-                margin = [random.randrange(2*m) for m in margin]
-            except ValueError:
-                pass
-        pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
-    return pos
-
-def match_regions(regions, db, max_usages=1):
-    #query = """SELECT
-    #        image_id,
-    pass
-            
-            
 
 def match_colors(tile, db, max_usages=1):
     JND = 2.3 # "just noticeable difference"
@@ -405,6 +424,17 @@ def crop_to_fit(img, tile_size):
                     y_offset + crop_h))
     img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
     return img
+
+def print_db(db):
+    "Dump the database to the screen, for debugging."
+    c = db.cursor()
+    c.execute("SELECT * FROM Images")
+    for row in c:
+        print row 
+    c.execute("SELECT * FROM Colors")
+    for row in c:
+        print row
+    c.close()
     
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
