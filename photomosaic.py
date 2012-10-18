@@ -135,14 +135,11 @@ def photomosaic(target_filename, tile_size, db_path):
         for x, row in enumerate(tiles):
             for y, tile in enumerate(row):
                 # Replace target tile with a matched tile.
-                match = find_match(tile, db)
-                new_tile = make_tile(match, tile_size)
+                match = match_colors(tile, db)
+                new_tile = make_tile(match, tile_size, vary_size=True)
                 tiles[x][y] = new_tile
-                print "ab_distance {:8.2}   L_distance {:8.2}   rank {:1}   usages {:1}   size {}".format(
-                    np.sqrt(match['ab_distance_sq']),
+                print "L_distance {:8.2}  size {}".format(
                     match['L_distance'],
-                    match['rank'],
-                    match['usages'] + 1,
                     str(new_tile.size))
     finally:
         db.close()
@@ -204,37 +201,100 @@ def tile_position(x, y, this_size, generic_size, randomize=True):
         pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
     return pos
 
+def match_colors(tile, db, max_usages=1):
+    JND = 2.3 # "just noticeable difference"
+    tol = 5*JND
+    LIMIT = 1 # Increase from 1 to see runners-up.
+    colors = map(cs.rgb2lab, salient_colors(tile))
+    if len(colors) > 2:
+        # Query images that share two prominent colors.
+        L1, a1, b1 = colors[0]
+        L2, a2, b2 = colors[1]
+        query  =   """SELECT
+                   image_id,
+                   (a-({a1}))*(a-({a1})) + (b-({b1}))*(b-({b1})) 
+                       + (L-({L1}))*(L-({L1})) as E1_sq,
+                   (a-({a2}))*(a-({a2})) + (b-({b2}))*(b-({b2})) 
+                       + (L-({L2}))*(L-({L2})) as E2_sq,
+                   min(L-({L1}), L-({L2})) as L_distance,
+                   filename
+                   FROM Colors
+                   JOIN Images using (image_id)
+                   WHERE (E1_sq < {tol}*{tol}
+                          OR E2_sq < {tol}*{tol})
+                   AND usages < {max_usages}
+                   AND rank > 4
+                   GROUP BY image_id
+                   HAVING COUNT(*) >= 2
+                   LIMIT {limit}""".format(a1=a1, b1=b1, L1=L1,
+                                           a2=a2, b2=b2, L2=L2,
+                                           tol=tol,
+                                           max_usages=max_usages,
+                                           limit=LIMIT)
+    else:
+        # Query images that share one prominent color.
+        L1, a1, b1 = colors[0]
+        query  =   """SELECT
+                   image_id,
+                   (a-({a1}))*(a-({a1})) + (b-({b1}))*(b-({b1})) 
+                       + (L-({L1}))*(L-({L1})) as E1_sq,
+                   (L-({L1})) as L_distance,
+                   filename
+                   FROM Colors
+                   JOIN Images using (image_id)
+                   WHERE E1_sq < {tol}*{tol}
+                   AND usages < {max_usages}
+                   AND rank > 3
+                   GROUP BY image_id
+                   LIMIT {limit}""".format(a1=a1, b1=b1, L1=L1,
+                                           tol=tol,
+                                           max_usages=max_usages,
+                                           limit=LIMIT)
+    try:
+        c=db.cursor()
+        c.execute(query)
+        match = c.fetchone()
+        if match:
+            c.execute("UPDATE Images SET usages=usages+1 WHERE image_id=?", (match['image_id'],))
+    finally:
+        c.close()
+    if match:
+        return match
+    else:
+        # Fall back on old method.
+        print "Falling back on Lab proximity method."
+        return match_Lab_proximity(tile, db)
 
-def find_match(tile, db, max_usages=1):
+def match_Lab_proximity(tile, db, max_usages=1):
     """Query the db for the best match, weighing the color's ab-distance
     in Lab color space, the color's prominence in the image in question
     (its 'rank'), and the image's usage count."""
     target_L, target_a, target_b = map(cs.rgb2lab, salient_colors(tile))[0]
     LIMIT = 1 # Increase to see runners-up.
     # Here, I am working around sqlite's lack of ^ and sqrt operations.
+    query = """SELECT
+               image_id,
+               L, a, b,
+               red, green, blue,
+               (a-({target_a}))*(a-({target_a})) 
+                   + (b-({target_b}))*(b-({target_b})) as ab_distance_sq,
+               (L-({target_L})) as L_distance,
+               (a-({target_a}))*(a-({target_a})) 
+                   + (b-({target_b}))*(b-({target_b})) 
+                   + (L-({target_L}))*(L-({target_L})) as E_sq,
+               rank,
+               usages,
+               filename
+               FROM Colors
+               JOIN Images USING (image_id) 
+               WHERE usages <= {max_usages} 
+               ORDER BY E_sq ASC
+               LIMIT {limit}""".format(
+               target_a=target_a, target_b=target_b,
+               target_L=target_L, max_usages=max_usages,
+               limit=LIMIT)
     try:
         c = db.cursor()
-        query = """SELECT
-                   image_id,
-                   L, a, b,
-                   red, green, blue,
-                   (a-({target_a}))*(a-({target_a})) 
-                       + (b-({target_b}))*(b-({target_b})) as ab_distance_sq,
-                   (L-({target_L})) as L_distance,
-                   (a-({target_a}))*(a-({target_a})) 
-                       + (b-({target_b}))*(b-({target_b})) 
-                       + (L-({target_L}))*(L-({target_L})) as E_sq,
-                   rank,
-                   usages,
-                   filename
-                   FROM Colors
-                   JOIN Images USING (image_id) 
-                   WHERE usages <= {max_usages} 
-                   ORDER BY E_sq ASC
-                   LIMIT {limit}""".format(
-                   target_a=target_a, target_b=target_b,
-                   target_L=target_L, max_usages=max_usages,
-                   limit=LIMIT)
         c.execute(query)
         match = c.fetchone()
         c.execute("""UPDATE Images SET usages=usages+1 WHERE image_id=?""", (match['image_id'],))
