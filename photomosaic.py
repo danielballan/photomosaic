@@ -173,7 +173,7 @@ def partition_target(img, tile_size):
 def create_target_table(db):
     c = db.cursor()
     try:
-        c.execute("DROP TABLE Target")
+        c.execute("DROP TABLE IF EXISTS Target")
         c.execute("""CREATE TABLE Target
                      (tile_id INTEGER PRIMARY KEY,
                       x INTEGER,
@@ -200,28 +200,22 @@ def insert_target_tile(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
     color of each of its regions in the Colors table."""
     c = db.cursor()
     try:
-        c.execute("""INSERT INTO Images (usages, w, h, filename)
-                     VALUES (?, ?, ?, ?)""",
-                  (0, w, h, filename))
-        image_id = c.lastrowid
         for region in xrange(len(rgb_dom)):
             red_dom, green_dom, blue_dom = rgb_dom[region]
             red_avg, green_avg, blue_avg = rgb_avg[region]
             L_dom, a_dom, b_dom = lab_dom[region]
             L_avg, a_avg, b_avg = lab_avg[region]
-            c.execute("""INSERT INTO Colors (x, y, region, 
+            c.execute("""INSERT INTO Target (x, y, region, 
                          L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom, 
                          L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                          (x, y, region,
                          L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
                          L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg))
-    except sqlite3.IntegrityError:
-        print "Image %s is already in the table. Skipping it." % filename
     finally:
         c.close()
     
-def target(target_filename, db_name):
+def target(target_filename, tile_size, db_name):
     """Open the target image, partition it into tiles, analyze them,
     store the results in the db, and return a 2D list of the tiles."""
     try:
@@ -229,10 +223,12 @@ def target(target_filename, db_name):
     except IOError:
         print "Cannot open %s as an image." % target_filename
         return 1
+    if isinstance(tile_size, int):
+        tile_size = tile_size, tile_size
     tiles = partition_target(target_img, tile_size)
     db = connect(db_name)
     try:
-        create_tables(db)
+        create_target_table(db)
         reset_usage(db)
         for x, row in enumerate(tiles):
             for y, tile in enumerate(row):
@@ -242,7 +238,7 @@ def target(target_filename, db_name):
                 rgb_avg= map(average_color, regions) 
                 lab_avg = map(cs.rgb2lab, rgb_avg)
                 # Really, a proper avg in Lab space would be best.
-                insert(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
+                insert_target_tile(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
         db.commit()
     finally:
         db.close()
