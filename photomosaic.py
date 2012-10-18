@@ -58,7 +58,9 @@ def dominant_color(img, clusters=5, size=50):
     return map(int, dominant_color) # Avoid returning np.uint8 type.
 
 def average_color(img):
-    #TODO
+    """Average values of [r, g, b] over image. Should be done in
+    Lab space, but converting every pixel is expensive."""
+    # TODO
     return [0, 0, 0] 
 
 
