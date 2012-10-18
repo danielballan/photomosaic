@@ -254,14 +254,51 @@ def reset_usage(db):
     except sqlite3.OperationalError, e:
         print e
 
-def match_regions(db):
-    query = """SELECT
-               sum(t.L - c.L) over regions
-               FROM Target t
-               OUTER JOIN Colors c USING (region)
-               GROUP BY image_id
-               ORDER BY"""
-    pass
+def join(db):
+    """Compare every target tile to every image by joining
+    the Colors table to the Target table."""
+    query = """INSERT INTO BigJoin (x, y, region, image_id, Esq, dL)
+               SELECT
+               x, y, region,
+               image_id, 
+               (c.L_{type} - t.L_{type})*(c.L_{type} - t.L_{type})
+               + (c.a_{type} - t.a_{type})*(c.a_{type} - t.a_{type})
+               + (c.b_{type} - t.b_{type})*(c.b_{type} - t.b_{type}) as Esq,
+               c.L_{type} - t.L_{type} as dL
+               FROM Colors c
+               JOIN Target t USING (region)""".format(
+               type='dom')
+    c = db.cursor()
+    try:
+        c.execute("DROP TABLE IF EXISTS BigJoin")
+        c.execute("""CREATE TABLE BigJoin
+                     (id INTEGER PRIMARY KEY,
+                      x INTEGER,
+                      y INTEGER,
+                      region INTEGER,
+                      image_id INTEGER,
+                      Esq REAL,
+                      dL REAL)""")
+        c.execute(query)
+        db.commit()
+    finally:
+        c.close()
+
+def match(db):
+    """Average perceived color difference E and lightness difference dL
+    over the regions of each possible match. Rank them in E, and take
+    the best image for each target tile. Allow duplicates."""
+    query = """SELECT x, y, image_id, avg(Esq) avg_Esq, avg(dL) avg_dL
+               FROM BigJoin
+               GROUP BY x, y, region
+               ORDER BY avg_Esq"""
+    c = db.cursor()
+    try:
+        c.execute(query)
+        matches = c.fetchall()
+    finally:
+        c.close()
+    return matches
 
 def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
     "Build the final image."
