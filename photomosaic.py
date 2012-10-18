@@ -190,9 +190,12 @@ def tile_position(x, y, this_size, generic_size, randomize=True):
         margin = ((generic_size[0] - this_size[0]) // 2, 
                   (generic_size[1] - this_size[1]) // 2)
         if randomize:
-            # Set left and bottom margins to a random value
-            # bound by 0 and twice their original value.
-            margin = [random.randrange(2*m) for m in margin]
+            try:
+                # Set left and bottom margins to a random value
+                # bound by 0 and twice their original value.
+                margin = [random.randrange(2*m) for m in margin]
+            except ValueError:
+                pass
         pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
     return pos
 
@@ -268,11 +271,13 @@ def crop_to_fit(img, tile_size):
     img_aspect = img_w // img_h
     tile_aspect = tile_w // tile_h
     if img_aspect > tile_aspect:
+        # It's too wide.
         crop_h = img_h
         crop_w = crop_h*tile_aspect
         x_offset = (img_w - crop_w) // 2
         y_offset = 0
     else:
+        # It's too tall.
         crop_w = img_w
         crop_h = crop_w // tile_aspect
         x_offset = 0
