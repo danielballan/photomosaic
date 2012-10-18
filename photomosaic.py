@@ -285,7 +285,7 @@ def join(db):
     finally:
         c.close()
 
-def match(db):
+def matching(db):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
@@ -333,11 +333,12 @@ def photomosaic(tiles, db_name):
     tile_size = tiles[0][0].size # assuming uniform
     db = connect(db_name)
     try:
-        matches = match(db)
+        matches = matching(db)
     finally:
         db.close()
-    for m in matches:
-        new_tile = make_tile(m, tile_size, vary_size=True)
+    for match in matches:
+        new_tile = make_tile(match, tile_size, vary_size=True)
+        x, y = match['x'], match['y']
         tiles[x][y] = new_tile
     mosaic = assemble_mosaic(tiles, tile_size)
     return mosaic
