@@ -59,7 +59,7 @@ def dominant_color(img, clusters=5, size=50):
 
 def average_color(img):
     #TODO
-    return 0 
+    return [0, 0, 0] 
 
 
 def connect(db_path):
@@ -108,14 +108,14 @@ def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
                      VALUES (?, ?, ?, ?)""",
                   (0, w, h, filename))
         image_id = c.lastrowid
-        for region in xrange(len(rgb)):
-            red_dom, green_dom, blue_dom = rgb 
-            red_avg, green_avg, blue_avg = rgb 
-            L_dom, a_dom, b_dom = lab[region]
-            L_avg, a_avg, b_avg = lab[region]
+        for region in xrange(len(rgb_dom)):
+            red_dom, green_dom, blue_dom = rgb_dom[region]
+            red_avg, green_avg, blue_avg = rgb_avg[region]
+            L_dom, a_dom, b_dom = lab_dom[region]
+            L_avg, a_avg, b_avg = lab_avg[region]
             c.execute("""INSERT INTO Colors (image_id, region, 
-                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom) 
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg) 
+                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom, 
+                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                          (image_id, region, 
                          L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
@@ -145,7 +145,7 @@ def catalog(image_dir, db_name='imagepool.db'):
             regions = split_quadrants(img)
             rgb_dom= map(dominant_color, regions) 
             lab_dom = map(cs.rgb2lab, rgb_dom)
-            rgb_avg= map(dominant_color, regions) 
+            rgb_avg= map(average_color, regions) 
             lab_avg = map(cs.rgb2lab, rgb_avg)
             # Really, a proper avg in Lab space would be best.
             insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
