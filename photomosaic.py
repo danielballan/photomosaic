@@ -23,8 +23,13 @@ def salient_colors(img, clusters=4, size=100):
     colors, dist = scipy.cluster.vq.kmeans(imgarr, clusters)
     vecs, dist = scipy.cluster.vq.vq(imgarr, colors)
     counts, bins = scipy.histogram(vecs, len(colors))
-    ranked_colors = colors[(-counts).argsort()]
-    return ranked_colors
+    ranking = (-counts).argsort()
+    ranked_colors = colors[ranking] # Top 4 colors, in descending order
+    total_count = np.sum(counts)
+    # If 1 or 2 or 3 colors dominate, leave off the rest.
+    prominent_colors = ranked_colors[counts[ranking]/total_count >= 1/(clusters+1)]
+    assert prominent_colors.size > 0, "No salient colors!"
+    return prominent_colors
 
 def catalog(image_dir, db_name='imagepool.db'):
     """Analyze all the images in image_dir, and store the results in
