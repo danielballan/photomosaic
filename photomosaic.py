@@ -1,6 +1,7 @@
 from __future__ import division
 import os
 import logging
+import time
 import random
 import numpy as np
 import scipy
@@ -270,7 +271,9 @@ def join(db, subscript='dom'):
                       image_id INTEGER,
                       Esq REAL,
                       dL REAL)""")
+        start_time = time.clock()
         c.execute(query)
+        print "Join completed in {}".format(time.clock() - start_time)
     finally:
         c.close()
 
@@ -278,13 +281,20 @@ def matching(db):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
-    query = """SELECT x, y, image_id, avg(Esq) avg_Esq, avg(dL) avg_dL
+    query = """SELECT x, y, 
+               image_id,
+               avg(Esq) as avg_Esq,
+               avg(dL) as avg_dL,
+               filename
                FROM BigJoin
+               JOIN Images using (image_id)
                GROUP BY x, y, region
                ORDER BY avg_Esq"""
     c = db.cursor()
     try:
+        start_time = time.clock()
         c.execute(query)
+        print "Matching completed in {}".format(time.clock() - start_time)
         matches = c.fetchall()
     finally:
         c.close()
@@ -303,6 +313,8 @@ def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
     return mosaic # suitable to be saved with imsave
 
 def tile_position(x, y, this_size, generic_size, randomize=True):
+    """Return the x, y position of the tile in the mosaic, according for
+    possible margins and optional random nudges for a 'scattered' look.""" 
     if this_size == generic_size: 
         pos = x*generic_size[0], y*generic_size[1]
     else:
@@ -322,9 +334,11 @@ def photomosaic(tiles, db_name):
     tile_size = tiles[0][0].size # assuming uniform
     db = connect(db_name)
     try:
+        print 'Choosing matching tiles...'
         matches = matching(db)
     finally:
         db.close()
+    print 'Building mosaic...'
     for match in matches:
         new_tile = make_tile(match, tile_size, vary_size=True)
         x, y = match['x'], match['y']
@@ -335,13 +349,13 @@ def photomosaic(tiles, db_name):
 def make_tile(match, tile_size, vary_size=True):
     "Open and resize the matched image."
     raw = Image.open(match['filename'])
-    if (match['dL'] >= 0 or not vary_size):
+    if (match['avg_dL'] >= 0 or not vary_size):
         # Match is brighter than target.
         img = crop_to_fit(raw, tile_size)
     else:
         # Match is darker than target.
         # Shrink it to leave white padding.
-        img = shrink_to_brighten(raw, tile_size, match['dL'])
+        img = shrink_to_brighten(raw, tile_size, match['avg_dL'])
     return img
 
 def shrink_to_brighten(img, tile_size, dL):
