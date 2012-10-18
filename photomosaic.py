@@ -20,7 +20,7 @@ def split_regions(img, split_dim):
     """Split an image into subregions.
     Use split_dim=2 or (2,2) or (2,3) etc.
     Return a flat list of images."""
-    if isinstance(factor, int):
+    if isinstance(split_dim, int):
         rows = columns = split_dim
     else:
         columns, rows = split_dim
@@ -119,7 +119,7 @@ def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                          (image_id, region, 
                          L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
+                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg))
     except sqlite3.IntegrityError:
         print "Image %s is already in the table. Skipping it." % filename
     finally:
@@ -174,23 +174,23 @@ def create_target_table(db):
     c = db.cursor()
     try:
         c.execute("DROP TABLE Target")
-        c.execute("CREATE TABLE Target
-                   (id INTEGER PRIMARY KEY,
-                    x INTEGER,
-                    y INTEGER,
-                    region INTEGER,
-                    L_dom REAL,
-                    a_dom REAL,
-                    b_dom REAL,
-                    red_dom INTEGER,
-                    green_dom INTEGER,
-                    blue_dom INTEGER,
-                    L_avg REAL,
-                    a_avg REAL,
-                    b_avg REAL,
-                    red_avg INTEGER,
-                    green_avg INTEGER,
-                    blue_avg INTEGER)""")
+        c.execute("""CREATE TABLE Target
+                     (id INTEGER PRIMARY KEY,
+                      x INTEGER,
+                      y INTEGER,
+                      region INTEGER,
+                      L_dom REAL,
+                      a_dom REAL,
+                      b_dom REAL,
+                      red_dom INTEGER,
+                      green_dom INTEGER,
+                      blue_dom INTEGER,
+                      L_avg REAL,
+                      a_avg REAL,
+                      b_avg REAL,
+                      red_avg INTEGER,
+                      green_avg INTEGER,
+                      blue_avg INTEGER)""")
     finally:
         c.close()
 
@@ -202,9 +202,6 @@ def match_regions(db):
                GROUP BY image_id
                ORDER BY"""
     pass
-
-def match_regions(regions, db):
-    # Analyze target, load into SQL, do all analysis there!
 
 def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
     "Build the final image."
@@ -438,7 +435,7 @@ def print_db(db):
     
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
-    return '#' ''.join(chr(c) for c in color).encode('hex')
+    return '#' + ''.join(chr(c) for c in rgb).encode('hex')
 
 def Lab_distance(lab1, lab2):
     """Compute distance in Lab."""
