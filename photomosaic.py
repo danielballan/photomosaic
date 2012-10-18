@@ -125,10 +125,10 @@ def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
     finally:
         c.close()
     
-def pool(image_dir, db_name='imagepool.db'):
+def pool(image_dir, db_name):
     """Analyze all the images in image_dir, and store the results in
     a sqlite database at db_name."""
-    db = connect(os.path.join(image_dir, db_name))
+    db = connect(db_name)
     try:
         create_tables(db)
         walker = DirectoryWalker(image_dir)
@@ -239,6 +239,8 @@ def target(target_filename, tile_size, db_name):
                 lab_avg = map(cs.rgb2lab, rgb_avg)
                 # Really, a proper avg in Lab space would be best.
                 insert_target_tile(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
+        print 'Performing big join.'
+        join(db)
         db.commit()
     finally:
         db.close()
@@ -280,7 +282,6 @@ def join(db):
                       Esq REAL,
                       dL REAL)""")
         c.execute(query)
-        db.commit()
     finally:
         c.close()
 
@@ -332,143 +333,37 @@ def photomosaic(tiles, db_name):
     tile_size = tiles[0][0].size # assuming uniform
     db = connect(db_name)
     try:
-        reset_usage(db)
-        for x, row in enumerate(tiles):
-            for y, tile in enumerate(row):
-                # Replace target tile with a matched tile.
-                match = match_colors(tile, db)
-                new_tile = make_tile(match, tile_size, vary_size=True)
-                tiles[x][y] = new_tile
+        matches = match(db)
     finally:
         db.close()
+    for m in matches:
+        new_tile = make_tile(m, tile_size, vary_size=True)
+        tiles[x][y] = new_tile
     mosaic = assemble_mosaic(tiles, tile_size)
     return mosaic
 
-
-def match_colors(tile, db, max_usages=1):
-    JND = 2.3 # "just noticeable difference"
-    tol = 5*JND
-    LIMIT = 1 # Increase from 1 to see runners-up.
-    colors = map(cs.rgb2lab, salient_colors(tile))
-    if len(colors) > 2:
-        # Query images that share two prominent colors.
-        L1, a1, b1 = colors[0]
-        L2, a2, b2 = colors[1]
-        query  =   """SELECT
-                   image_id,
-                   (a-({a1}))*(a-({a1})) + (b-({b1}))*(b-({b1})) 
-                       + (L-({L1}))*(L-({L1})) as E1_sq,
-                   (a-({a2}))*(a-({a2})) + (b-({b2}))*(b-({b2})) 
-                       + (L-({L2}))*(L-({L2})) as E2_sq,
-                   min(L-({L1}), L-({L2})) as L_distance,
-                   filename
-                   FROM Colors
-                   JOIN Images using (image_id)
-                   WHERE (E1_sq < {tol}*{tol}
-                          OR E2_sq < {tol}*{tol})
-                   AND usages < {max_usages}
-                   AND rank > 4
-                   GROUP BY image_id
-                   HAVING COUNT(*) >= 2
-                   LIMIT {limit}""".format(a1=a1, b1=b1, L1=L1,
-                                           a2=a2, b2=b2, L2=L2,
-                                           tol=tol,
-                                           max_usages=max_usages,
-                                           limit=LIMIT)
-    else:
-        # Query images that share one prominent color.
-        L1, a1, b1 = colors[0]
-        query  =   """SELECT
-                   image_id,
-                   (a-({a1}))*(a-({a1})) + (b-({b1}))*(b-({b1})) 
-                       + (L-({L1}))*(L-({L1})) as E1_sq,
-                   (L-({L1})) as L_distance,
-                   filename
-                   FROM Colors
-                   JOIN Images using (image_id)
-                   WHERE E1_sq < {tol}*{tol}
-                   AND usages < {max_usages}
-                   AND rank > 3
-                   GROUP BY image_id
-                   LIMIT {limit}""".format(a1=a1, b1=b1, L1=L1,
-                                           tol=tol,
-                                           max_usages=max_usages,
-                                           limit=LIMIT)
-    try:
-        c=db.cursor()
-        c.execute(query)
-        match = c.fetchone()
-        if match:
-            c.execute("UPDATE Images SET usages=usages+1 WHERE image_id=?", (match['image_id'],))
-    finally:
-        c.close()
-    if match:
-        return match
-    else:
-        # Fall back on old method.
-        print "Falling back on Lab proximity method."
-        return match_Lab_proximity(tile, db)
-
-def match_Lab_proximity(tile, db, max_usages=1):
-    """Query the db for the best match, weighing the color's ab-distance
-    in Lab color space, the color's prominence in the image in question
-    (its 'rank'), and the image's usage count."""
-    target_L, target_a, target_b = map(cs.rgb2lab, salient_colors(tile))[0]
-    LIMIT = 1 # Increase to see runners-up.
-    # Here, I am working around sqlite's lack of ^ and sqrt operations.
-    query = """SELECT
-               image_id,
-               L, a, b,
-               red, green, blue,
-               (a-({target_a}))*(a-({target_a})) 
-                   + (b-({target_b}))*(b-({target_b})) as ab_distance_sq,
-               (L-({target_L})) as L_distance,
-               (a-({target_a}))*(a-({target_a})) 
-                   + (b-({target_b}))*(b-({target_b})) 
-                   + (L-({target_L}))*(L-({target_L})) as E_sq,
-               rank,
-               usages,
-               filename
-               FROM Colors
-               JOIN Images USING (image_id) 
-               WHERE usages <= {max_usages} 
-               ORDER BY E_sq ASC
-               LIMIT {limit}""".format(
-               target_a=target_a, target_b=target_b,
-               target_L=target_L, max_usages=max_usages,
-               limit=LIMIT)
-    try:
-        c = db.cursor()
-        c.execute(query)
-        match = c.fetchone()
-        c.execute("""UPDATE Images SET usages=usages+1 WHERE image_id=?""", (match['image_id'],))
-    finally:
-        c.close()
-    return match # a sqlite3.Row object
-
-def make_tile(match, tile_size,
-              vary_size=True):
+def make_tile(match, tile_size, vary_size=True):
     "Open and resize the matched image."
     raw = Image.open(match['filename'])
-    if (match['L_distance'] >= 0 or not vary_size):
+    if (match['dL'] >= 0 or not vary_size):
         # Match is brighter than target.
         img = crop_to_fit(raw, tile_size)
     else:
         # Match is darker than target.
         # Shrink it to leave white padding.
-        img = shrink_to_brighten(raw, tile_size, match['L_distance'])
+        img = shrink_to_brighten(raw, tile_size, match['dL'])
     return img
 
-def shrink_to_brighten(img, tile_size, L_distance):
+def shrink_to_brighten(img, tile_size, dL):
     """Return an image smaller than a tile. Its white margins
     will effect lightness. Also, varied tile size looks nice.
-    The greater the greater the lightness discrepancy, L_distance,
+    The greater the greater the lightness discrepancy dL
     the smaller the tile is shrunk."""
-    MAX_L_DISTANCE = 100 # the largest possible distance in Lab space
+    MAX_dL = 100 # the largest possible distance in Lab space
     MIN = 0.5 # not so close small that it's a speck
     MAX = 0.9 # not so close to unity that is looks accidental
-    assert L_distance < 0, "Only shrink image when tile is too dark."
-    scaling = MAX - (MAX - MIN)*(-L_distance)/MAX_L_DISTANCE
+    assert dL < 0, "Only shrink image when tile is too dark."
+    scaling = MAX - (MAX - MIN)*(-dL)/MAX_dL
     shrunk_size = [int(scaling*dim) for dim in tile_size]
     img = crop_to_fit(img, shrunk_size) 
     return img 
@@ -512,16 +407,3 @@ def print_db(db):
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
-
-def Lab_distance(lab1, lab2):
-    """Compute distance in Lab."""
-    L1, a1, b1 = lab1
-    L2, a2, b2 = lab2
-    E = np.sqrt((L1 - L2)**2 + (a1 - a2)**2 + (b1 - b2)**2)
-    return E
-    
-def ab_distance(lab1, lab2):
-    """Compute distance in the a-b plane, disregarding L."""
-    L1, a1, b1 = lab1
-    L2, a2, b2 = lab2
-    return sqrt((a1-a2)**2 + (b1-b2)**2)
