@@ -1,5 +1,6 @@
 from __future__ import division
 import os
+import logging
 import random
 import numpy as np
 import scipy
@@ -12,6 +13,8 @@ import sqlite3
 from utils import memo
 import color_spaces as cs
 from directory_walker import DirectoryWalker
+
+logger = logging.getLogger(__name__)
 
 def salient_colors(img, clusters=4, size=100):
     """Group the colors in an image into like clusters, and return a list
@@ -67,6 +70,30 @@ def catalog(image_dir, db_name='imagepool.db'):
         db.commit()
     finally:
         db.close()
+
+def split_regions(img, factor):
+    """Split an image into subregions"""
+    if isinstance(factor, int):
+        rows = columns = factor
+    else:
+        columns, rows = factor
+    r_size = img.size[0] // columns, img.size[1] // rows
+    regions = [[None for c in range(columns)] for r in range(rows)]
+    for y in range(rows):
+        for x in range(columns):
+            region = img.crop((x*r_size[0], 
+                             y*r_size[1],
+                             (x + 1)*r_size[0], 
+                             (y + 1)*r_size[1]))
+            regions[y][x] = region
+    return regions
+    
+def split_quadrants(img):
+    """Partition an image into quadrants. Return list of images
+    in order: [top-left, top-right, bottom-left, bottom-right].""" 
+    if img.size[0] & 1 or img.size[1] & 1:
+        logger.warning("I am quartering an image with odd dimensions.")
+    return split_regions(img, 2)
 
 def print_db(db):
     "Dump the database to the screen, for debugging."
