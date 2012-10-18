@@ -16,24 +16,6 @@ from directory_walker import DirectoryWalker
 
 logger = logging.getLogger(__name__)
 
-def salient_colors(img, clusters=4, size=100):
-    """Group the colors in an image into like clusters, and return a list
-    of these colors in order of their abundance in the image."""
-    assert img.mode == 'RGB', 'RGB images only!'
-    img.thumbnail((size, size))
-    imgarr = scipy.misc.fromimage(img)
-    imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
-    colors, dist = scipy.cluster.vq.kmeans(imgarr, clusters)
-    vecs, dist = scipy.cluster.vq.vq(imgarr, colors)
-    counts, bins = scipy.histogram(vecs, len(colors))
-    ranking = (-counts).argsort()
-    ranked_colors = colors[ranking] # Top 4 colors, in descending order
-    total_count = np.sum(counts)
-    # If 1 or 2 or 3 colors dominate, leave off the rest.
-    prominent_colors = ranked_colors[counts[ranking]/total_count >= 1/(clusters+1)]
-    assert prominent_colors.size > 0, "No salient colors!"
-    return prominent_colors
-
 def dominant_color(img, clusters=5, size=50):
     """Group the colors in an image into like clusters, and return
     the central value of the largest cluster -- the dominant color."""
@@ -45,7 +27,11 @@ def dominant_color(img, clusters=5, size=50):
     vecs, dist = scipy.cluster.vq.vq(imgarr, colors)
     counts, bins = scipy.histogram(vecs, len(colors))
     dominant_color = colors[counts.argmax()]
-    return dominant_color 
+    return map(int, dominant_color) # Avoid returning np.uint8 type.
+
+def average_color(img):
+    #TODO
+    return 0 
 
 def catalog(image_dir, db_name='imagepool.db'):
     """Analyze all the images in image_dir, and store the results in
@@ -64,33 +50,41 @@ def catalog(image_dir, db_name='imagepool.db'):
                 print 'RGB images only. Skipping %s.' % filename
                 continue
             w, h = img.size
-            rgb_colors = salient_colors(img)
-            lab_colors = map(cs.rgb2lab, rgb_colors)
-            insert(filename, w, h, rgb_colors, lab_colors, db)
+            regions = split_quadrants(img)
+            rgb_dom= map(dominant_color, regions) 
+            lab_dom = map(cs.rgb2lab, rgb_dom)
+            rgb_avg= map(dominant_color, regions) 
+            lab_avg = map(cs.rgb2lab, rgb_avg)
+            # Really, a proper avg in Lab space would be best.
+            insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
         db.commit()
     finally:
         db.close()
 
-def split_regions(img, factor):
-    """Split an image into subregions"""
+def split_regions(img, split_dim):
+    """Split an image into subregions.
+    Use split_dim=2 or (2,2) or (2,3) etc.
+    Return a flat list of images."""
     if isinstance(factor, int):
-        rows = columns = factor
+        rows = columns = split_dim
     else:
-        columns, rows = factor
+        columns, rows = split_dim
     r_size = img.size[0] // columns, img.size[1] // rows
-    regions = [[None for c in range(columns)] for r in range(rows)]
+    # regions = [[None for c in range(columns)] for r in range(rows)]
+    regions = columns*rows*[None]
     for y in range(rows):
         for x in range(columns):
             region = img.crop((x*r_size[0], 
                              y*r_size[1],
                              (x + 1)*r_size[0], 
                              (y + 1)*r_size[1]))
-            regions[y][x] = region
+            # regions[y][x] = region ## for nested output
+            regions[y*columns + x] = region
     return regions
     
 def split_quadrants(img):
-    """Partition an image into quadrants. Return list of images
-    in order: [top-left, top-right, bottom-left, bottom-right].""" 
+    """Convenience function: calls split_regions(img, 2). Returns
+    a flat 4-element list: top-left, top-right, bottom-left, bottom-right."""
     if img.size[0] & 1 or img.size[1] & 1:
         logger.warning("I am quartering an image with odd dimensions.")
     return split_regions(img, 2)
@@ -106,22 +100,27 @@ def print_db(db):
         print row
     c.close()
 
-def insert(filename, w, h, rgb, lab, db):
-    "Register an image in Images and its salient colors in Colors."
+def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
+    """Insert image info in the Images table. Insert the dominant and average
+    color of each of its regions in the Colors table."""
     c = db.cursor()
     try:
         c.execute("""INSERT INTO Images (usages, w, h, filename)
                      VALUES (?, ?, ?, ?)""",
                   (0, w, h, filename))
         image_id = c.lastrowid
-        for i in xrange(len(rgb)):
-            red, green, blue = map(int, rgb[i]) # np.uint8 confuses sqlite3
-            L, a, b = lab[i] 
-            rank = 1 + i
-            c.execute("""INSERT INTO Colors (image_id, rank, 
-                         L, a, b, red, green, blue) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                         (image_id, rank, L, a, b, red, green, blue))
+        for region in xrange(len(rgb)):
+            red_dom, green_dom, blue_dom = rgb 
+            red_avg, green_avg, blue_avg = rgb 
+            L_dom, a_dom, b_dom = lab[region]
+            L_avg, a_avg, b_avg = lab[region]
+            c.execute("""INSERT INTO Colors (image_id, region, 
+                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom) 
+                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                         (image_id, region, 
+                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
+                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
     except sqlite3.IntegrityError:
         print "Image %s is already in the table. Skipping it." % filename
     finally:
@@ -148,13 +147,19 @@ def create_tables(db):
     c.execute("""CREATE TABLE IF NOT EXISTS Colors
                  (color_id INTEGER PRIMARY KEY,
                   image_id INTEGER,
-                  rank INTEGER,
-                  L REAL,
-                  a REAL,
-                  b REAL,
-                  red INTEGER,
-                  green INTEGER,
-                  blue INTEGER)""")
+                  region INTEGER,
+                  L_dom REAL,
+                  a_dom REAL,
+                  b_dom REAL,
+                  red_dom INTEGER,
+                  green_dom INTEGER,
+                  blue_dom INTEGER,
+                  L_avg REAL,
+                  a_avg REAL,
+                  b_avg REAL,
+                  red_avg INTEGER,
+                  green_avg INTEGER,
+                  blue_avg INTEGER)""")
     c.close()
     db.commit()
 
@@ -240,6 +245,13 @@ def tile_position(x, y, this_size, generic_size, randomize=True):
                 pass
         pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
     return pos
+
+def match_regions(regions, db, max_usages=1):
+    #query = """SELECT
+    #        image_id,
+    pass
+            
+            
 
 def match_colors(tile, db, max_usages=1):
     JND = 2.3 # "just noticeable difference"
