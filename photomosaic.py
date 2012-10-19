@@ -229,7 +229,7 @@ def target(target_filename, tile_size, db_name):
     db = connect(db_name)
     try:
         create_target_table(db)
-        reset_usage(db)
+        print 'Analyzing target image...'
         for x, row in enumerate(tiles):
             for y, tile in enumerate(row):
                 regions = split_quadrants(tile)
@@ -239,7 +239,7 @@ def target(target_filename, tile_size, db_name):
                 lab_avg = map(cs.rgb2lab, rgb_avg)
                 # Really, a proper avg in Lab space would be best.
                 insert_target_tile(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
-        print 'Performing big join.'
+        print 'Performing big join...'
         join(db)
         db.commit()
     finally:
@@ -278,51 +278,27 @@ def join(db, subscript='dom'):
         c.close()
     db.commit()
 
-def matching(db):
+def matching(x, y, db):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
-    query = """SELECT x, y, 
+    query = """SELECT 
                image_id,
                Esq,
                dL,
                filename
                FROM BigJoin
                JOIN Images using (image_id)
-               GROUP BY x, y
-               ORDER BY Esq ASC"""
+               WHERE x=? AND y=?
+               ORDER BY Esq ASC
+               LIMIT 1"""
     c = db.cursor()
     try:
-        start_time = time.clock()
-        c.execute(query)
-        print "Matching completed in {}".format(time.clock() - start_time)
-        matches = c.fetchall()
+        c.execute(query, (x, y))
+        match = c.fetchone()
     finally:
         c.close()
-    return matches
-
-def debug_matching(db):
-    """Average perceived color difference E and lightness difference dL
-    over the regions of each possible match. Rank them in E, and take
-    the best image for each target tile. Allow duplicates."""
-    query = """SELECT x, y, 
-               image_id,
-               avg(Esq) as avg_Esq,
-               avg(dL) as avg_dL,
-               filename
-               FROM BigJoin
-               JOIN Images using (image_id)
-               GROUP BY x, y
-               ORDER BY x, y, avg_Esq ASC"""
-    c = db.cursor()
-    try:
-        start_time = time.clock()
-        c.execute(query)
-        print "Matching completed in {}".format(time.clock() - start_time)
-        matches = c.fetchall()
-    finally:
-        c.close()
-    return matches
+    return match
 
 def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
     "Build the final image."
@@ -358,15 +334,16 @@ def photomosaic(tiles, db_name):
     tile_size = tiles[0][0].size # assuming uniform
     db = connect(db_name)
     try:
-        print 'Choosing matching tiles...'
-        matches = matching(db)
+        print 'Choosing matching tiles and scaling them...'
+        for x, row in enumerate(tiles):
+            for y, tile in enumerate(row):
+                # Replace target tile with a matched tile.
+                match = matching(x, y, db)
+                new_tile = make_tile(match, tile_size, vary_size=True)
+                tiles[x][y] = new_tile
     finally:
         db.close()
     print 'Building mosaic...'
-    for match in matches:
-        new_tile = make_tile(match, tile_size, vary_size=True)
-        x, y = match['x'], match['y']
-        tiles[x][y] = new_tile
     mosaic = assemble_mosaic(tiles, tile_size)
     return mosaic
 
