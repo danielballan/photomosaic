@@ -9,9 +9,11 @@ Usage:
     import photomosaic as pm
     
     pool('folder-of-many-images/', 'imagepool.db')
-    tiles = target('original.jpg', 'imagepool.db')
+    tiles = target('original.jpg', 20, 'imagepool.db')
+    # 20 = tile size in px. For rectangular tiles, use tuple: (40, 30).
     img = photomosaic(tiles, 'imagepool.db)
     img.save('mosaic.jpg')
+
 
 Dependences:
 -----------
