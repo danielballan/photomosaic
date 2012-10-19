@@ -268,7 +268,7 @@ def histogram(db, table_name):
     finally:
         c.close()
     return hist
-    
+
 def join(db):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
