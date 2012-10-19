@@ -23,4 +23,4 @@ Dependences:
 
 Related Project:
 ---------------
-[John Louis Del Rosario][https://github.com/john2x] also has a [photomosaic project][https://github.com/john2x/photomosaic] in Python. I studied his code while I began writing my own, and there are similarities. However, my algorithm for characterizing tiles and finding matches, which is accomplished mostly through SQL queries, is substatially different.
+[John Louis Del Rosario](https://github.com/john2x) also has a [photomosaic project](https://github.com/john2x/photomosaic) in Python. I studied his code while I began writing my own, and there are similarities. However, my algorithm for characterizing tiles and finding matches, which is accomplished mostly through SQL queries, is substatially different.
