@@ -30,6 +30,9 @@ import sqlite3
 import color_spaces as cs
 from directory_walker import DirectoryWalker
 
+# Configure logger.
+FORMAT = "%(name)s.%(funcName)s:  %(message)s"
+logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
 def split_regions(img, split_dim):
