@@ -76,12 +76,6 @@ def dominant_color(img, clusters=5, size=50):
     dominant_color = colors[counts.argmax()]
     return map(int, dominant_color) # Avoid returning np.uint8 type.
 
-def average_color(img):
-    """Average values of [r, g, b] over image. Should be done in
-    Lab space, but converting every pixel is expensive."""
-    # TODO
-    return [0, 0, 0] 
-
 def connect(db_path):
     "Connect to, and if need be create, a sqlite database at db_path."
     try:
@@ -104,23 +98,17 @@ def create_tables(db):
                  (color_id INTEGER PRIMARY KEY,
                   image_id INTEGER,
                   region INTEGER,
-                  L_dom REAL,
-                  a_dom REAL,
-                  b_dom REAL,
-                  red_dom INTEGER,
-                  green_dom INTEGER,
-                  blue_dom INTEGER,
-                  L_avg REAL,
-                  a_avg REAL,
-                  b_avg REAL,
-                  red_avg INTEGER,
-                  green_avg INTEGER,
-                  blue_avg INTEGER)""")
+                  L REAL,
+                  a REAL,
+                  b REAL,
+                  red INTEGER,
+                  green INTEGER,
+                  blue INTEGER)""")
     c.close()
     db.commit()
 
-def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
-    """Insert image info in the Images table. Insert the dominant and average
+def insert(filename, w, h, rgb, lab, db):
+    """Insert image info in the Images table. Insert the dominant
     color of each of its regions in the Colors table."""
     c = db.cursor()
     try:
@@ -128,18 +116,14 @@ def insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
                      VALUES (?, ?, ?, ?)""",
                   (0, w, h, filename))
         image_id = c.lastrowid
-        for region in xrange(len(rgb_dom)):
-            red_dom, green_dom, blue_dom = rgb_dom[region]
-            red_avg, green_avg, blue_avg = rgb_avg[region]
-            L_dom, a_dom, b_dom = lab_dom[region]
-            L_avg, a_avg, b_avg = lab_avg[region]
+        for region in xrange(len(rgb)):
+            L, a, b= lab[region]
+            red, green, blue= rgb[region]
             c.execute("""INSERT INTO Colors (image_id, region, 
-                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom, 
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                         L, a, b, red, green, blue) 
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
                          (image_id, region, 
-                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg))
+                         L, a, b, red, green, blue))
     except sqlite3.IntegrityError:
         print "Image %s is already in the table. Skipping it." % filename
     finally:
@@ -163,12 +147,10 @@ def pool(image_dir, db_name):
                 continue
             w, h = img.size
             regions = split_quadrants(img)
-            rgb_dom= map(dominant_color, regions) 
-            lab_dom = map(cs.rgb2lab, rgb_dom)
-            rgb_avg= map(average_color, regions) 
-            lab_avg = map(cs.rgb2lab, rgb_avg)
+            rgb = map(dominant_color, regions) 
+            lab = map(cs.rgb2lab, rgb)
             # Really, a proper avg in Lab space would be best.
-            insert(filename, w, h, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
+            insert(filename, w, h, rgb, lab, db)
         db.commit()
     finally:
         db.close()
@@ -199,39 +181,29 @@ def create_target_table(db):
                       x INTEGER,
                       y INTEGER,
                       region INTEGER,
-                      L_dom REAL,
-                      a_dom REAL,
-                      b_dom REAL,
-                      red_dom INTEGER,
-                      green_dom INTEGER,
-                      blue_dom INTEGER,
-                      L_avg REAL,
-                      a_avg REAL,
-                      b_avg REAL,
-                      red_avg INTEGER,
-                      green_avg INTEGER,
-                      blue_avg INTEGER)""")
+                      L REAL,
+                      a REAL,
+                      b REAL,
+                      red INTEGER,
+                      green INTEGER,
+                      blue INTEGER)""")
     finally:
         c.close()
         db.commit()
 
-def insert_target_tile(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db):
-    """Insert the dominant and average color of each a tile's regions
+def insert_target_tile(x, y, rgb, lab, db):
+    """Insert the dominant color of each a tile's regions
     in the Target table. Identify each tile by x, y."""
     c = db.cursor()
     try:
-        for region in xrange(len(rgb_dom)):
-            red_dom, green_dom, blue_dom = rgb_dom[region]
-            red_avg, green_avg, blue_avg = rgb_avg[region]
-            L_dom, a_dom, b_dom = lab_dom[region]
-            L_avg, a_avg, b_avg = lab_avg[region]
+        for region in xrange(len(rgb)):
+            red, green, blue= rgb[region]
+            L, a, b= lab[region]
             c.execute("""INSERT INTO Target (x, y, region, 
-                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom, 
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                         L, a, b, red, green, blue)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                          (x, y, region,
-                         L_dom, a_dom, b_dom, red_dom, green_dom, blue_dom,
-                         L_avg, a_avg, b_avg, red_avg, green_avg, blue_avg))
+                         L, a, b, red, green, blue))
     finally:
         c.close()
     
@@ -253,34 +225,43 @@ def target(target_filename, tile_size, db_name):
         for x, row in enumerate(tiles):
             for y, tile in enumerate(row):
                 regions = split_quadrants(tile)
-                rgb_dom= map(dominant_color, regions) 
-                lab_dom = map(cs.rgb2lab, rgb_dom)
-                rgb_avg= map(average_color, regions) 
-                lab_avg = map(cs.rgb2lab, rgb_avg)
+                rgb = map(dominant_color, regions) 
+                lab = map(cs.rgb2lab, rgb)
                 # Really, a proper avg in Lab space would be best.
-                insert_target_tile(x, y, rgb_dom, lab_dom, rgb_avg, lab_avg, db)
+                insert_target_tile(x, y, rgb, lab, db)
         print 'Performing big join...'
         join(db)
         db.commit()
     finally:
         db.close()
     return tiles
+
+def histogram(db, table_name):
+    Lab_query = """SELECT L, a, b, count(*) FROM {table} GROUP BY L, a, b"""
+    rgb_query = """SELECT r, g, b, count(*) FROM {table} GROUP BY r, g, b"""
+    c = db.cursor()
+    try: 
+        pass
+    finally:
+        c.close()
+    count, L, a, b, red, green, blue = c.fetchone()
+    return count, [L, a, b], [red, green, blue]
     
-def join(db, subscript='dom'):
+    
+def join(db):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
     query = """INSERT INTO BigJoin (x, y, image_id, Esq, dL)
                SELECT
                x, y,
                image_id, 
-               avg((c.L_{s} - t.L_{s})*(c.L_{s} - t.L_{s})
-               + (c.a_{s} - t.a_{s})*(c.a_{s} - t.a_{s})
-               + (c.b_{s} - t.b_{s})*(c.b_{s} - t.b_{s})) as Esq,
-               avg(c.L_{s} - t.L_{s}) as dL
+               avg((c.L - t.L)*(c.L - t.L)
+               + (c.a - t.a)*(c.a - t.a)
+               + (c.b - t.b)*(c.b - t.b)) as Esq,
+               avg(c.L - t.L) as dL
                FROM Colors c
                JOIN Target t USING (region)
-               GROUP BY x, y, image_id""".format(
-               s=subscript)
+               GROUP BY x, y, image_id"""
     c = db.cursor()
     try:
         c.execute("DROP TABLE IF EXISTS BigJoin")
