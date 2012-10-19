@@ -37,7 +37,7 @@ Thus, shrinking is applied to all tiles that are darker than their targets, and 
     ...
     img = photomosaic(tiles, 'imagepool.db', vary_size=True)
 
-By default, a shrunken tile is placed in the center of its space, leaving even margins on all sides. For artistic effect, they can be randomly nudged off center within their margins.
+By default, a shrunken tile is placed in the center of its space, leaving even margins. For artistic effect, they can be randomly nudged off center.
 
     ...
     img = photomosaic(tiles, 'imagepool.db', vary_size=True,
