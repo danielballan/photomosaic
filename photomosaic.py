@@ -237,16 +237,25 @@ def target(target_filename, tile_size, db_name):
     return tiles
 
 def histogram(db, table_name):
-    Lab_query = """SELECT L, a, b, count(*) FROM {table} GROUP BY L, a, b"""
-    rgb_query = """SELECT r, g, b, count(*) FROM {table} GROUP BY r, g, b"""
+    """Generate a histogram of the images in the pool, histogram(db, 'Colors'),
+    or the tiles in the target, histogram(db, 'Target').
+    Return a dictionary of the channels: L, a, b, red, green blue.
+    Each dict entry contains a pair of tuples: [(channel values), (counts)]."""
+    if table_name not in ['Colors', 'Target']:
+        logger.error("Invalid table_name.")
+        return
+    hist = {}
     c = db.cursor()
     try: 
-        pass
+        for channel in ['L', 'a', 'b', 'red', 'green', 'blue']:
+            c.execute("""SELECT ROUND({channel}) as {channel}_, count(*)
+                         FROM {table}
+                         GROUP BY ROUND({channel}_)""".format(
+                         table=table_name, channel=channel))
+            hist[channel] = zip(*c.fetchall())
     finally:
         c.close()
-    count, L, a, b, red, green, blue = c.fetchone()
-    return count, [L, a, b], [red, green, blue]
-    
+    return hist
     
 def join(db):
     """Compare every target tile to every image by joining
