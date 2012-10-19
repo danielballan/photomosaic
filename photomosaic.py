@@ -317,7 +317,8 @@ def matching(x, y, db):
         c.close()
     return match
 
-def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
+def assemble_mosaic(tiles, tile_size, background=(255, 255, 255),
+                    random_margins=False):
     "Build the final image."
     # Technically, tile_size could be inferred from a tile,
     # but let's not trust it in this case.
@@ -325,11 +326,12 @@ def assemble_mosaic(tiles, tile_size, background=(255, 255, 255)):
     mosaic = Image.new('RGB', size, background)
     for y, row in enumerate(tiles):
         for x, tile in enumerate(row):
-            pos = tile_position(x, y, tile.size, tile_size, randomize=True)
+            pos = tile_position(x, y, tile.size, tile_size, random_margins)
             mosaic.paste(tile, pos)
     return mosaic # suitable to be saved with imsave
 
-def tile_position(x, y, this_size, generic_size, randomize=True):
+def tile_position(x, y, this_size, generic_size,
+                  random_margins=False):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
     if this_size == generic_size: 
@@ -347,7 +349,7 @@ def tile_position(x, y, this_size, generic_size, randomize=True):
         pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
     return pos
 
-def photomosaic(tiles, db_name):
+def photomosaic(tiles, db_name, vary_size=False, random_margins=False):
     """Take the tiles from target() and return a mosaic image."""
     tile_size = tiles[0][0].size # assuming uniform
     db = connect(db_name)
@@ -357,15 +359,15 @@ def photomosaic(tiles, db_name):
             for y, tile in enumerate(row):
                 # Replace target tile with a matched tile.
                 match = matching(x, y, db)
-                new_tile = make_tile(match, tile_size, vary_size=True)
+                new_tile = make_tile(match, tile_size, vary_size)
                 tiles[x][y] = new_tile
     finally:
         db.close()
     print 'Building mosaic...'
-    mosaic = assemble_mosaic(tiles, tile_size)
+    mosaic = assemble_mosaic(tiles, tile_size, random_margins)
     return mosaic
 
-def make_tile(match, tile_size, vary_size=True):
+def make_tile(match, tile_size, vary_size=False):
     "Open and resize the matched image."
     raw = Image.open(match['filename'])
     if (match['dL'] >= 0 or not vary_size):
