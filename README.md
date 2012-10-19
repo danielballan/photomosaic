@@ -14,6 +14,9 @@ Simple Usage
     img = photomosaic(tiles, 'imagepool.db')
     img.save('mosaic.jpg')
 
+The most time-consuming step is ``target()``, which compares every tile in the target image to every image in the pool. The final step, ``photomosaic()``, which identifies the closest matches and generates the actual mosaic, is relatively speedy. Once ``target()`` is done, it is convenient to run ``photomosaic()`` several times while experimenting with different settings.
+
+For more on said settings, see Advanced Usage below.
 
 Dependences
 -----------
@@ -43,4 +46,4 @@ By default, a shrunken tile is placed in the center of its space, leaving even m
     img = photomosaic(tiles, 'imagepool.db', vary_size=True,
                       random_margins=True)
 
-    
+
