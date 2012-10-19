@@ -24,7 +24,8 @@ import random
 import numpy as np
 import scipy
 import scipy.misc
-import scipy.cluster
+from scipy.cluster import vq
+from scipy import interpolate
 import Image
 import sqlite3
 import color_spaces as cs
@@ -70,8 +71,8 @@ def dominant_color(img, clusters=5, size=50):
     img.thumbnail((size, size))
     imgarr = scipy.misc.fromimage(img)
     imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
-    colors, dist = scipy.cluster.vq.kmeans(imgarr, clusters)
-    vecs, dist = scipy.cluster.vq.vq(imgarr, colors)
+    colors, dist = vq.kmeans(imgarr, clusters)
+    vecs, dist = vq.vq(imgarr, colors)
     counts, bins = scipy.histogram(vecs, len(colors))
     dominant_color = colors[counts.argmax()]
     return map(int, dominant_color) # Avoid returning np.uint8 type.
@@ -240,7 +241,7 @@ def histogram(db, table_name):
     """Generate a histogram of the images in the pool, histogram(db, 'Colors'),
     or the tiles in the target, histogram(db, 'Target').
     Return a dictionary of the channels: L, a, b, red, green blue.
-    Each dict entry contains a pair of tuples: [(channel values), (counts)]."""
+    Each dict entry contains a pair of tuples: [(values), (counts)]."""
     if table_name not in ['Colors', 'Target']:
         logger.error("Invalid table_name.")
         return
@@ -252,7 +253,18 @@ def histogram(db, table_name):
                          FROM {table}
                          GROUP BY ROUND({channel}_)""".format(
                          table=table_name, channel=channel))
-            hist[channel] = zip(*c.fetchall())
+            values, counts = zip(*c.fetchall())
+            # Normalize the histogram, and fill in 0 for missing entries.
+            if channel in ['red', 'green', 'blue']:
+                full_domain = range(0,256)
+            elif channel in ['a', 'b']:
+                full_domain = range(-100,101)
+            else:
+                full_domain = range(0,101)
+            N = sum(counts)
+            all_counts = [1./N*counts[values.index(i)] if i in values else 0 \
+                          for i in full_domain]
+            hist[channel] = [full_domain, all_counts]
     finally:
         c.close()
     return hist
@@ -435,4 +447,3 @@ def reset_usage(db):
         db.commit()
     except sqlite3.OperationalError, e:
         print e
-
