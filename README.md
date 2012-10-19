@@ -1,7 +1,7 @@
-phototile
+photomosaic
 =========
 
-Assemble thumbnail-sized images from a large collection into a tiling which, viewed at a distance, gives the impression of one large photo.
+Assemble thumbnail-sized images from a large collection into a mosaic which, viewed at a distance, gives the impression of one large photo.
 
 Usage:
 -----
