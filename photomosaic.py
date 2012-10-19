@@ -249,16 +249,17 @@ def target(target_filename, tile_size, db_name):
 def join(db, subscript='dom'):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
-    query = """INSERT INTO BigJoin (x, y, region, image_id, Esq, dL)
+    query = """INSERT INTO BigJoin (x, y, image_id, Esq, dL)
                SELECT
-               x, y, region,
+               x, y,
                image_id, 
-               (c.L_{s} - t.L_{s})*(c.L_{s} - t.L_{s})
+               avg((c.L_{s} - t.L_{s})*(c.L_{s} - t.L_{s})
                + (c.a_{s} - t.a_{s})*(c.a_{s} - t.a_{s})
-               + (c.b_{s} - t.b_{s})*(c.b_{s} - t.b_{s}) as Esq,
-               c.L_{s} - t.L_{s} as dL
+               + (c.b_{s} - t.b_{s})*(c.b_{s} - t.b_{s})) as Esq,
+               avg(c.L_{s} - t.L_{s}) as dL
                FROM Colors c
-               JOIN Target t USING (region)""".format(
+               JOIN Target t USING (region)
+               GROUP BY x, y, image_id""".format(
                s=subscript)
     c = db.cursor()
     try:
@@ -267,7 +268,6 @@ def join(db, subscript='dom'):
                      (id INTEGER PRIMARY KEY,
                       x INTEGER,
                       y INTEGER,
-                      region INTEGER,
                       image_id INTEGER,
                       Esq REAL,
                       dL REAL)""")
@@ -276,8 +276,32 @@ def join(db, subscript='dom'):
         print "Join completed in {}".format(time.clock() - start_time)
     finally:
         c.close()
+    db.commit()
 
 def matching(db):
+    """Average perceived color difference E and lightness difference dL
+    over the regions of each possible match. Rank them in E, and take
+    the best image for each target tile. Allow duplicates."""
+    query = """SELECT x, y, 
+               image_id,
+               Esq,
+               dL,
+               filename
+               FROM BigJoin
+               JOIN Images using (image_id)
+               GROUP BY x, y
+               ORDER BY Esq ASC"""
+    c = db.cursor()
+    try:
+        start_time = time.clock()
+        c.execute(query)
+        print "Matching completed in {}".format(time.clock() - start_time)
+        matches = c.fetchall()
+    finally:
+        c.close()
+    return matches
+
+def debug_matching(db):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
@@ -288,8 +312,8 @@ def matching(db):
                filename
                FROM BigJoin
                JOIN Images using (image_id)
-               GROUP BY x, y, region
-               ORDER BY avg_Esq ASC"""
+               GROUP BY x, y
+               ORDER BY x, y, avg_Esq ASC"""
     c = db.cursor()
     try:
         start_time = time.clock()
@@ -349,13 +373,13 @@ def photomosaic(tiles, db_name):
 def make_tile(match, tile_size, vary_size=True):
     "Open and resize the matched image."
     raw = Image.open(match['filename'])
-    if (match['avg_dL'] >= 0 or not vary_size):
+    if (match['dL'] >= 0 or not vary_size):
         # Match is brighter than target.
         img = crop_to_fit(raw, tile_size)
     else:
         # Match is darker than target.
         # Shrink it to leave white padding.
-        img = shrink_to_brighten(raw, tile_size, match['avg_dL'])
+        img = shrink_to_brighten(raw, tile_size, match['dL'])
     return img
 
 def shrink_to_brighten(img, tile_size, dL):
