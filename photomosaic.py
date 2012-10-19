@@ -269,6 +269,31 @@ def histogram(db, table_name):
         c.close()
     return hist
 
+def compare_levels(target_lev, pool_lev):
+    "Return the difference of two levels histograms."
+    adjustment = {}
+    for ch in ['red', 'green', 'blue']:
+        adjustment[ch] = np.difference(pool_lev[ch][1], target_lev[ch][1])
+        assert sum(adjustment[ch]) < 0.01, """The integral of the difference of
+                                              to normalized functions should be
+                                              equal to 1."""
+    return adjustment
+     
+def adjust_levels(adjustment, amount, db):
+    # I think this is the wrong idea. Leaving it for now.
+    if amount < 0 or amount > 1:
+        logger.error("amount must be between 0 and 1")
+    c = db.connect()
+    try:
+        c.execute("CREATE TABLE LeveledTarget AS SELECT * FROM Target")
+        for ch in adjusment.keys()
+            a = [(amount*adj, value) \
+                 for value, adj in enumerate(adjustment[ch])]
+        c.executemany("""UPDATE LeveledTarget
+                        SET {ch}={ch} + ?
+                        WHERE {ch}=?""".format(ch=ch), a)
+
+
 def join(db):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
