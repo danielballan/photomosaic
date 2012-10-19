@@ -156,6 +156,21 @@ def pool(image_dir, db_name):
     finally:
         db.close()
 
+def plot_palette(db):
+    "Plot an RGB histogram for all the images in the pool collectively."
+    import matplotlib.pyplot as plt
+    hist = histogram(db, 'Colors')
+    fig, axarr = plt.subplots(3, sharex=True, sharey=True)
+    axarr[0].fill_between(hist['red'][0], 0, hist['red'][1],
+                     facecolor='red')
+    axarr[1].fill_between(hist['green'][0], 0, hist['green'][1],
+                     facecolor='green')
+    axarr[2].fill_between(hist['blue'][0], 0, hist['blue'][1],
+                     facecolor='blue')
+    axarr[0].set_xlim(0,256)
+    axarr[1].set_ylim(ymin=0)
+    fig.show()
+
 def partition_target(img, tile_size):
     "Partition the target image into a 2D list of Images."
     # TODO: Allow to tiles are different sizes. 
