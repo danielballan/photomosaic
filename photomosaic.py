@@ -9,7 +9,6 @@ import scipy.misc
 import scipy.cluster
 import Image
 import sqlite3
-from utils import memo
 import color_spaces as cs
 from directory_walker import DirectoryWalker
 
@@ -331,6 +330,7 @@ def tile_position(x, y, this_size, generic_size, randomize=True):
     return pos
 
 def photomosaic(tiles, db_name):
+    """Take the tiles from target() and return a mosaic image."""
     tile_size = tiles[0][0].size # assuming uniform
     db = connect(db_name)
     try:
