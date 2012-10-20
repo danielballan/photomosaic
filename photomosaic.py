@@ -252,49 +252,24 @@ def target(target_filename, tile_size, db_name):
         db.close()
     return tiles
 
-def histogram(db, table_name):
-    """Generate a histogram of the images in the pool, histogram(db, 'Colors'),
-    or the tiles in the target, histogram(db, 'Target').
-    Return a dictionary of the channels: L, a, b, red, green blue.
-    Each dict entry contains a pair of tuples: [(values), (counts)]."""
-    if table_name not in ['Colors', 'Target']:
-        logger.error("Invalid table_name.")
-        return
-    hist = {}
+def compute_pool_palette(db):
+    """Picture the Photoshop Curves features.
+    The list index is the x axis; the list value is the y axis.
+    Return a dictionary with such a list for each channel."""
+    palette = {}
     c = db.cursor()
     try: 
-        for channel in ['L', 'a', 'b', 'red', 'green', 'blue']:
+        for ch in ['L', 'a', 'b', 'red', 'green', 'blue']:
             c.execute("""SELECT ROUND({channel}) as {channel}_, count(*)
-                         FROM {table}
-                         GROUP BY ROUND({channel}_)""".format(
-                         table=table_name, channel=channel))
-            values, counts = zip(*c.fetchall())
-            # Normalize the histogram, and fill in 0 for missing entries.
-            if channel in ['red', 'green', 'blue']:
-                full_domain = range(0,256)
-            elif channel in ['a', 'b']:
-                full_domain = range(-100,101)
-            else:
-                full_domain = range(0,101)
-            N = sum(counts)
-            all_counts = [1./N*counts[values.index(i)] if i in values else 0 \
-                          for i in full_domain]
-            hist[channel] = [full_domain, all_counts]
+                         FROM Colors
+                         GROUP BY ROUND({channel}_)""".format(ch=ch))
+            pairs = c.fetchall() # [(value, count), (value, count), ...]
+            palette[ch] = [count*[value] for value, count in pairs]
     finally:
         c.close()
-    return hist
+    return palette 
 
-def compare_levels(target_lev, pool_lev):
-    "Return the difference of two levels histograms."
-    adjustment = {}
-    for ch in ['red', 'green', 'blue']:
-        adjustment[ch] = np.difference(pool_lev[ch][1], target_lev[ch][1])
-        assert sum(adjustment[ch]) < 0.01, """The integral of the difference of
-                                              to normalized functions should be
-                                              equal to 1."""
-    return adjustment
-     
-def adjust_levels(adjustment, amount, db):
+def adjust_levels(target_img, pool_palette, amount, db):
     # I think this is the wrong idea. Leaving it for now.
     if amount < 0 or amount > 1:
         logger.error("amount must be between 0 and 1")
