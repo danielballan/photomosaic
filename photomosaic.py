@@ -156,7 +156,7 @@ def pool(image_dir, db_name):
     finally:
         db.close()
 
-def plot_palette(db):
+def plot_histograms(db):
     "Plot an RGB histogram for all the images in the pool collectively."
     import matplotlib.pyplot as plt
     hist = histogram(db, 'Colors')
@@ -285,9 +285,12 @@ def compute_palette(hist):
     # Integrate a histogram and round down.
     palette = {}
     for ch in ['red', 'green', 'blue']:
-        p = np.cumsum(hist[ch][1]) # Integrate
-        p = np.floor(256*p + 0.01).astype(int) # Safely round down.
-        palette[ch] = p.tolist()
+        integrals = np.cumsum(hist[ch][1])
+        blocky_integrals = np.floor(256*integrals + 0.01).astype(int)
+        p = []
+        for i in range(256):
+            p.append(np.where(blocky_integrals >= i)[0][0])
+        palette[ch] = p
     return palette
 
 def adjust_levels(target_img, pool_palette, dial=1):
