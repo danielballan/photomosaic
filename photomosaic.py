@@ -297,12 +297,10 @@ def adjust_levels(target_img, palette, dial=1):
     "Transform the colors in the target_img according to palette."
     if dial < 0 or dial > 1:
         logger.error("dial must be between 0 and 1")
-    palette_lookup = [lambda x: return dial*palette[ch][x] \
-                      for ch in palette.keys()]
-    channels = {}
-    channels['red'], channels['green'], channels['blue'] = target_img.split()
-    adjusted_channels = [Image.eval(channels[ch], palette[ch]) \
-                         for ch in ['red', 'green', 'blue']]
+    keys = 'red', 'green', 'blue'
+    p_func = dict(zip(keys, [lambda x: dial*palette[ch][x] for ch in keys]))
+    channels = dict(zip(keys, target_img.split()))
+    adjusted_channels = [Image.eval(channels[ch], p_func[ch]) for ch in keys]
     return Image.merge('RGB', adjusted_channels)
 
 def join(db):
