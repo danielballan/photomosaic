@@ -252,37 +252,49 @@ def target(target_filename, tile_size, db_name):
         db.close()
     return tiles
 
-def compute_pool_palette(db):
-    """Picture the Photoshop Curves features.
-    The list index is the x axis; the list value is the y axis.
-    Return a dictionary with such a list for each channel."""
-    palette = {}
+def histogram(db):
+    """Generate a histogram of the images in the pool.
+    Return a dictionary of the channels: L, a, b, red, green blue.
+    Each dict entry contains a pair of tuples: [(values), (counts)]."""
+    hist = {}
     c = db.cursor()
     try: 
         for ch in ['L', 'a', 'b', 'red', 'green', 'blue']:
-            c.execute("""SELECT ROUND({channel}) as {channel}_, count(*)
-                         FROM Colors
-                         GROUP BY ROUND({channel}_)""".format(ch=ch))
-            pairs = c.fetchall() # [(value, count), (value, count), ...]
-            palette[ch] = [count*[value] for value, count in pairs]
+            c.execute("""SELECT ROUND({ch}) as {ch}_, count(*)
+                         FROM Colors 
+                         GROUP BY ROUND({ch}_)""".format(ch=ch))
+            values, counts = zip(*c.fetchall())
+            # Normalize the histogram, and fill in 0 for missing entries.
+            if ch in ['red', 'green', 'blue']:
+                full_domain = range(0,256)
+            elif ch in ['a', 'b']:
+                full_domain = range(-100,101)
+            else:
+                full_domain = range(0,101)
+            N = sum(counts)
+            all_counts = [1./N*counts[values.index(i)] if i in values else 0 \
+                          for i in full_domain]
+            hist[ch] = [full_domain, all_counts]
     finally:
         c.close()
-    return palette 
+    return hist
 
-def adjust_levels(target_img, pool_palette, amount, db):
-    # I think this is the wrong idea. Leaving it for now.
-    if amount < 0 or amount > 1:
-        logger.error("amount must be between 0 and 1")
-    c = db.connect()
-    try:
-        c.execute("CREATE TABLE LeveledTarget AS SELECT * FROM Target")
-        for ch in adjusment.keys()
-            a = [(amount*adj, value) \
-                 for value, adj in enumerate(adjustment[ch])]
-        c.executemany("""UPDATE LeveledTarget
-                        SET {ch}={ch} + ?
-                        WHERE {ch}=?""".format(ch=ch), a)
+def compute_palette(hist):
+    """A palette maps a channel into the space of available colors, gleaned
+    from a histogram of those colors."""
+    # Integrate a histogram and round down.
+    palette = {}
+    for ch in ['red', 'green', 'blue']:
+        p = np.cumsum(hist[ch][1]) # Integrate
+        p = np.floor(256*p + 0.01).astype(int) # Safely round down.
+        palette[ch] = p.tolist()
+    return palette
 
+def adjust_levels(target_img, pool_palette, dial=1):
+    """Transform the colors in the target_img into the palette of the colors
+    in the pool."""
+    if dial < 0 or dial > 1:
+        logger.error("dial must be between 0 and 1")
 
 def join(db):
     """Compare every target tile to every image by joining
