@@ -293,11 +293,17 @@ def compute_palette(hist):
         palette[ch] = p
     return palette
 
-def adjust_levels(target_img, pool_palette, dial=1):
-    """Transform the colors in the target_img into the palette of the colors
-    in the pool."""
+def adjust_levels(target_img, palette, dial=1):
+    "Transform the colors in the target_img according to palette."
     if dial < 0 or dial > 1:
         logger.error("dial must be between 0 and 1")
+    palette_lookup = [lambda x: return dial*palette[ch][x] \
+                      for ch in palette.keys()]
+    channels = {}
+    channels['red'], channels['green'], channels['blue'] = target_img.split()
+    adjusted_channels = [Image.eval(channels[ch], palette[ch]) \
+                         for ch in ['red', 'green', 'blue']]
+    return Image.merge('RGB', adjusted_channels)
 
 def join(db):
     """Compare every target tile to every image by joining
