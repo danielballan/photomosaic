@@ -6,7 +6,7 @@ Assemble thumbnail-sized images from a large collection into a mosaic which, vie
 Simple Usage
 ------------
 
-In one line:
+In two lines:
 
     import photomosaic
     photomosaic.simple('folder-of-many-images/', 'original.jpg', 20, 'mosaic.jpg')
