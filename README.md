@@ -3,8 +3,8 @@ photomosaic
 
 Assemble thumbnail-sized images from a large collection into a mosaic which, viewed at a distance, gives the impression of one large photo.
 
-Simple Usage
-------------
+One-Step Usage
+--------------
 
 In two lines:
 
@@ -12,6 +12,9 @@ In two lines:
     photomosaic.simple('folder-of-many-images/', 'original.jpg', 20, 'mosaic.jpg')
 
 where 20 is the size of a tile in pixels.
+
+Basic Usage
+-----------
 
 Alternatively, you can run the process one step at a time. This gives access to more options. 
 
