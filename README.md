@@ -20,13 +20,13 @@ Alternatively, you can run the process one step at a time. This gives access to 
 
     import photomosaic as pm
     
-    pool('folder-of-many-images/', 'imagepool.db')
-    img = open('original.jpg')
-    img = tune(img) # Adjust colors levels to what's availabe in the pool.
-    tiles = partition(img, 20)
+    pm.pool('folder-of-many-images/', 'imagepool.db')
+    img = pm.open('original.jpg')
+    img = pm.tune(img) # Adjust colors levels to what's availabe in the pool.
+    tiles = pm.partition(img, 20)
     # 20 is the tile size in px. For rectangular tiles, use tuple like (40, 30).
-    analyze(tiles, 'imagepool.db')
-    mosaic = photomosaic(tiles, 'imagepool.db')
+    pm.analyze(tiles, 'imagepool.db')
+    mosaic = pm.photomosaic(tiles, 'imagepool.db')
     mosaic.save('mosaic.jpg')
 
 The most time-consuming step is ``analyze()``, which compares every tile in the target image to every image in the pool. The final step, ``photomosaic()``, which identifies the closest matches and generates the actual mosaic, is relatively speedy. Once ``analyze()`` is done, it is convenient to run ``photomosaic()`` several times while experimenting with different settings.
