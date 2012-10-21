@@ -223,14 +223,22 @@ def insert_target_tile(x, y, rgb, lab, db):
     finally:
         c.close()
     
-def target(target_filename, tile_size, db_name):
-    """Open the target image, partition it into tiles, analyze them,
+def target(target_filename, tile_size, db_name, color_dial=1, do_join=True):
+    """Open the target image, adjust its levels to match the images available
+    in the pool, partition the target into tiles, analyze them,
     store the results in the db, and return a 2D list of the tiles."""
     try:
         target_img = Image.open(target_filename)
     except IOError:
         print "Cannot open %s as an image." % target_filename
         return 1
+    db = connect(db_name)
+    try:
+        hist = histogram(db)
+    finally:
+        db.close()
+    palette = compute_palette(hist)
+    target_img = adjust_levels(target_img, palette, color_dial)
     if isinstance(tile_size, int):
         tile_size = tile_size, tile_size
     tiles = partition_target(target_img, tile_size)
@@ -243,10 +251,10 @@ def target(target_filename, tile_size, db_name):
                 regions = split_quadrants(tile)
                 rgb = map(dominant_color, regions) 
                 lab = map(cs.rgb2lab, rgb)
-                # Really, a proper avg in Lab space would be best.
                 insert_target_tile(x, y, rgb, lab, db)
-        print 'Performing big join...'
-        join(db)
+        if do_join:
+            print 'Performing big join...'
+            join(db)
         db.commit()
     finally:
         db.close()
@@ -259,18 +267,13 @@ def histogram(db):
     hist = {}
     c = db.cursor()
     try: 
-        for ch in ['L', 'a', 'b', 'red', 'green', 'blue']:
+        for ch in ['red', 'green', 'blue']:
             c.execute("""SELECT ROUND({ch}) as {ch}_, count(*)
                          FROM Colors 
                          GROUP BY ROUND({ch}_)""".format(ch=ch))
             values, counts = zip(*c.fetchall())
             # Normalize the histogram, and fill in 0 for missing entries.
-            if ch in ['red', 'green', 'blue']:
-                full_domain = range(0,256)
-            elif ch in ['a', 'b']:
-                full_domain = range(-100,101)
-            else:
-                full_domain = range(0,101)
+            full_domain = range(0,256)
             N = sum(counts)
             all_counts = [1./N*counts[values.index(i)] if i in values else 0 \
                           for i in full_domain]
