@@ -39,7 +39,7 @@ logger = logging.getLogger(__name__)
 def simple(image_dir, target_filename, tile_size, output_file):
     pool(dir, 'temp.db')
     img = open(target_filename)
-    img = tune(img, 'temp.db')
+    img = tune(img, 'temp.db', quiet=True)
     tiles = partition(img, 40)
     analyze(tiles, 'temp.db')
     mos = photomosaic(tiles, 'temp.db')
@@ -165,16 +165,17 @@ def pool(image_dir, db_name):
     finally:
         db.close()
 
-def plot_histograms(db):
-    "Plot an RGB histogram for all the images in the pool collectively."
+def plot_histograms(hist, title=''):
+    "Plot an RGB histogram given as a dictionary with channel keys."
     import matplotlib.pyplot as plt
-    hist = histogram(db, 'Colors')
     fig, axarr = plt.subplots(3, sharex=True, sharey=True)
-    axarr[0].fill_between(hist['red'][0], 0, hist['red'][1],
+    fig.set_title(title)
+    domain = range(0, 256)
+    axarr[0].fill_between(domain, hist['red'],
                      facecolor='red')
-    axarr[1].fill_between(hist['green'][0], 0, hist['green'][1],
+    axarr[1].fill_between(domain, 0, hist['green'],
                      facecolor='green')
-    axarr[2].fill_between(hist['blue'][0], 0, hist['blue'][1],
+    axarr[2].fill_between(domain, 0, hist['blue'],
                      facecolor='blue')
     axarr[0].set_xlim(0,256)
     axarr[1].set_ylim(ymin=0)
@@ -223,16 +224,28 @@ def open(target_filename):
         print "Cannot open %s as an image." % target_filename
         return
 
-def tune(target_img, db_name, dial=1):
-    "Adjsut the levels of the image to match the colors available in the pool."
+def tune(target_img, db_name, dial=1, quiet=False):
+    """Adjsut the levels of the image to match the colors available in the
+    th pool. Return the adjusted image. Optionally plot some histograms."""
     db = connect(db_name)
     try:
-        hist = histogram(db)
+        pool_hist = pool_histogram(db)
     finally:
         db.close()
-    palette = compute_palette(hist)
-    target_img = adjust_levels(target_img, palette, dial)
-    return target_img
+    palette = compute_palette(pool_hist)
+    adjusted_img = adjust_levels(target_img, palette, dial)
+    if not quiet:
+        # Use the Image.histogram() method to examine the target image
+        # before and after the alteration.
+        keys = 'red', 'green', 'blue'
+        values = [channel.histogram() for channel in target_img.split()]
+        orig_hist = dict(zip(keys, values)) 
+        values = [channel.histogram() for channel in adjusted_img.split()]
+        adjusted_hist = dict(zip(keys, values)) 
+        plot_histograms(pool_hist, title='Images in the pool')
+        plot_histograms(orig_hist, title='Unaltered target image')
+        plot_histograms(adjusted_hist, title='Adjusted target image')
+    return adjusted_img
 
 def analyze(tiles, db_name):
     """Determine dominant colors of target tiles, and insert them into
@@ -253,10 +266,11 @@ def analyze(tiles, db_name):
     finally:
         db.close()
 
-def histogram(db):
+def pool_histogram(db):
     """Generate a histogram of the images in the pool.
     Return a dictionary of the channels: L, a, b, red, green blue.
-    Each dict entry contains a pair of tuples: [(values), (counts)]."""
+    Each dict entry contains a list of the frequencies correspond to the
+    domain 0 - 255.""" 
     hist = {}
     c = db.cursor()
     try: 
@@ -270,7 +284,7 @@ def histogram(db):
             N = sum(counts)
             all_counts = [1./N*counts[values.index(i)] if i in values else 0 \
                           for i in full_domain]
-            hist[ch] = [full_domain, all_counts]
+            hist[ch] = all_counts
     finally:
         c.close()
     return hist
@@ -281,7 +295,7 @@ def compute_palette(hist):
     # Integrate a histogram and round down.
     palette = {}
     for ch in ['red', 'green', 'blue']:
-        integrals = np.cumsum(hist[ch][1])
+        integrals = np.cumsum(hist[ch])
         blocky_integrals = np.floor(256*integrals + 0.01).astype(int)
         p = []
         for i in range(256):
