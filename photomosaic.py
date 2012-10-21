@@ -36,6 +36,15 @@ FORMAT = "%(name)s.%(funcName)s:  %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
+def simple(image_dir, target_filename, tile_size, output_file):
+    pool(dir, 'temp.db')
+    img = open(target_filename)
+    img = tune(img, 'temp.db')
+    tiles = partition(img, 40)
+    analyze(tiles, 'temp.db')
+    mos = photomosaic(tiles, 'temp.db')
+    mos.save(output_file)
+
 def split_regions(img, split_dim):
     """Split an image into subregions.
     Use split_dim=2 or (2,2) or (2,3) etc.
@@ -171,23 +180,6 @@ def plot_histograms(db):
     axarr[1].set_ylim(ymin=0)
     fig.show()
 
-def partition_target(img, tile_size):
-    "Partition the target image into a 2D list of Images."
-    # TODO: Allow to tiles are different sizes. 
-    # Merge neighbors that are similar
-    # or that inhabit regions of long spatial wavelength.
-    width = img.size[0] // tile_size[0]
-    height = img.size[1] // tile_size[1]
-    tiles = [[None for w in range(width)] for h in range(height)]
-    for y in range(height):
-        for x in range(width):
-            tile = img.crop((x*tile_size[0], 
-                             y*tile_size[1],
-                             (x + 1)*tile_size[0], 
-                             (y + 1)*tile_size[1]))
-            tiles[y][x] = tile
-    return tiles
-
 def create_target_table(db):
     c = db.cursor()
     try:
@@ -223,25 +215,28 @@ def insert_target_tile(x, y, rgb, lab, db):
     finally:
         c.close()
     
-def target(target_filename, tile_size, db_name, color_dial=1, do_join=True):
-    """Open the target image, adjust its levels to match the images available
-    in the pool, partition the target into tiles, analyze them,
-    store the results in the db, and return a 2D list of the tiles."""
+def open(target_filename):
+    "Just a wrapper for Image.open from PIL"
     try:
-        target_img = Image.open(target_filename)
+        return Image.open(target_filename)
     except IOError:
         print "Cannot open %s as an image." % target_filename
-        return 1
+        return
+
+def tune(target_img, db_name, dial=1):
+    "Adjsut the levels of the image to match the colors available in the pool."
     db = connect(db_name)
     try:
         hist = histogram(db)
     finally:
         db.close()
     palette = compute_palette(hist)
-    target_img = adjust_levels(target_img, palette, color_dial)
-    if isinstance(tile_size, int):
-        tile_size = tile_size, tile_size
-    tiles = partition_target(target_img, tile_size)
+    target_img = adjust_levels(target_img, palette, dial)
+    return target_img
+
+def analyze(tiles, db_name):
+    """Determine dominant colors of target tiles, and insert them into
+    the Target table of the db."""
     db = connect(db_name)
     try:
         create_target_table(db)
@@ -252,13 +247,11 @@ def target(target_filename, tile_size, db_name, color_dial=1, do_join=True):
                 rgb = map(dominant_color, regions) 
                 lab = map(cs.rgb2lab, rgb)
                 insert_target_tile(x, y, rgb, lab, db)
-        if do_join:
-            print 'Performing big join...'
-            join(db)
+        print 'Performing big join...'
+        join(db)
         db.commit()
     finally:
         db.close()
-    return tiles
 
 def histogram(db):
     """Generate a histogram of the images in the pool.
@@ -306,6 +299,22 @@ def adjust_levels(target_img, palette, dial=1):
     adjusted_channels = [Image.eval(channels[ch], p_func[ch]) for ch in keys]
     return Image.merge('RGB', adjusted_channels)
 
+def partition(img, tile_size):
+    "Partition the target image into a 2D list of Images."
+    if isinstance(tile_size, int):
+        tile_size = tile_size, tile_size
+    width = img.size[0] // tile_size[0]
+    height = img.size[1] // tile_size[1]
+    tiles = [[None for w in range(width)] for h in range(height)]
+    for y in range(height):
+        for x in range(width):
+            tile = img.crop((x*tile_size[0], 
+                             y*tile_size[1],
+                             (x + 1)*tile_size[0], 
+                             (y + 1)*tile_size[1]))
+            tiles[y][x] = tile
+    return tiles
+
 def join(db):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
@@ -337,7 +346,7 @@ def join(db):
         c.close()
     db.commit()
 
-def matching(x, y, randomize=False, db):
+def matching(x, y, db, randomize=False):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""

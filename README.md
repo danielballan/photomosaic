@@ -6,15 +6,27 @@ Assemble thumbnail-sized images from a large collection into a mosaic which, vie
 Simple Usage
 ------------
 
+In one line:
+
+    import photomosaic
+    photomosaic.simple('folder-of-many-images/', 'original.jpg', 20, 'mosaic.jpg')
+
+where 20 is the size of a tile in pixels.
+
+Alternatively, you can run the process one step at a time. This gives access to more options. 
+
     import photomosaic as pm
     
     pool('folder-of-many-images/', 'imagepool.db')
-    tiles = target('original.jpg', 20, 'imagepool.db')
-    # 20 = tile size in px. For rectangular tiles, use tuple: (40, 30).
-    img = photomosaic(tiles, 'imagepool.db')
-    img.save('mosaic.jpg')
+    img = open('original.jpg')
+    img = tune(img) # Adjust colors levels to what's availabe in the pool.
+    tiles = partition(img, 20)
+    # 20 is the tile size in px. For rectangular tiles, use tuple like (40, 30).
+    analyze(tiles, 'imagepool.db')
+    mosaic = photomosaic(tiles, 'imagepool.db')
+    mosaic.save('mosaic.jpg')
 
-The most time-consuming step is ``target()``, which compares every tile in the target image to every image in the pool. The final step, ``photomosaic()``, which identifies the closest matches and generates the actual mosaic, is relatively speedy. Once ``target()`` is done, it is convenient to run ``photomosaic()`` several times while experimenting with different settings.
+The most time-consuming step is ``analyze()``, which compares every tile in the target image to every image in the pool. The final step, ``photomosaic()``, which identifies the closest matches and generates the actual mosaic, is relatively speedy. Once ``analyze()`` is done, it is convenient to run ``photomosaic()`` several times while experimenting with different settings.
 
 For more on said settings, see Advanced Usage below.
 
