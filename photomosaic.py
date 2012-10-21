@@ -337,20 +337,35 @@ def join(db):
         c.close()
     db.commit()
 
-def matching(x, y, db):
+def matching(x, y, randomize=False, db):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
-    query = """SELECT 
-               image_id,
-               Esq,
-               dL,
-               filename
-               FROM BigJoin
-               JOIN Images using (image_id)
-               WHERE x=? AND y=?
-               ORDER BY Esq ASC
-               LIMIT 1"""
+    if not randomize:
+        query = """SELECT 
+                   image_id,
+                   Esq,
+                   dL,
+                   filename
+                   FROM BigJoin
+                   JOIN Images using (image_id)
+                   WHERE x=? AND y=?
+                   ORDER BY Esq ASC
+                   LIMIT 1"""
+    elif not isinstance(randomize, int):
+        logger.error("randomzie must be an integer or False")
+        return
+    else:
+        query = """SELECT * FROM (SELECT 
+                   image_id,
+                   Esq,
+                   dL,
+                   filename
+                   FROM BigJoin
+                   JOIN Images using (image_id)
+                   WHERE x=? AND y=?
+                   ORDER BY Esq ASC
+                   LIMIT {N}) ORDER BY RANDOM() LIMIT 1""".format(N=randomize)
     c = db.cursor()
     try:
         c.execute(query, (x, y))
@@ -391,7 +406,7 @@ def tile_position(x, y, this_size, generic_size,
         pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
     return pos
 
-def photomosaic(tiles, db_name, vary_size=False, random_margins=False):
+def photomosaic(tiles, db_name, vary_size=False, randomize=5, random_margins=False):
     """Take the tiles from target() and return a mosaic image."""
     tile_size = tiles[0][0].size # assuming uniform
     db = connect(db_name)
