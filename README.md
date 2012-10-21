@@ -22,7 +22,7 @@ Alternatively, you can run the process one step at a time. This gives access to 
     
     pm.pool('folder-of-many-images/', 'imagepool.db')
     img = pm.open('original.jpg')
-    img = pm.tune(img) # Adjust colors levels to what's availabe in the pool.
+    img = pm.tune(img, 'imagepool.db') # Adjust colors levels to what's availabe in the pool.
     tiles = pm.partition(img, 20)
     # 20 is the tile size in px. For rectangular tiles, use tuple like (40, 30).
     pm.analyze(tiles, 'imagepool.db')
