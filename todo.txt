@@ -4,7 +4,8 @@ mosaic_size is hard coded. Infer it from tiles or something.
 
 Functionality:
 Fix "dark palette" issue.
-Split tiles!
+Split tiles
+Mask image: black -> no tile, gray -> probabilistic
 
 Performance:
 Fast RGB -> XYZ -> LAB using Image.convert()
