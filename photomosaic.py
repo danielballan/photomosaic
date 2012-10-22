@@ -31,6 +31,7 @@ import sqlite3
 import color_spaces as cs
 from directory_walker import DirectoryWalker
 from memo import memo
+from progress_bar import progress_bar
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
@@ -534,15 +535,3 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
-
-def progress_bar(total_steps, message='', notifications=8):
-    step = 0
-    logger.info('%s...', message)
-    notifications = min(total_steps, notifications)
-    while step < total_steps - 1:
-        if step % (total_steps // notifications) == 0:
-            logger.info('%s/%s', step, total_steps)
-        yield
-        step += 1
-    logger.info('Complete.')
-    yield
