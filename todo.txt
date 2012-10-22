@@ -13,4 +13,3 @@ memoize tile resizing
 
 Diagnostics:
 sqlite3.set_progress_handler(handler, n) # handler is called every n calls
-progress() as a generator that can see in an non-enumerated loop and count to itself. try progress(len(tiles), "Message")

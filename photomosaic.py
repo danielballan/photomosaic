@@ -520,7 +520,9 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
         db.close()
     pbar = progress_bar(len(tiles), "Building mosaic")
     background = (255, 255, 255)
-    mosaic_size = 800, 600 
+    # Infer dimensions so they don't have to be passed in the function call.
+    dimensions = map(max, zip([tile.x, tile.y for tile in tiles]))
+    mosaic_size = tile.size[0]*dimensions[0], tile.size[1]*dimensions[1]
     mosaic = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
