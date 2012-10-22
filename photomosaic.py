@@ -73,7 +73,7 @@ def split_quadrants(img):
     """Convenience function: calls split_regions(img, 2). Returns
     a flat 4-element list: top-left, top-right, bottom-left, bottom-right."""
     if img.size[0] & 1 or img.size[1] & 1:
-        logger.warning("I am quartering an image with odd dimensions.")
+        logger.debug("I am quartering an image with odd dimensions.")
     return split_regions(img, 2)
 
 def dominant_color(img, clusters=5, size=50):
