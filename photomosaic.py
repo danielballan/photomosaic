@@ -485,7 +485,7 @@ def tile_position(tile, random_margins=False):
     return pos
 
 @memo
-def prepare_tile(filename, size, dL):
+def prepare_tile(filename, size, dL, vary_size=False):
     """This memoized function only executes once for a given set of args.
     Hence, multiple (same-sized) tiles of the same image are speedy."""
     new_img = Image.open(filename)
@@ -510,7 +510,8 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
         for tile in tiles:
             new_img = prepare_tile(tile.match['filename'],
                                    tile.size,
-                                   tile.match['dL'])
+                                   tile.match['dL'],
+                                   vary_size)
             tile.substitute_img(new_img)
     finally:
         db.close()
