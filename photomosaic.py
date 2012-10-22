@@ -264,6 +264,9 @@ def adjust_levels(target_img, palette, dial=1):
     return Image.merge('RGB', adjusted_channels)
 
 class Tile(object):
+    """Tile wraps the Image class, so all methods that apply to images (show,
+    save, crop, size, ...) apply to Tiles. Tiles also store contextual
+    information that is used to reassembled them in the end."""
     def __init__(self, img, x, y, ancestry=None):
         self._img = img
         self.x = x
@@ -281,13 +284,23 @@ class Tile(object):
         self.container_size = self._img.size
 
     def pos(self):
-        return x, y 
+        return self.x, self.y 
 
-    def set_id(self, tile_id):
-        self.tile_id = tile_id
+    @property
+    def tile_id(self):
+        return self._tile_id
 
-    def set_match(self, match):
-        self.match = match # sqlite Row object
+    @tile_id.setter
+    def tile_id(self, value):
+        self._tile_id = value
+
+    @property
+    def match(self):
+        return self._match
+
+    @match.setter
+    def match(self, value):
+        self._match = value # sqlite Row object
 
 
 def partition(img, dimensions):
@@ -299,11 +312,11 @@ def partition(img, dimensions):
     tiles = []
     for y in range(dimensions[1]):
         for x in range(dimensions[0]):
-            img = img.crop((x*width, 
-                             y*height,
-                             (x + 1)*width, 
-                             (y + 1)*height))
-            tiles.append(Tile(img, x, y))
+            tile_img = img.crop((x*width, 
+                                y*height,
+                                (x + 1)*width, 
+                                (y + 1)*height))
+            tiles.append(Tile(tile_img, x, y))
     return tiles
 
 def create_target_table(db):
@@ -324,7 +337,7 @@ def create_target_table(db):
         c.close()
         db.commit()
 
-def insert_target_tile(x, y, rgb, lab, db):
+def insert_target_tile(rgb, lab, db):
     """Insert the dominant color of each a tile's regions
     in the Target table. Identify each tile by x, y."""
     c = db.cursor()
@@ -332,7 +345,7 @@ def insert_target_tile(x, y, rgb, lab, db):
         c.execute("""SELECT IFNULL(MAX(tile_id) + 1, 0) FROM Target""")
         tile_id, = c.fetchone()
         for region in xrange(len(rgb)):
-            red, green, blue= rgb[region]
+            red, green, blue = rgb[region]
             L, a, b = lab[region]
             c.execute("""INSERT INTO Target (tile_id, region, 
                          L, a, b, red, green, blue)
@@ -354,7 +367,8 @@ def analyze(tiles, db_name):
             regions = split_quadrants(tile)
             rgb = map(dominant_color, regions) 
             lab = map(cs.rgb2lab, rgb)
-            tile_id = insert_target_tile(tile.x, tile.y, rgb, lab, db)
+            tile_id = insert_target_tile(rgb, lab, db)
+            # tile_id is a number assigned by the db
             tile.tile_id = tile_id
         print 'Performing big join...'
         join(db)
@@ -364,11 +378,14 @@ def analyze(tiles, db_name):
 
 def join(db):
     """Compare every target tile to every image by joining
-    the Colors table to the Target table."""
+    the Colors table to the Target table. Specifically, compute their
+    Euclidean color distance E."""
     c = db.cursor()
     try:
         c.execute("DROP TABLE IF EXISTS BigJoin")
         start_time = time.clock()
+        # Technically, compute E^2, not E, because sqlite does not support
+        # sqrt(). Also compute the difference in lightness, dL.
         c.execute("""CREATE TABLE BigJoin AS
                      SELECT
                      tile_id, image_id, 
@@ -464,7 +481,6 @@ def tile_position(tile, random_margins=False):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
     pos = tile.x*tile.container_size[0], tile.y*tile.container_size[1]
-    print pos
     return pos
 
 def photomosaic(tiles, db_name, vary_size=False, randomize=5, 
@@ -474,7 +490,7 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
     try:
         print 'Choosing matching tiles...'
         for tile in tiles:
-            tile.set_match(choose_match(tile.tile_id, db))
+            tile.match = choose_match(tile.tile_id, db)
         print 'Scaling them...'
         for tile in tiles:
             new_img = Image.open(tile.match['filename'])
@@ -495,30 +511,9 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
     mosaic = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
-    mosaic.paste(tile, pos)
+        mosaic.paste(tile, pos)
     return mosaic
 
-def print_db(db):
-    "Dump the database to the screen, for debugging."
-    c = db.cursor()
-    c.execute("SELECT * FROM Images")
-    for row in c:
-        print row 
-    c.execute("SELECT * FROM Colors")
-    for row in c:
-        print row
-    c.close()
-    
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
-
-def reset_usage(db):
-    "Before using the image pool, reset image usage count to 0."
-    try:
-        c = db.cursor()
-        c.execute("UPDATE Images SET usages=0")
-        c.close()
-        db.commit()
-    except sqlite3.OperationalError, e:
-        print e
