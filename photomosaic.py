@@ -93,7 +93,7 @@ def connect(db_path):
     except IOError:
         print 'Cannot connect to SQLite database at %s' % db_path
         return
-    db.row_factory = sqlite3.Row
+    db.row_factory = sqlite3.Row # Rows are dictionaries.
     return db
 
 def create_tables(db):
@@ -181,43 +181,6 @@ def plot_histograms(hist, title=''):
     red.set_title(title)
     fig.show()
 
-def create_target_table(db):
-    c = db.cursor()
-    try:
-        c.execute("DROP TABLE IF EXISTS Target")
-        c.execute("""CREATE TABLE Target
-                     (tile_id INTEGER,
-                      region INTEGER,
-                      L REAL,
-                      a REAL,
-                      b REAL,
-                      red INTEGER,
-                      green INTEGER,
-                      blue INTEGER,
-                      PRIMARY KEY (tile_id, region))""")
-    finally:
-        c.close()
-        db.commit()
-
-def insert_target_tile(x, y, rgb, lab, db):
-    """Insert the dominant color of each a tile's regions
-    in the Target table. Identify each tile by x, y."""
-    c = db.cursor()
-    try:
-        c.execute("""SELECT IFNULL(MAX(tile_id) + 1, 0) FROM Target""")
-        tile_id, = c.fetchone()
-        for region in xrange(len(rgb)):
-            red, green, blue= rgb[region]
-            L, a, b = lab[region]
-            c.execute("""INSERT INTO Target (tile_id, region, 
-                         L, a, b, red, green, blue)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                         (tile_id, region,
-                         L, a, b, red, green, blue))
-    finally:
-        c.close()
-    return tile_id
-    
 def open(target_filename):
     "Just a wrapper for Image.open from PIL"
     try:
@@ -252,25 +215,6 @@ def tune(target_img, db_name, dial=1, quiet=False):
         plot_histograms(orig_hist, title='Unaltered target image')
         plot_histograms(adjusted_hist, title='Adjusted target image')
     return adjusted_img
-
-def analyze(tiles, db_name):
-    """Determine dominant colors of target tiles, and insert them into
-    the Target table of the db."""
-    db = connect(db_name)
-    try:
-        create_target_table(db)
-        print 'Analyzing target image...'
-        for tile in tiles:
-            regions = split_quadrants(tile)
-            rgb = map(dominant_color, regions) 
-            lab = map(cs.rgb2lab, rgb)
-            tile_id = insert_target_tile(tile.x, tile.y, rgb, lab, db)
-            tile.id = tile_id
-        print 'Performing big join...'
-        join(db)
-        db.commit()
-    finally:
-        db.close()
 
 def pool_histogram(db):
     """Generate a histogram of the images in the pool.
@@ -335,8 +279,45 @@ class Tile(object):
     def mask(self, img):
         self.mask = img 
         
+def create_target_table(db):
+    c = db.cursor()
+    try:
+        c.execute("DROP TABLE IF EXISTS Target")
+        c.execute("""CREATE TABLE Target
+                     (tile_id INTEGER,
+                      region INTEGER,
+                      L REAL,
+                      a REAL,
+                      b REAL,
+                      red INTEGER,
+                      green INTEGER,
+                      blue INTEGER,
+                      PRIMARY KEY (tile_id, region))""")
+    finally:
+        c.close()
+        db.commit()
+
+def insert_target_tile(x, y, rgb, lab, db):
+    """Insert the dominant color of each a tile's regions
+    in the Target table. Identify each tile by x, y."""
+    c = db.cursor()
+    try:
+        c.execute("""SELECT IFNULL(MAX(tile_id) + 1, 0) FROM Target""")
+        tile_id, = c.fetchone()
+        for region in xrange(len(rgb)):
+            red, green, blue= rgb[region]
+            L, a, b = lab[region]
+            c.execute("""INSERT INTO Target (tile_id, region, 
+                         L, a, b, red, green, blue)
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                         (tile_id, region,
+                         L, a, b, red, green, blue))
+    finally:
+        c.close()
+    return tile_id
+    
 def partition(img, dimensions):
-    "Partition the target image into a 2D list of Images."
+    "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
     width = img.size[0] // dimensions[0] 
@@ -350,6 +331,25 @@ def partition(img, dimensions):
                              (y + 1)*height))
             tiles.append(Tile(img, x, y))
     return tiles
+
+def analyze(tiles, db_name):
+    """Determine dominant colors of target tiles, and insert them into
+    the Target table of the db."""
+    db = connect(db_name)
+    try:
+        create_target_table(db)
+        print 'Analyzing target image...'
+        for tile in tiles:
+            regions = split_quadrants(tile)
+            rgb = map(dominant_color, regions) 
+            lab = map(cs.rgb2lab, rgb)
+            tile_id = insert_target_tile(tile.x, tile.y, rgb, lab, db)
+            tile.id = tile_id
+        print 'Performing big join...'
+        join(db)
+        db.commit()
+    finally:
+        db.close()
 
 def join(db):
     """Compare every target tile to every image by joining
