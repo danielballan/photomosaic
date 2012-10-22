@@ -363,7 +363,7 @@ def analyze(tiles, db_name):
     db = connect(db_name)
     try:
         create_target_table(db)
-        print 'Analyzing target image...'
+        pbar = progress_bar(len(tiles), "Analyzing images")
         for tile in tiles:
             regions = split_quadrants(tile)
             rgb = map(dominant_color, regions) 
@@ -371,7 +371,8 @@ def analyze(tiles, db_name):
             tile_id = insert_target_tile(rgb, lab, db)
             # tile_id is a number assigned by the db
             tile.tile_id = tile_id
-        print 'Performing big join...'
+            pbar.next()
+        progress_bar(None, "Performing big join (no progress bar)").next()
         join(db)
         db.commit()
     finally:
@@ -503,35 +504,43 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
     """Take the tiles from target() and return a mosaic image."""
     db = connect(db_name)
     try:
-        print 'Choosing matching tiles...'
+        pbar = progress_bar(len(tiles), "Choosing matching tiles")
         for tile in tiles:
             tile.match = choose_match(tile.tile_id, db)
-            progress_bar(len(tiles))
-        print 'Scaling them...'
+            pbar.next()
+        pbar = progress_bar(len(tiles), "Scaling tiles")
         for tile in tiles:
             new_img = prepare_tile(tile.match['filename'],
                                    tile.size,
                                    tile.match['dL'],
                                    vary_size)
             tile.substitute_img(new_img)
-            progress_bar(len(tiles))
+            pbar.next()
     finally:
         db.close()
-    print 'Building mosaic...'
+    pbar = progress_bar(len(tiles), "Building mosaic")
     background = (255, 255, 255)
     mosaic_size = 800, 600 
     mosaic = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
         mosaic.paste(tile, pos)
+        pbar.next()
     return mosaic
 
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
 
-def progress_bar(total_steps, message='', notification=5):
-    while step in xrange(total_steps):
-        if step % (total_steps // notifications):
-            logger('%s/%s %s', step, total_step, message)
+def progress_bar(total_steps, message='', notifications=8):
+    step = 0
+    logger.info('%s...', message)
+    if total_steps is None: yield # message only
+    notifications = min(total_steps, notifications)
+    while step < total_steps - 1:
+        if step % (total_steps // notifications) == 0:
+            logger.info('%s/%s', step, total_steps)
+        yield
+        step += 1
+    logger.info('Complete.')
     yield
