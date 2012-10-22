@@ -248,12 +248,15 @@ def compute_palette(hist):
     # Integrate a histogram and round down.
     palette = {}
     for ch in ['red', 'green', 'blue']:
+        print hist[ch]
         integrals = np.cumsum(hist[ch])
-        blocky_integrals = np.floor(256*integrals + 0.01).astype(int)
+        blocky_integrals = np.ceil(256*integrals - 0.01).astype(int)
+        print blocky_integrals
         p = []
         for i in range(256):
-            p.append(np.where(blocky_integrals >= i)[0][0])
+            p.append(np.where(blocky_integrals >= i - 1)[0][0])
         palette[ch] = p
+        #  print palette[ch]
     return palette
 
 def adjust_levels(target_img, palette, dial=1):
@@ -406,39 +409,25 @@ def join(db):
         c.close()
     db.commit()
 
-def choose_match(tile_id, db, randomize=False):
+def choose_match(tile_id, db, tolerance=10):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
-    if not randomize:
-        query = """SELECT 
-                   image_id,
-                   Esq,
-                   dL,
-                   filename
-                   FROM BigJoin
-                   JOIN Images using (image_id)
-                   WHERE tile_id=? 
-                   ORDER BY Esq ASC
-                   LIMIT 1"""
-    elif not isinstance(randomize, int):
-        logger.error("randomzie must be an integer or False")
-        return
-    else:
-        query = """SELECT * FROM (SELECT 
-                   image_id,
-                   Esq,
-                   dL,
-                   filename
-                   FROM BigJoin
-                   JOIN Images using (image_id)
-                   WHERE tile_id=?
-                   ORDER BY Esq ASC
-                   LIMIT {N}) ORDER BY RANDOM() LIMIT 1""".format(N=randomize)
+    query = """SELECT 
+               image_id,
+               Esq,
+               dL,
+               filename 
+               FROM BigJoin
+               JOIN Images using (image_id)
+               WHERE tile_id=? AND Esq < {tolerance} 
+               ORDER BY RANDOM()
+               LIMIT 1""".format(tolerance=tolerance)
     c = db.cursor()
     try:
         c.execute(query, (tile_id,))
         match = c.fetchone()
+        # if none order by Esq and choose top
     finally:
         c.close()
     return match
