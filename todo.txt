@@ -1,14 +1,13 @@
 Urgent:
-
 Update readme.
 mosaic_size is hard coded. Infer it from tiles or something.
 
-Major:
+Functionality:
 Fix "dark palette" issue.
 Split tiles!
 
 Performance:
-Fast LAB
+Fast RGB -> XYZ -> LAB using Image.convert()
 memoize tile resizing
 
 Diagnostics:
