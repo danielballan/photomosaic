@@ -517,7 +517,7 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
         db.close()
     print 'Building mosaic...'
     background = (255, 255, 255)
-    mosaic_size = 500, 610
+    mosaic_size = 800, 600 
     mosaic = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
