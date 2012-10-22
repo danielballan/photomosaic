@@ -30,6 +30,7 @@ import Image
 import sqlite3
 import color_spaces as cs
 from directory_walker import DirectoryWalker
+from memo import memo
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
