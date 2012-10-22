@@ -1,15 +1,20 @@
 import logging
+import time
 
 logger = logging.getLogger(__name__)
 
-def progress_bar(total_steps, message='', notifications=8):
-    step = 0
+def progress_bar(total_steps, message=''):
     logger.info('%s...', message)
-    notifications = min(total_steps, notifications)
+    step = 0
+    start = time.clock()
+    previous_notif = start
     while step < total_steps - 1:
-        if step % (total_steps // notifications) == 0:
-            logger.info('%s/%s', step, total_steps)
+        if (time.clock() - previous_notif) > 10:
+             elapsed = time.clock() - start
+             logger.info("%s/%s complete after %d seconds elapsed", 
+                         step, total_steps, int(elapsed))
+             previous_notif = time.clock()
         yield
         step += 1
-    logger.info('Complete.')
+    logger.info("Complete.")
     yield
