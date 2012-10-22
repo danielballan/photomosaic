@@ -491,6 +491,7 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
         print 'Choosing matching tiles...'
         for tile in tiles:
             tile.match = choose_match(tile.tile_id, db)
+            progress_bar(len(tiles))
         print 'Scaling them...'
         for tile in tiles:
             new_img = Image.open(tile.match['filename'])
@@ -503,6 +504,7 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
                 new_img = shrink_to_brighten(new_img, tile.size,
                                              tile.match['dL'])
             tile.substitute_img(new_img)
+            progress_bar(len(tiles))
     finally:
         db.close()
     print 'Building mosaic...'
@@ -517,3 +519,9 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
+
+def progress_bar(total_steps, message='', notification=5):
+    while step in xrange(total_steps):
+        if step % (total_steps // notifications):
+            logger('%s/%s %s', step, total_step, message)
+    yield
