@@ -249,11 +249,13 @@ def compute_palette(hist):
     palette = {}
     for ch in ['red', 'green', 'blue']:
         integrals = np.cumsum(hist[ch])
-        blocky_integrals = np.floor(256*integrals + 0.01).astype(int)
+        blocky_integrals = np.ceil(256*integrals - 0.01).astype(int)
+        print blocky_integrals
         p = []
         for i in range(256):
-            p.append(np.where(blocky_integrals >= i)[0][0])
+            p.append(np.where(blocky_integrals >= i - 1)[0][0])
         palette[ch] = p
+        #  print palette[ch]
     return palette
 
 def adjust_levels(target_img, palette, dial=1):
