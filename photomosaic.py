@@ -187,8 +187,6 @@ def create_target_table(db):
         c.execute("DROP TABLE IF EXISTS Target")
         c.execute("""CREATE TABLE Target
                      (tile_id INTEGER,
-                      x INTEGER,
-                      y INTEGER,
                       region INTEGER,
                       L REAL,
                       a REAL,
@@ -206,15 +204,16 @@ def insert_target_tile(x, y, rgb, lab, db):
     in the Target table. Identify each tile by x, y."""
     c = db.cursor()
     try:
+        c.execute("""SELECT IFNULL(MAX(tile_id) + 1, 0) FROM Target""")
+        tile_id, = c.fetchone()
         for region in xrange(len(rgb)):
             red, green, blue= rgb[region]
-            L, a, b= lab[region]
-            c.execute("""INSERT INTO Target (x, y, region, 
+            L, a, b = lab[region]
+            c.execute("""INSERT INTO Target (tile_id, region, 
                          L, a, b, red, green, blue)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                         (x, y, region,
+                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                         (tile_id, region,
                          L, a, b, red, green, blue))
-            tile_id = c.lastrowid    
     finally:
         c.close()
     return tile_id
@@ -333,6 +332,8 @@ class Tile(object):
         return x, y 
     def set_id(self, id):
         self.id = id
+    def mask(self, img):
+        self.mask = img 
         
 def partition(img, dimensions):
     "Partition the target image into a 2D list of Images."
@@ -359,21 +360,20 @@ def join(db):
         start_time = time.clock()
         c.execute("""CREATE TABLE BigJoin AS
                      SELECT
-                     x, y,
-                     image_id, 
+                     tile_id, image_id, 
                      avg((c.L - t.L)*(c.L - t.L)
                      + (c.a - t.a)*(c.a - t.a)
                      + (c.b - t.b)*(c.b - t.b)) as Esq,
                      avg(c.L - t.L) as dL
                      FROM Colors c
                      JOIN Target t USING (region)
-                     GROUP BY x, y, image_id""")
+                     GROUP BY tile_id, image_id""")
         print "Join completed in {}".format(time.clock() - start_time)
     finally:
         c.close()
     db.commit()
 
-def matching(x, y, db, randomize=False):
+def matching(tile_id, db, randomize=False):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
@@ -385,7 +385,7 @@ def matching(x, y, db, randomize=False):
                    filename
                    FROM BigJoin
                    JOIN Images using (image_id)
-                   WHERE x=? AND y=?
+                   WHERE tile_id=? 
                    ORDER BY Esq ASC
                    LIMIT 1"""
     elif not isinstance(randomize, int):
@@ -399,12 +399,12 @@ def matching(x, y, db, randomize=False):
                    filename
                    FROM BigJoin
                    JOIN Images using (image_id)
-                   WHERE x=? AND y=?
+                   WHERE tile_id=?
                    ORDER BY Esq ASC
                    LIMIT {N}) ORDER BY RANDOM() LIMIT 1""".format(N=randomize)
     c = db.cursor()
     try:
-        c.execute(query, (x, y))
+        c.execute(query, (tile_id,))
         match = c.fetchone()
     finally:
         c.close()
@@ -417,10 +417,8 @@ def assemble_mosaic(tiles, tile_size, background=(255, 255, 255),
     # but let's not trust it in this case.
     size = len(tiles[0])*tile_size[0], len(tiles)*tile_size[1]
     mosaic = Image.new('RGB', size, background)
-    for y, row in enumerate(tiles):
-        for x, tile in enumerate(row):
-            pos = tile_position(x, y, tile.size, tile_size, random_margins)
-            mosaic.paste(tile, pos)
+    pos = tile_position(tile.x, tile.y, tile.size, tile_size, random_margins)
+    mosaic.paste(tile, pos)
     return mosaic # suitable to be saved with imsave
 
 def tile_position(x, y, this_size, generic_size,
@@ -448,16 +446,12 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5, random_margins=Fal
     db = connect(db_name)
     try:
         print 'Choosing matching tiles and scaling them...'
-        for x, row in enumerate(tiles):
-            for y, tile in enumerate(row):
-                # Replace target tile with a matched tile.
-                match = matching(x, y, db)
-                new_tile = make_tile(match, tile_size, vary_size)
-                tiles[x][y] = new_tile
+        new_tiles = [make_tile(matching(tile.id, db), tile_size, vary_size)
+                     \ for tile in tiles]]
     finally:
         db.close()
     print 'Building mosaic...'
-    mosaic = assemble_mosaic(tiles, tile_size, random_margins)
+    mosaic = assemble_mosaic(new_tiles, tile_size, random_margins)
     return mosaic
 
 def make_tile(match, tile_size, vary_size=False):
