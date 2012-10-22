@@ -30,6 +30,7 @@ import Image
 import sqlite3
 import color_spaces as cs
 from directory_walker import DirectoryWalker
+from memo import memo
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
@@ -483,6 +484,20 @@ def tile_position(tile, random_margins=False):
     pos = tile.x*tile.container_size[0], tile.y*tile.container_size[1]
     return pos
 
+@memo
+def prepare_tile(filename, size, dL, vary_size=False):
+    """This memoized function only executes once for a given set of args.
+    Hence, multiple (same-sized) tiles of the same image are speedy."""
+    new_img = Image.open(filename)
+    if (dL >= 0 or not vary_size):
+        # Match is brighter than target. 
+        new_img = crop_to_fit(new_img, size)
+    else:
+        # Match is darker than target.
+        # Shrink it to leave white padding.
+        new_img = shrink_to_brighten(new_img, size, dL)
+    return new_img
+
 def photomosaic(tiles, db_name, vary_size=False, randomize=5, 
                 random_margins=False):
     """Take the tiles from target() and return a mosaic image."""
@@ -494,22 +509,17 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
             progress_bar(len(tiles))
         print 'Scaling them...'
         for tile in tiles:
-            new_img = Image.open(tile.match['filename'])
-            if (tile.match['dL'] >= 0 or not vary_size):
-                # Match is brighter than target.
-                new_img = crop_to_fit(new_img, tile.size)
-            else:
-                # Match is darker than target.
-                # Shrink it to leave white padding.
-                new_img = shrink_to_brighten(new_img, tile.size,
-                                             tile.match['dL'])
+            new_img = prepare_tile(tile.match['filename'],
+                                   tile.size,
+                                   tile.match['dL'],
+                                   vary_size)
             tile.substitute_img(new_img)
             progress_bar(len(tiles))
     finally:
         db.close()
     print 'Building mosaic...'
     background = (255, 255, 255)
-    mosaic_size = 500, 610
+    mosaic_size = 800, 600 
     mosaic = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
