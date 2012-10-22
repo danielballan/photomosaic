@@ -279,6 +279,22 @@ class Tile(object):
     def mask(self, img):
         self.mask = img 
         
+def partition(img, dimensions):
+    "Partition the target image into a list of Tile objects."
+    if isinstance(dimensions, int):
+        dimensions = dimensions, dimensions
+    width = img.size[0] // dimensions[0] 
+    height = img.size[1] // dimensions[1]
+    tiles = []
+    for y in range(dimensions[1]):
+        for x in range(dimensions[0]):
+            img = img.crop((x*width, 
+                             y*height,
+                             (x + 1)*width, 
+                             (y + 1)*height))
+            tiles.append(Tile(img, x, y))
+    return tiles
+
 def create_target_table(db):
     c = db.cursor()
     try:
@@ -316,22 +332,6 @@ def insert_target_tile(x, y, rgb, lab, db):
         c.close()
     return tile_id
     
-def partition(img, dimensions):
-    "Partition the target image into a list of Tile objects."
-    if isinstance(dimensions, int):
-        dimensions = dimensions, dimensions
-    width = img.size[0] // dimensions[0] 
-    height = img.size[1] // dimensions[1]
-    tiles = []
-    for y in range(dimensions[1]):
-        for x in range(dimensions[0]):
-            img = img.crop((x*width, 
-                             y*height,
-                             (x + 1)*width, 
-                             (y + 1)*height))
-            tiles.append(Tile(img, x, y))
-    return tiles
-
 def analyze(tiles, db_name):
     """Determine dominant colors of target tiles, and insert them into
     the Target table of the db."""
