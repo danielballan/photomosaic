@@ -127,7 +127,7 @@ def insert(filename, w, h, rgb, lab, db):
                   (0, w, h, filename))
         image_id = c.lastrowid
         for region in xrange(len(rgb)):
-            L, a, b= lab[region]
+            L, a, b = lab[region]
             red, green, blue= rgb[region]
             c.execute("""INSERT INTO Colors (image_id, region, 
                          L, a, b, red, green, blue) 
@@ -186,7 +186,7 @@ def create_target_table(db):
     try:
         c.execute("DROP TABLE IF EXISTS Target")
         c.execute("""CREATE TABLE Target
-                     (tile_id INTEGER PRIMARY KEY,
+                     (tile_id INTEGER,
                       x INTEGER,
                       y INTEGER,
                       region INTEGER,
@@ -195,7 +195,8 @@ def create_target_table(db):
                       b REAL,
                       red INTEGER,
                       green INTEGER,
-                      blue INTEGER)""")
+                      blue INTEGER,
+                      PRIMARY KEY (tile_id, region))""")
     finally:
         c.close()
         db.commit()
@@ -213,8 +214,10 @@ def insert_target_tile(x, y, rgb, lab, db):
                          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
                          (x, y, region,
                          L, a, b, red, green, blue))
+            tile_id = c.lastrowid    
     finally:
         c.close()
+    return tile_id
     
 def open(target_filename):
     "Just a wrapper for Image.open from PIL"
@@ -239,9 +242,13 @@ def tune(target_img, db_name, dial=1, quiet=False):
         # before and after the alteration.
         keys = 'red', 'green', 'blue'
         values = [channel.histogram() for channel in target_img.split()]
-        orig_hist = dict(zip(keys, values)) 
+        totals = map(sum, values)
+        norm = [map(lambda x: x/totals[i], val) for i, val in enumerate(values)]
+        orig_hist = dict(zip(keys, norm)) 
         values = [channel.histogram() for channel in adjusted_img.split()]
-        adjusted_hist = dict(zip(keys, values)) 
+        totals = map(sum, values)
+        norm = [map(lambda x: x/totals[i], val) for i, val in enumerate(values)]
+        adjusted_hist = dict(zip(keys, norm)) 
         plot_histograms(pool_hist, title='Images in the pool')
         plot_histograms(orig_hist, title='Unaltered target image')
         plot_histograms(adjusted_hist, title='Adjusted target image')
@@ -254,12 +261,12 @@ def analyze(tiles, db_name):
     try:
         create_target_table(db)
         print 'Analyzing target image...'
-        for x, row in enumerate(tiles):
-            for y, tile in enumerate(row):
-                regions = split_quadrants(tile)
-                rgb = map(dominant_color, regions) 
-                lab = map(cs.rgb2lab, rgb)
-                insert_target_tile(x, y, rgb, lab, db)
+        for tile in tiles:
+            regions = split_quadrants(tile)
+            rgb = map(dominant_color, regions) 
+            lab = map(cs.rgb2lab, rgb)
+            tile_id = insert_target_tile(tile.x, tile.y, rgb, lab, db)
+            tile.id = tile_id
         print 'Performing big join...'
         join(db)
         db.commit()
@@ -313,48 +320,54 @@ def adjust_levels(target_img, palette, dial=1):
     adjusted_channels = [Image.eval(channels[ch], p_func[ch]) for ch in keys]
     return Image.merge('RGB', adjusted_channels)
 
-def partition(img, tile_size):
+class Tile(object):
+    def __init__(self, img, x, y):
+        self._img = img
+        self.x = x
+        self.y = y
+    def __getattr__(self, key):
+        if key == '_img':
+            raise AttributeError()
+        return getattr(self._img, key)
+    def pos(self):
+        return x, y 
+    def set_id(self, id):
+        self.id = id
+        
+def partition(img, dimensions):
     "Partition the target image into a 2D list of Images."
-    if isinstance(tile_size, int):
-        tile_size = tile_size, tile_size
-    width = img.size[0] // tile_size[0]
-    height = img.size[1] // tile_size[1]
-    tiles = [[None for w in range(width)] for h in range(height)]
-    for y in range(height):
-        for x in range(width):
-            tile = img.crop((x*tile_size[0], 
-                             y*tile_size[1],
-                             (x + 1)*tile_size[0], 
-                             (y + 1)*tile_size[1]))
-            tiles[y][x] = tile
+    if isinstance(dimensions, int):
+        dimensions = dimensions, dimensions
+    width = img.size[0] // dimensions[0] 
+    height = img.size[1] // dimensions[1]
+    tiles = []
+    for y in range(dimensions[1]):
+        for x in range(dimensions[0]):
+            img = img.crop((x*width, 
+                             y*height,
+                             (x + 1)*width, 
+                             (y + 1)*height))
+            tiles.append(Tile(img, x, y))
     return tiles
 
 def join(db):
     """Compare every target tile to every image by joining
     the Colors table to the Target table."""
-    query = """INSERT INTO BigJoin (x, y, image_id, Esq, dL)
-               SELECT
-               x, y,
-               image_id, 
-               avg((c.L - t.L)*(c.L - t.L)
-               + (c.a - t.a)*(c.a - t.a)
-               + (c.b - t.b)*(c.b - t.b)) as Esq,
-               avg(c.L - t.L) as dL
-               FROM Colors c
-               JOIN Target t USING (region)
-               GROUP BY x, y, image_id"""
     c = db.cursor()
     try:
         c.execute("DROP TABLE IF EXISTS BigJoin")
-        c.execute("""CREATE TABLE BigJoin
-                     (id INTEGER PRIMARY KEY,
-                      x INTEGER,
-                      y INTEGER,
-                      image_id INTEGER,
-                      Esq REAL,
-                      dL REAL)""")
         start_time = time.clock()
-        c.execute(query)
+        c.execute("""CREATE TABLE BigJoin AS
+                     SELECT
+                     x, y,
+                     image_id, 
+                     avg((c.L - t.L)*(c.L - t.L)
+                     + (c.a - t.a)*(c.a - t.a)
+                     + (c.b - t.b)*(c.b - t.b)) as Esq,
+                     avg(c.L - t.L) as dL
+                     FROM Colors c
+                     JOIN Target t USING (region)
+                     GROUP BY x, y, image_id""")
         print "Join completed in {}".format(time.clock() - start_time)
     finally:
         c.close()
