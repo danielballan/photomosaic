@@ -168,17 +168,17 @@ def pool(image_dir, db_name):
 def plot_histograms(hist, title=''):
     "Plot an RGB histogram given as a dictionary with channel keys."
     import matplotlib.pyplot as plt
-    fig, axarr = plt.subplots(3, sharex=True, sharey=True)
-    fig.set_title(title)
+    fig, (red, green, blue) = plt.subplots(3, sharex=True, sharey=True)
     domain = range(0, 256)
-    axarr[0].fill_between(domain, hist['red'],
+    red.fill_between(domain, hist['red'],
                      facecolor='red')
-    axarr[1].fill_between(domain, 0, hist['green'],
-                     facecolor='green')
-    axarr[2].fill_between(domain, 0, hist['blue'],
-                     facecolor='blue')
-    axarr[0].set_xlim(0,256)
-    axarr[1].set_ylim(ymin=0)
+    green.fill_between(domain, 0, hist['green'],
+                       facecolor='green')
+    blue.fill_between(domain, 0, hist['blue'],
+                      facecolor='blue')
+    red.set_xlim(0,256)
+    red.set_ylim(ymin=0)
+    red.set_title(title)
     fig.show()
 
 def create_target_table(db):
