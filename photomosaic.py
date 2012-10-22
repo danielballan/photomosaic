@@ -37,11 +37,11 @@ FORMAT = "%(name)s.%(funcName)s:  %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
-def simple(image_dir, target_filename, tile_size, output_file):
+def simple(image_dir, target_filename, dimensions, output_file):
     pool(dir, 'temp.db')
     img = open(target_filename)
     img = tune(img, 'temp.db', quiet=True)
-    tiles = partition(img, 40)
+    tiles = partition(img, dimensions)
     analyze(tiles, 'temp.db')
     mos = photomosaic(tiles, 'temp.db')
     mos.save(output_file)
