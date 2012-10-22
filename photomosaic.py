@@ -488,12 +488,13 @@ def tile_position(tile, random_margins=False):
     return pos
 
 @memo
-def prepare_tile(filename, size, dL, vary_size=False):
+def prepare_tile(filename, size, dL=None):
     """This memoized function only executes once for a given set of args.
     Hence, multiple (same-sized) tiles of the same image are speedy."""
     new_img = Image.open(filename)
-    if (dL >= 0 or not vary_size):
-        # Match is brighter than target. 
+    if (dL is None or dL >= 0):
+        # Either we are not shrinking tiles (dL = None) or
+        # the match is brighter than the target. Leave it alone.
         new_img = crop_to_fit(new_img, size)
     else:
         # Match is darker than target.
@@ -512,10 +513,8 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
             pbar.next()
         pbar = progress_bar(len(tiles), "Scaling tiles")
         for tile in tiles:
-            new_img = prepare_tile(tile.match['filename'],
-                                   tile.size,
-                                   tile.match['dL'],
-                                   vary_size)
+            dL = tile.match['dL'] if vary_size else None
+            new_img = prepare_tile(tile.match['filename'], tile.size, dL)
             tile.substitute_img(new_img)
             pbar.next()
     finally:

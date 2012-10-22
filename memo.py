@@ -18,6 +18,9 @@
 
 import collections
 import functools
+import logging
+
+logger = logging.getLogger(__name__)
 
 class memo(object):
    """Decorator. Caches a function's return value each time it is called.
@@ -31,10 +34,14 @@ class memo(object):
       if not isinstance(args, collections.Hashable):
          # uncacheable. a list, for instance.
          # better to not cache than blow up.
+         logger.warning("""@memo decorator has been used on a function
+                        with unhashable arguments.""")
          return self.func(*args)
       if args in self.cache:
+         logger.debug("""Found in cache. Returning cached value.""")
          return self.cache[args]
       else:
+         logger.debug("""%s not found in cache. Computing value.""", args)
          value = self.func(*args)
          self.cache[args] = value
          return value
