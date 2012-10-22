@@ -38,12 +38,13 @@ logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
 def simple(image_dir, target_filename, dimensions, output_file):
-    pool(dir, 'temp.db')
+    pool(image_dir, 'temp.db')
     img = open(target_filename)
     img = tune(img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
     analyze(tiles, 'temp.db')
     mos = photomosaic(tiles, 'temp.db')
+    logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
 
 def split_regions(img, split_dim):
@@ -372,9 +373,10 @@ def analyze(tiles, db_name):
             # tile_id is a number assigned by the db
             tile.tile_id = tile_id
             pbar.next()
-        progress_bar(None, "Performing big join (no progress bar)").next()
+        logger.info("Performing big join (no progress bar)")
         join(db)
         db.commit()
+        logger.info("Complete.")
     finally:
         db.close()
 
@@ -521,8 +523,8 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
     pbar = progress_bar(len(tiles), "Building mosaic")
     background = (255, 255, 255)
     # Infer dimensions so they don't have to be passed in the function call.
-    dimensions = map(max, zip([tile.x, tile.y for tile in tiles]))
-    mosaic_size = tile.size[0]*dimensions[0], tile.size[1]*dimensions[1]
+    dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in tiles]))
+    mosaic_size = tiles[0].size[0]*dimensions[0], tiles[0].size[1]*dimensions[1]
     mosaic = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
@@ -537,7 +539,6 @@ def color_hex(rgb):
 def progress_bar(total_steps, message='', notifications=8):
     step = 0
     logger.info('%s...', message)
-    if total_steps is None: yield # message only
     notifications = min(total_steps, notifications)
     while step < total_steps - 1:
         if step % (total_steps // notifications) == 0:
