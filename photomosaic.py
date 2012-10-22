@@ -264,21 +264,32 @@ def adjust_levels(target_img, palette, dial=1):
     return Image.merge('RGB', adjusted_channels)
 
 class Tile(object):
-    def __init__(self, img, x, y):
+    def __init__(self, img, x, y, ancestry=None):
         self._img = img
         self.x = x
         self.y = y
+        self.container_size = self._img.size
+        self.ancestry = ancestry 
+
     def __getattr__(self, key):
         if key == '_img':
             raise AttributeError()
         return getattr(self._img, key)
+
+    def substitute_img(self, img):
+        self._img = img
+        self.container_size = self._img.size
+
     def pos(self):
         return x, y 
-    def set_id(self, id):
-        self.id = id
-    def mask(self, img):
-        self.mask = img 
-        
+
+    def set_id(self, tile_id):
+        self.tile_id = tile_id
+
+    def set_match(self, match):
+        self.match = match # sqlite Row object
+
+
 def partition(img, dimensions):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
@@ -344,7 +355,7 @@ def analyze(tiles, db_name):
             rgb = map(dominant_color, regions) 
             lab = map(cs.rgb2lab, rgb)
             tile_id = insert_target_tile(tile.x, tile.y, rgb, lab, db)
-            tile.id = tile_id
+            tile.tile_id = tile_id
         print 'Performing big join...'
         join(db)
         db.commit()
@@ -373,7 +384,7 @@ def join(db):
         c.close()
     db.commit()
 
-def matching(tile_id, db, randomize=False):
+def choose_match(tile_id, db, randomize=False):
     """Average perceived color difference E and lightness difference dL
     over the regions of each possible match. Rank them in E, and take
     the best image for each target tile. Allow duplicates."""
@@ -410,82 +421,12 @@ def matching(tile_id, db, randomize=False):
         c.close()
     return match
 
-def assemble_mosaic(tiles, tile_size, background=(255, 255, 255),
-                    random_margins=False):
-    "Build the final image."
-    # Technically, tile_size could be inferred from a tile,
-    # but let's not trust it in this case.
-    size = len(tiles[0])*tile_size[0], len(tiles)*tile_size[1]
-    mosaic = Image.new('RGB', size, background)
-    pos = tile_position(tile.x, tile.y, tile.size, tile_size, random_margins)
-    mosaic.paste(tile, pos)
-    return mosaic # suitable to be saved with imsave
-
-def tile_position(x, y, this_size, generic_size,
-                  random_margins=False):
-    """Return the x, y position of the tile in the mosaic, according for
-    possible margins and optional random nudges for a 'scattered' look.""" 
-    if this_size == generic_size: 
-        pos = x*generic_size[0], y*generic_size[1]
-    else:
-        margin = ((generic_size[0] - this_size[0]) // 2, 
-                  (generic_size[1] - this_size[1]) // 2)
-        if randomize:
-            try:
-                # Set left and bottom margins to a random value
-                # bound by 0 and twice their original value.
-                margin = [random.randrange(2*m) for m in margin]
-            except ValueError:
-                pass
-        pos = x*generic_size[0] + margin[0], y*generic_size[1] + margin[1]
-    return pos
-
-def photomosaic(tiles, db_name, vary_size=False, randomize=5, random_margins=False):
-    """Take the tiles from target() and return a mosaic image."""
-    tile_size = tiles[0][0].size # assuming uniform
-    db = connect(db_name)
-    try:
-        print 'Choosing matching tiles and scaling them...'
-        new_tiles = [make_tile(matching(tile.id, db), tile_size, vary_size)
-                     \ for tile in tiles]]
-    finally:
-        db.close()
-    print 'Building mosaic...'
-    mosaic = assemble_mosaic(new_tiles, tile_size, random_margins)
-    return mosaic
-
-def make_tile(match, tile_size, vary_size=False):
-    "Open and resize the matched image."
-    raw = Image.open(match['filename'])
-    if (match['dL'] >= 0 or not vary_size):
-        # Match is brighter than target.
-        img = crop_to_fit(raw, tile_size)
-    else:
-        # Match is darker than target.
-        # Shrink it to leave white padding.
-        img = shrink_to_brighten(raw, tile_size, match['dL'])
-    return img
-
-def shrink_to_brighten(img, tile_size, dL):
-    """Return an image smaller than a tile. Its white margins
-    will effect lightness. Also, varied tile size looks nice.
-    The greater the greater the lightness discrepancy dL
-    the smaller the tile is shrunk."""
-    MAX_dL = 100 # the largest possible distance in Lab space
-    MIN = 0.5 # not so close small that it's a speck
-    MAX = 0.9 # not so close to unity that is looks accidental
-    assert dL < 0, "Only shrink image when tile is too dark."
-    scaling = MAX - (MAX - MIN)*(-dL)/MAX_dL
-    shrunk_size = [int(scaling*dim) for dim in tile_size]
-    img = crop_to_fit(img, shrunk_size) 
-    return img 
-
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
     img_w, img_h = img.size
     tile_w, tile_h = tile_size
-    img_aspect = img_w // img_h
-    tile_aspect = tile_w // tile_h
+    img_aspect = int(round(img_w/img_h))
+    tile_aspect = int(round(tile_w/tile_h))
     if img_aspect > tile_aspect:
         # It's too wide.
         crop_h = img_h
@@ -504,6 +445,58 @@ def crop_to_fit(img, tile_size):
                     y_offset + crop_h))
     img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
     return img
+
+def shrink_to_brighten(img, tile_size, dL):
+    """Return an image smaller than a tile. Its white margins
+    will effect lightness. Also, varied tile size looks nice.
+    The greater the greater the lightness discrepancy dL
+    the smaller the tile is shrunk."""
+    MAX_dL = 100 # the largest possible distance in Lab space
+    MIN = 0.5 # not so close small that it's a speck
+    MAX = 0.9 # not so close to unity that is looks accidental
+    assert dL < 0, "Only shrink image when tile is too dark."
+    scaling = MAX - (MAX - MIN)*(-dL)/MAX_dL
+    shrunk_size = [int(scaling*dim) for dim in tile_size]
+    img = crop_to_fit(img, shrunk_size) 
+    return img 
+
+def tile_position(tile, random_margins=False):
+    """Return the x, y position of the tile in the mosaic, according for
+    possible margins and optional random nudges for a 'scattered' look.""" 
+    pos = tile.x*tile.container_size[0], tile.y*tile.container_size[1]
+    print pos
+    return pos
+
+def photomosaic(tiles, db_name, vary_size=False, randomize=5, 
+                random_margins=False):
+    """Take the tiles from target() and return a mosaic image."""
+    db = connect(db_name)
+    try:
+        print 'Choosing matching tiles...'
+        for tile in tiles:
+            tile.set_match(choose_match(tile.tile_id, db))
+        print 'Scaling them...'
+        for tile in tiles:
+            new_img = Image.open(tile.match['filename'])
+            if (tile.match['dL'] >= 0 or not vary_size):
+                # Match is brighter than target.
+                new_img = crop_to_fit(new_img, tile.size)
+            else:
+                # Match is darker than target.
+                # Shrink it to leave white padding.
+                new_img = shrink_to_brighten(new_img, tile.size,
+                                             tile.match['dL'])
+            tile.substitute_img(new_img)
+    finally:
+        db.close()
+    print 'Building mosaic...'
+    background = (255, 255, 255)
+    mosaic_size = 500, 610
+    mosaic = Image.new('RGB', mosaic_size, background)
+    for tile in tiles:
+        pos = tile_position(tile, random_margins)
+    mosaic.paste(tile, pos)
+    return mosaic
 
 def print_db(db):
     "Dump the database to the screen, for debugging."
