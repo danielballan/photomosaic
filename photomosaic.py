@@ -483,6 +483,20 @@ def tile_position(tile, random_margins=False):
     pos = tile.x*tile.container_size[0], tile.y*tile.container_size[1]
     return pos
 
+@memo
+def prepare_tile(filename, size, dL):
+    """This memoized function only executes once for a given set of args.
+    Hence, multiple (same-sized) tiles of the same image are speedy."""
+    new_img = Image.open(filename)
+    if (dL >= 0 or not vary_size):
+        # Match is brighter than target. 
+        new_img = crop_to_fit(new_img, size)
+    else:
+        # Match is darker than target.
+        # Shrink it to leave white padding.
+        new_img = shrink_to_brighten(new_img, size, dL)
+    return new_img
+
 def photomosaic(tiles, db_name, vary_size=False, randomize=5, 
                 random_margins=False):
     """Take the tiles from target() and return a mosaic image."""
@@ -493,15 +507,9 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
             tile.match = choose_match(tile.tile_id, db)
         print 'Scaling them...'
         for tile in tiles:
-            new_img = Image.open(tile.match['filename'])
-            if (tile.match['dL'] >= 0 or not vary_size):
-                # Match is brighter than target.
-                new_img = crop_to_fit(new_img, tile.size)
-            else:
-                # Match is darker than target.
-                # Shrink it to leave white padding.
-                new_img = shrink_to_brighten(new_img, tile.size,
-                                             tile.match['dL'])
+            new_img = prepare_tile(tile.match['filename'],
+                                   tile.size,
+                                   tile.match['dL'])
             tile.substitute_img(new_img)
     finally:
         db.close()
