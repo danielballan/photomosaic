@@ -9,9 +9,9 @@ One-Step Usage
 In two lines:
 
     import photomosaic
-    photomosaic.simple('folder-of-many-images/', 'original.jpg', 20, 'mosaic.jpg')
+    photomosaic.simple('folder-of-many-images/', 'original.jpg', (10, 10), 'mosaic.jpg')
 
-where 20 is the size of a tile in pixels.
+where (10, 10) is the number of tiles along each dimension.
 
 Basic Usage
 -----------
@@ -23,8 +23,7 @@ Alternatively, you can run the process one step at a time. This gives access to 
     pm.pool('folder-of-many-images/', 'imagepool.db')
     img = pm.open('original.jpg')
     img = pm.tune(img, 'imagepool.db') # Adjust colors levels to what's availabe in the pool.
-    tiles = pm.partition(img, 20)
-    # 20 is the tile size in px. For rectangular tiles, use tuple like (40, 30).
+    tiles = pm.partition(img, (10, 10))
     pm.analyze(tiles, 'imagepool.db')
     mosaic = pm.photomosaic(tiles, 'imagepool.db')
     mosaic.save('mosaic.jpg')
