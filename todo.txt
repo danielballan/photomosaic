@@ -6,6 +6,7 @@ Split tiles
 Mask image: black -> no tile, gray -> probabilistic
 
 Performance:
+Try varying dominant_color to simpler algorithm, like avg(...Image.histogram())
 
 Diagnostics:
 sqlite3.set_progress_handler(handler, n) # handler is called every n calls
