@@ -314,7 +314,7 @@ class Tile(object):
         return self._rgb
 
     @rgb.setter
-    def tile_id(self, value):
+    def rgb(self, value):
         self._rgb = value
 
     @property
@@ -322,7 +322,7 @@ class Tile(object):
         return self._lab
 
     @lab.setter
-    def tile_id(self, value):
+    def lab(self, value):
         self._lab = value
 
     @property
@@ -349,42 +349,17 @@ def partition(img, dimensions):
             tiles.append(Tile(tile_img, x, y))
     return tiles
 
-def analyze(tiles, db_name):
+def analyze(tiles):
     """Determine dominant colors of target tiles, and save that information
     in the Tile object."""
     pbar = progress_bar(len(tiles), "Analyzing images")
     for tile in tiles:
         regions = split_quadrants(tile)
         tile.rgb = map(dominant_color, regions) 
-        tile.lab = map(cs.rgb2lab, rgb)
+        tile.lab = map(cs.rgb2lab, tile.rgb)
         pbar.next()
 
-def join(db):
-    """Compare every target tile to every image by joining
-    the Colors table to the Target table. Specifically, compute their
-    Euclidean color distance E."""
-    c = db.cursor()
-    try:
-        c.execute("DROP TABLE IF EXISTS BigJoin")
-        start_time = time.clock()
-        # Technically, compute E^2, not E, because sqlite does not support
-        # sqrt(). Also compute the difference in lightness, dL.
-        c.execute("""CREATE TABLE BigJoin AS
-                     SELECT
-                     tile_id, image_id, 
-                     avg((c.L - t.L)*(c.L - t.L)
-                     + (c.a - t.a)*(c.a - t.a)
-                     + (c.b - t.b)*(c.b - t.b)) as Esq,
-                     avg(c.L - t.L) as dL
-                     FROM Colors c
-                     JOIN Target t USING (region)
-                     GROUP BY tile_id, image_id""")
-        logger.info("Join completed in %s", (time.clock() - start_time))
-    finally:
-        c.close()
-    db.commit()
-
-def choose_match(lab, db):
+def choose_match(lab, db, tolerance=2):
     """If there is are good matches (within tolerance times the 'just noticeable
     difference'), return one at random. If not, choose the closest match
     deterministically. Return the match (as a sqlite Row dictionary) and the
@@ -392,24 +367,29 @@ def choose_match(lab, db):
     JND = 2.3 # "just noticeable difference"
     c = db.cursor()
     try:
-        c.execute("""SELECT image_id,
-                     L-(?) + a-(?) + b-(?) as approx_E,
-                     AVG(L-(?)) as dL,
+        c.execute("""SELECT
+                     image_id,
+                     L1 as Esq,
+                     L1-({L1}) + L2-({L2}) + L3-({L3}) + L4-({L4}) as dL,
                      filename
-                     FROM Colors 
-                     JOIN Images USING (image_id)
-                     GROUP BY image_id
-                     HAVING ABS(approx_E) < ?
-                     ORDER BY RANDOM()
-                     LIMIT 1""",
-                     (L, a, b, tolerance*JND))
-        match = c.fetchone()
+                     FROM LabColors
+                     JOIN Images using (image_id)
+                     WHERE
+                       L1-(?) + a1-(?) + b1-(?)
+                     + L2-(?) + a2-(?) + b2-(?)
+                     + L3-(?) + a3-(?) + b3-(?)
+                     + L4-(?) + a4-(?) + b4-(?)
+                     < 4*?
+                     ORDER BY RANDOM()""",
+                     tuple([ch for reg in lab for ch in reg] 
+                           + [JND*tolerance]))
+        match = c.fetchall()
         if not match:
             return choose_match(lab, db, tolerance + 1)
     finally:
         c.close()
     logger.debug("%s", match)
-    return match
+    return match[0]
 
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
