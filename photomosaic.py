@@ -43,7 +43,7 @@ def simple(image_dir, target_filename, dimensions, output_file):
     img = open(target_filename)
     img = tune(img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
-    analyze(tiles, 'temp.db')
+    analyze(tiles)
     mos = photomosaic(tiles, 'temp.db')
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
@@ -90,7 +90,7 @@ def dominant_color(img, clusters=5, size=50):
     return map(int, dominant_color) # Avoid returning np.uint8 type.
 
 def connect(db_path):
-    "Connect to, and if need be create, a sqlite database at db_path."
+    "Connect to a sqlite database at db_path. If it does not exist, create it."
     try:
         db = sqlite3.connect(db_path)
     except IOError:
@@ -100,6 +100,10 @@ def connect(db_path):
     return db
 
 def create_tables(db):
+    """Create Images for image meta info, Color for RGB values and LabColor
+    for LAB values. RGB and LAB are used for different steps, RGB for levels
+    adjustments are LAB for measure perceived color difference precisely.
+    Thus Color and LabColor are organized somewhat differently."""
     c = db.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS Images
                  (image_id INTEGER PRIMARY KEY,
@@ -111,32 +115,45 @@ def create_tables(db):
                  (color_id INTEGER PRIMARY KEY,
                   image_id INTEGER,
                   region INTEGER,
-                  L REAL,
-                  a REAL,
-                  b REAL,
                   red INTEGER,
                   green INTEGER,
                   blue INTEGER)""")
+    c.execute("""CREATE TABLE IF NOT EXISTS LabColors
+                 (labcolor_id INTEGER PRIMARY KEY,
+                  image_id INTEGER,
+                  region INTEGER,
+                  L1 REAL,
+                  a1 REAL,
+                  b1 REAL,
+                  L2 REAL,
+                  a2 REAL,
+                  b2 REAL,
+                  L3 REAL,
+                  a3 REAL,
+                  b3 REAL,
+                  L4 REAL,
+                  a4 REAL,
+                  b4 REAL)""")
     c.close()
     db.commit()
 
 def insert(filename, w, h, rgb, lab, db):
-    """Insert image info in the Images table. Insert the dominant
-    color of each of its regions in the Colors table."""
+    """Insert image info in the Images table and color information in the
+    Color and LabColor tables."""
     c = db.cursor()
     try:
         c.execute("""INSERT INTO Images (usages, w, h, filename)
                      VALUES (?, ?, ?, ?)""",
                   (0, w, h, filename))
         image_id = c.lastrowid
-        for region in xrange(len(rgb)):
-            L, a, b = lab[region]
-            red, green, blue= rgb[region]
-            c.execute("""INSERT INTO Colors (image_id, region, 
-                         L, a, b, red, green, blue) 
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                         (image_id, region, 
-                         L, a, b, red, green, blue))
+        c.executemany("""INSERT INTO Colors (image_id, region, red, green, blue)
+                         VALUES (?, ?, ?, ?, ?)""",
+                         [tuple([image_id, region] + list(colors)) \
+                          for region, colors in enumerate(rgb)])
+        c.execute("""INSERT INTO LabColors (image_id,
+                     L1, a1, b1, L2, a2, b2, L3, a3, b3, L4, a4, b4)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                     tuple([image_id] + [ch for reg in lab for ch in reg]))
     except sqlite3.IntegrityError:
         logger.warning("Image %s is already in the table. Skipping it.",
                        filename)
@@ -150,6 +167,9 @@ def pool(image_dir, db_name):
     try:
         create_tables(db)
         walker = DirectoryWalker(image_dir)
+        file_count = len(list(walker)) # stupid but needed but progress bar
+        pbar = progress_bar(file_count, "Analyzing images and building db")
+        walker = DirectoryWalker(image_dir)
         for filename in walker:
             try:
                 img = Image.open(filename)
@@ -157,15 +177,17 @@ def pool(image_dir, db_name):
                 logger.warning("Cannot open %s as an image. Skipping it.",
                                filename)
                 continue
+                pbar.next()
             if img.mode != 'RGB':
                 logger.warning("RGB images only. Skipping %s.", filename)
                 continue
+                pbar.next()
             w, h = img.size
             regions = split_quadrants(img)
             rgb = map(dominant_color, regions) 
             lab = map(cs.rgb2lab, rgb)
-            # Really, a proper avg in Lab space would be best.
             insert(filename, w, h, rgb, lab, db)
+            pbar.next()
         db.commit()
     finally:
         db.close()
@@ -223,16 +245,16 @@ def tune(target_img, db_name, dial=1, quiet=False):
 
 def pool_histogram(db):
     """Generate a histogram of the images in the pool.
-    Return a dictionary of the channels: L, a, b, red, green blue.
+    Return a dictionary of the channels red, green blue.
     Each dict entry contains a list of the frequencies correspond to the
     domain 0 - 255.""" 
     hist = {}
     c = db.cursor()
     try: 
         for ch in ['red', 'green', 'blue']:
-            c.execute("""SELECT ROUND({ch}) as {ch}_, count(*)
+            c.execute("""SELECT {ch}, count(*)
                          FROM Colors 
-                         GROUP BY ROUND({ch}_)""".format(ch=ch))
+                         GROUP BY {ch}""".format(ch=ch))
             values, counts = zip(*c.fetchall())
             # Normalize the histogram, and fill in 0 for missing entries.
             full_domain = range(0,256)
@@ -292,12 +314,20 @@ class Tile(object):
         return self.x, self.y 
 
     @property
-    def tile_id(self):
-        return self._tile_id
+    def rgb(self):
+        return self._rgb
 
-    @tile_id.setter
-    def tile_id(self, value):
-        self._tile_id = value
+    @rgb.setter
+    def rgb(self, value):
+        self._rgb = value
+
+    @property
+    def lab(self):
+        return self._lab
+
+    @lab.setter
+    def lab(self, value):
+        self._lab = value
 
     @property
     def match(self):
@@ -306,15 +336,6 @@ class Tile(object):
     @match.setter
     def match(self, value):
         self._match = value # sqlite Row object
-
-    @property
-    def match_count(self):
-        return self._match_count
-
-    @match_count.setter
-    def match_count(self, value):
-        self._match_count = value
-
 
 def partition(img, dimensions):
     "Partition the target image into a list of Tile objects."
@@ -332,91 +353,17 @@ def partition(img, dimensions):
             tiles.append(Tile(tile_img, x, y))
     return tiles
 
-def create_target_table(db):
-    c = db.cursor()
-    try:
-        c.execute("DROP TABLE IF EXISTS Target")
-        c.execute("""CREATE TABLE Target
-                     (tile_id INTEGER,
-                      region INTEGER,
-                      L REAL,
-                      a REAL,
-                      b REAL,
-                      red INTEGER,
-                      green INTEGER,
-                      blue INTEGER,
-                      PRIMARY KEY (tile_id, region))""")
-    finally:
-        c.close()
-        db.commit()
+def analyze(tiles):
+    """Determine dominant colors of target tiles, and save that information
+    in the Tile object."""
+    pbar = progress_bar(len(tiles), "Analyzing images")
+    for tile in tiles:
+        regions = split_quadrants(tile)
+        tile.rgb = map(dominant_color, regions) 
+        tile.lab = map(cs.rgb2lab, tile.rgb)
+        pbar.next()
 
-def insert_target_tile(rgb, lab, db):
-    """Insert the dominant color of each a tile's regions
-    in the Target table. Identify each tile by x, y."""
-    c = db.cursor()
-    try:
-        c.execute("""SELECT IFNULL(MAX(tile_id) + 1, 0) FROM Target""")
-        tile_id, = c.fetchone()
-        for region in xrange(len(rgb)):
-            red, green, blue = rgb[region]
-            L, a, b = lab[region]
-            c.execute("""INSERT INTO Target (tile_id, region, 
-                         L, a, b, red, green, blue)
-                         VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                         (tile_id, region,
-                         L, a, b, red, green, blue))
-    finally:
-        c.close()
-    return tile_id
-    
-def analyze(tiles, db_name):
-    """Determine dominant colors of target tiles, and insert them into
-    the Target table of the db."""
-    db = connect(db_name)
-    try:
-        create_target_table(db)
-        pbar = progress_bar(len(tiles), "Analyzing images")
-        for tile in tiles:
-            regions = split_quadrants(tile)
-            rgb = map(dominant_color, regions) 
-            lab = map(cs.rgb2lab, rgb)
-            tile_id = insert_target_tile(rgb, lab, db)
-            # tile_id is a number assigned by the db
-            tile.tile_id = tile_id
-            pbar.next()
-        logger.info("Performing big join (no progress bar)")
-        join(db)
-        db.commit()
-        logger.info("Complete.")
-    finally:
-        db.close()
-
-def join(db):
-    """Compare every target tile to every image by joining
-    the Colors table to the Target table. Specifically, compute their
-    Euclidean color distance E."""
-    c = db.cursor()
-    try:
-        c.execute("DROP TABLE IF EXISTS BigJoin")
-        start_time = time.clock()
-        # Technically, compute E^2, not E, because sqlite does not support
-        # sqrt(). Also compute the difference in lightness, dL.
-        c.execute("""CREATE TABLE BigJoin AS
-                     SELECT
-                     tile_id, image_id, 
-                     avg((c.L - t.L)*(c.L - t.L)
-                     + (c.a - t.a)*(c.a - t.a)
-                     + (c.b - t.b)*(c.b - t.b)) as Esq,
-                     avg(c.L - t.L) as dL
-                     FROM Colors c
-                     JOIN Target t USING (region)
-                     GROUP BY tile_id, image_id""")
-        logger.info("Join completed in %s", (time.clock() - start_time))
-    finally:
-        c.close()
-    db.commit()
-
-def choose_match(tile_id, db, tolerance=2):
+def choose_match(lab, db, tolerance=2):
     """If there is are good matches (within tolerance times the 'just noticeable
     difference'), return one at random. If not, choose the closest match
     deterministically. Return the match (as a sqlite Row dictionary) and the
@@ -424,38 +371,55 @@ def choose_match(tile_id, db, tolerance=2):
     JND = 2.3 # "just noticeable difference"
     c = db.cursor()
     try:
-        c.execute("""SELECT COUNT(*)
-                     FROM BigJoin
-                     WHERE tile_id=? AND Esq < ?""",
-                     (tile_id, (tolerance*JND)**2))
-        match_count, = c.fetchone()
-        if match_count > 0:
-            c.execute("""SELECT 
+        # Before we compute the exact color distance E, 
+        # which is expensive and requires
+        # adding 12 numbers in quadrature, the WHERE clause computes
+        # a simpler upper bound on E and filters out disqualifying rows.
+        # The survivors are ranked by their exact E plus a random component
+        # determined by the tolerance. Thus, decisive winners are chosen
+        # deterministically, but if there are many good matches, one is taken
+        # at random.
+        (L1, a1, b1), (L2, a2, b2), (L3, a3, b3), (L4, a4, b4) = lab
+        tokens = {'L1': L1, 'a1': a1, 'b1': b1,
+                  'L2': L2, 'a2': a2, 'b2': b2,
+                  'L3': L3, 'a3': a3, 'b3': b3,
+                  'L4': L4, 'a4': a4, 'b4': b4,
+                  'tol': tolerance*JND}
+        c.execute("""SELECT
                      image_id,
-                     Esq,
-                     dL,
-                     filename 
-                     FROM BigJoin
+                     ((L1-({L1}))*(L1-({L1}))
+                       + (a1-({a1}))*(a1-({a1})) 
+                       + (b1-({b1}))*(b1-({b1}))
+                       + (L2-({L2}))*(L2-({L2}))
+                       + (a2-({a2}))*(a2-({a2})) 
+                       + (b2-({b2}))*(b2-({b2}))
+                       + (L3-({L3}))*(L3-({L3}))
+                       + (a3-({a3}))*(a3-({a3})) 
+                       + (b3-({b3}))*(b3-({b3}))
+                       + (L4-({L4}))*(L4-({L4}))
+                       + (a4-({a4}))*(a4-({a4}))
+                       + (b4-({b4}))*(b4-({b4})))/4. as E_sq,
+                     (L1-({L1}) + L2-({L2}) + L3-({L3}) + L4-({L4}))/4. as dL,
+                     filename
+                     FROM LabColors
                      JOIN Images using (image_id)
-                     WHERE tile_id=? AND Esq < ? 
-                     ORDER BY RANDOM()
-                     LIMIT 1""", (tile_id, (tolerance*JND)**2))
-        else:
-            c.execute("""SELECT 
-                     image_id,
-                     Esq,
-                     dL,
-                     filename 
-                     FROM BigJoin
-                     JOIN Images using (image_id)
-                     WHERE tile_id=?
-                     ORDER BY Esq ASC
-                     LIMIT 1""", (tile_id,))
+                     WHERE
+                     L1-({L1}) + a1-({a1}) + b1-({b1})
+                       + L2-({L2}) + a2-({a2}) + b2-({b2})
+                       + L3-({L3}) + a3-({a3}) + b3-({b3})
+                       + L4-({L4}) + a4-({a4}) + b4-({b4})
+                     < 4*{tol}
+                     ORDER BY
+                     E_sq + {tol}*{tol}*RANDOM()/9223372036854775808. ASC
+                     LIMIT 1""".format(**tokens))
+                     # 9223372036854775808 is the range of sqlite RANDOM()
         match = c.fetchone()
+        if not match:
+            return choose_match(lab, db, tolerance + 1)
     finally:
         c.close()
     logger.debug("%s", match)
-    return match, match_count
+    return match
 
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
@@ -524,8 +488,7 @@ def photomosaic(tiles, db_name, vary_size=False, tolerance=2,
     try:
         pbar = progress_bar(len(tiles), "Choosing matching tiles")
         for tile in tiles:
-            tile.match, tile.match_count = choose_match(tile.tile_id, db,
-                                                        tolerance)
+            tile.match = choose_match(tile.lab, db, tolerance)
             pbar.next()
         pbar = progress_bar(len(tiles), "Scaling tiles")
         for tile in tiles:

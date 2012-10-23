@@ -9,9 +9,9 @@ One-Step Usage
 In two lines:
 
     import photomosaic
-    photomosaic.simple('folder-of-many-images/', 'original.jpg', (10, 10), 'mosaic.jpg')
+    photomosaic.simple('folder-of-many-images/', 'original.jpg', (30, 30), 'mosaic.jpg')
 
-where (10, 10) is the number of tiles along each dimension.
+where (30, 30) is the number of tiles along each dimension.
 
 Basic Usage
 -----------
@@ -24,13 +24,22 @@ Alternatively, you can run the process one step at a time. This gives access to 
     img = pm.open('original.jpg')
     img = pm.tune(img, 'imagepool.db') # Adjust colors levels to what's availabe in the pool.
     tiles = pm.partition(img, (10, 10))
-    pm.analyze(tiles, 'imagepool.db')
+    pm.analyze(tiles)
     mosaic = pm.photomosaic(tiles, 'imagepool.db')
     mosaic.save('mosaic.jpg')
 
-The most time-consuming step is ``analyze()``, which compares every tile in the target image to every image in the pool. The final step, ``photomosaic()``, which identifies the closest matches and generates the actual mosaic, is relatively speedy. Once ``analyze()`` is done, it is convenient to run ``photomosaic()`` several times while experimenting with different settings.
+Remarks on each step:
 
-For more on said settings, see Advanced Usage below.
+
+* Generating an image pool is by far the longest step (about 45 minutes for 10,000 images) but it only has to be done once, and images can be added later without redoing the whole thing. Just run it again on a new folder or on the same folder with new images; it will skip duplicates.
+
+* If the color scheme of your target image is not well represented in your potential tiles, shading and detail are lost. ``tune()`` ameliorates this problem by adjusting the levels of your target image to match the palette of colors available in the image pool. It's optional. The best solution is to have an image pool with all the necessary colors well represented. 
+
+* Partitioning the image into tiles takes no time at all.
+
+* Analyzing 900 (30x30) tiles takes about 20 seconds.
+
+* Generating a 30x30 mosaic takes about 30 seconds. Different styles and settings are available. See Advanced Usage below.
 
 Dependences
 -----------
