@@ -241,16 +241,16 @@ def tune(target_img, db_name, dial=1, quiet=False):
 
 def pool_histogram(db):
     """Generate a histogram of the images in the pool.
-    Return a dictionary of the channels: L, a, b, red, green blue.
+    Return a dictionary of the channels red, green blue.
     Each dict entry contains a list of the frequencies correspond to the
     domain 0 - 255.""" 
     hist = {}
     c = db.cursor()
     try: 
         for ch in ['red', 'green', 'blue']:
-            c.execute("""SELECT ROUND({ch}) as {ch}_, count(*)
+            c.execute("""SELECT {ch}, count(*)
                          FROM Colors 
-                         GROUP BY ROUND({ch}_)""".format(ch=ch))
+                         GROUP BY {ch}""".format(ch=ch))
             values, counts = zip(*c.fetchall())
             # Normalize the histogram, and fill in 0 for missing entries.
             full_domain = range(0,256)
