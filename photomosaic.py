@@ -216,7 +216,7 @@ def open(target_filename):
         logger.warning("Cannot open %s as an image.", target_filename)
         return
 
-def tune(target_img, db_name, dial=1, quiet=False):
+def tune(target_img, db_name, quiet=True):
     """Adjsut the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
     db = connect(db_name)
@@ -225,18 +225,20 @@ def tune(target_img, db_name, dial=1, quiet=False):
     finally:
         db.close()
     palette = compute_palette(pool_hist)
-    adjusted_img = adjust_levels(target_img, palette, dial)
+    adjusted_img = adjust_levels(target_img, palette)
     if not quiet:
         # Use the Image.histogram() method to examine the target image
         # before and after the alteration.
         keys = 'red', 'green', 'blue'
         values = [channel.histogram() for channel in target_img.split()]
         totals = map(sum, values)
-        norm = [map(lambda x: x/totals[i], val) for i, val in enumerate(values)]
+        norm = [map(lambda x: 256*x/totals[i], val) \
+                for i, val in enumerate(values)]
         orig_hist = dict(zip(keys, norm)) 
         values = [channel.histogram() for channel in adjusted_img.split()]
         totals = map(sum, values)
-        norm = [map(lambda x: x/totals[i], val) for i, val in enumerate(values)]
+        norm = [map(lambda x: 256*x/totals[i], val) \
+                for i, val in enumerate(values)]
         adjusted_hist = dict(zip(keys, norm)) 
         plot_histograms(pool_hist, title='Images in the pool')
         plot_histograms(orig_hist, title='Unaltered target image')
@@ -256,10 +258,11 @@ def pool_histogram(db):
                          FROM Colors 
                          GROUP BY {ch}""".format(ch=ch))
             values, counts = zip(*c.fetchall())
-            # Normalize the histogram, and fill in 0 for missing entries.
+            # Normalize the histogram to 256 for readability,
+            # and fill in 0 for missing entries.
             full_domain = range(0,256)
             N = sum(counts)
-            all_counts = [1./N*counts[values.index(i)] if i in values else 0 \
+            all_counts = [256./N*counts[values.index(i)] if i in values else 0 \
                           for i in full_domain]
             hist[ch] = all_counts
     finally:
@@ -273,21 +276,43 @@ def compute_palette(hist):
     palette = {}
     for ch in ['red', 'green', 'blue']:
         integrals = np.cumsum(hist[ch])
-        blocky_integrals = np.ceil(256*integrals - 0.01).astype(int)
-        p = []
-        for i in range(256):
-            p.append(np.where(blocky_integrals >= i - 1)[0][0])
+        blocky_integrals = np.floor(integrals + 0.01).astype(int)
+        bars = np.ediff1d(blocky_integrals,to_begin=blocky_integrals[0])
+        p = [[color]*freq for color, freq in enumerate(bars.tolist())]
+        p = [c for sublist in p for c in sublist]
+        assert len(p) == 256, "Palette should have 256 entries."
         palette[ch] = p
     return palette
 
-def adjust_levels(target_img, palette, dial=1):
+def adjust_levels(target_img, palette):
     "Transform the colors in the target_img according to palette."
-    if dial < 0 or dial > 1:
-        logger.error("dial must be between 0 and 1")
     keys = 'red', 'green', 'blue'
-    p_func = dict(zip(keys, [lambda x: dial*palette[ch][x] for ch in keys]))
     channels = dict(zip(keys, target_img.split()))
-    adjusted_channels = [Image.eval(channels[ch], p_func[ch]) for ch in keys]
+    logger.info("Computing image palette...")
+    target_hist = {}
+    for ch in keys:
+        h = channels[ch].histogram()
+        normalized_h = [256./sum(h)*v for v in h]
+        target_hist[ch] = normalized_h
+    target_palette = compute_palette(target_hist)
+    logger.info("Building palette conversion function...")
+    func = {} # function to transform color at each pixel
+    for ch in keys:
+        def f(x):
+           while True:
+               try:
+                   inv_T = target_palette[ch].index(x)
+                   break
+               except ValueError:
+                   if x < 255:
+                       x += 1
+                       continue 
+                   else:
+                       inv_T = 255
+                       break
+           return palette[ch][inv_T]
+        func[ch] = f
+    adjusted_channels = [Image.eval(channels[ch], func[ch]) for ch in keys]
     return Image.merge('RGB', adjusted_channels)
 
 class Tile(object):
@@ -363,7 +388,7 @@ def analyze(tiles):
         tile.lab = map(cs.rgb2lab, tile.rgb)
         pbar.next()
 
-def choose_match(lab, db, tolerance=2):
+def choose_match(lab, db, tolerance=1):
     """If there is are good matches (within tolerance times the 'just noticeable
     difference'), return one at random. If not, choose the closest match
     deterministically. Return the match (as a sqlite Row dictionary) and the
@@ -481,7 +506,7 @@ def prepare_tile(filename, size, dL=None):
         new_img = shrink_to_brighten(new_img, size, dL)
     return new_img
 
-def photomosaic(tiles, db_name, vary_size=False, tolerance=2,
+def photomosaic(tiles, db_name, vary_size=False, tolerance=1,
                 random_margins=False):
     """Take the tiles from target() and return a mosaic image."""
     db = connect(db_name)
