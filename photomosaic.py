@@ -111,9 +111,9 @@ def create_tables(db):
                  (color_id INTEGER PRIMARY KEY,
                   image_id INTEGER,
                   region INTEGER,
-                  L INTEGER,
-                  a INTEGER,
-                  b INTEGER,
+                  L REAL,
+                  a REAL,
+                  b REAL,
                   red INTEGER,
                   green INTEGER,
                   blue INTEGER)""")
@@ -150,28 +150,22 @@ def pool(image_dir, db_name):
     try:
         create_tables(db)
         walker = DirectoryWalker(image_dir)
-        file_count = len(list(walker)) # expensive; necessary for progress bar
-        walker = DirectoryWalker(image_dir)
-        pbar = progress_bar (file_count,
-                            "Analyzing images and create an image pool.")
         for filename in walker:
             try:
                 img = Image.open(filename)
             except IOError:
                 logger.warning("Cannot open %s as an image. Skipping it.",
                                filename)
-                pbar.next() 
                 continue
             if img.mode != 'RGB':
                 logger.warning("RGB images only. Skipping %s.", filename)
-                pbar.next() 
                 continue
             w, h = img.size
             regions = split_quadrants(img)
             rgb = map(dominant_color, regions) 
             lab = map(cs.rgb2lab, rgb)
+            # Really, a proper avg in Lab space would be best.
             insert(filename, w, h, rgb, lab, db)
-            pbar.next() 
         db.commit()
     finally:
         db.close()
@@ -256,8 +250,10 @@ def compute_palette(hist):
     # Integrate a histogram and round down.
     palette = {}
     for ch in ['red', 'green', 'blue']:
+        print hist[ch]
         integrals = np.cumsum(hist[ch])
         blocky_integrals = np.ceil(256*integrals - 0.01).astype(int)
+        print blocky_integrals
         p = []
         for i in range(256):
             p.append(np.where(blocky_integrals >= i - 1)[0][0])
@@ -346,9 +342,9 @@ def create_target_table(db):
         c.execute("""CREATE TABLE Target
                      (tile_id INTEGER,
                       region INTEGER,
-                      L INTEGER,
-                      a INTEGER,
-                      b INTEGER,
+                      L REAL,
+                      a REAL,
+                      b REAL,
                       red INTEGER,
                       green INTEGER,
                       blue INTEGER,
