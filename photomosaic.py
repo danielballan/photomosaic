@@ -250,15 +250,12 @@ def compute_palette(hist):
     # Integrate a histogram and round down.
     palette = {}
     for ch in ['red', 'green', 'blue']:
-        print hist[ch]
         integrals = np.cumsum(hist[ch])
         blocky_integrals = np.ceil(256*integrals - 0.01).astype(int)
-        print blocky_integrals
         p = []
         for i in range(256):
             p.append(np.where(blocky_integrals >= i - 1)[0][0])
         palette[ch] = p
-        #  print palette[ch]
     return palette
 
 def adjust_levels(target_img, palette, dial=1):
@@ -414,7 +411,7 @@ def join(db):
                      FROM Colors c
                      JOIN Target t USING (region)
                      GROUP BY tile_id, image_id""")
-        print "Join completed in {}".format(time.clock() - start_time)
+        logger.info("Join completed in %s", (time.clock() - start_time))
     finally:
         c.close()
     db.commit()
