@@ -108,9 +108,9 @@ def create_tables(db):
                   h INTEGER,
                   filename TEXT UNIQUE)""")
     c.execute("""CREATE TABLE IF NOT EXISTS Colors
-                 (color_id INTEGER PRIMARY KEY,
+                 (region INTEGER,
+                  color_id INTEGER PRIMARY KEY,
                   image_id INTEGER,
-                  region INTEGER,
                   L REAL,
                   a REAL,
                   b REAL,
@@ -150,6 +150,9 @@ def pool(image_dir, db_name):
     try:
         create_tables(db)
         walker = DirectoryWalker(image_dir)
+        file_count = len(list(walker)) # stupid but needed but progress bar
+        pbar = progress_bar(file_count, "Analyzing images and building db")
+        walker = DirectoryWalker(image_dir)
         for filename in walker:
             try:
                 img = Image.open(filename)
@@ -157,15 +160,18 @@ def pool(image_dir, db_name):
                 logger.warning("Cannot open %s as an image. Skipping it.",
                                filename)
                 continue
+                pbar.next()
             if img.mode != 'RGB':
                 logger.warning("RGB images only. Skipping %s.", filename)
                 continue
+                pbar.next()
             w, h = img.size
             regions = split_quadrants(img)
             rgb = map(dominant_color, regions) 
             lab = map(cs.rgb2lab, rgb)
             # Really, a proper avg in Lab space would be best.
             insert(filename, w, h, rgb, lab, db)
+            pbar.next()
         db.commit()
     finally:
         db.close()
@@ -337,8 +343,8 @@ def create_target_table(db):
     try:
         c.execute("DROP TABLE IF EXISTS Target")
         c.execute("""CREATE TABLE Target
-                     (tile_id INTEGER,
-                      region INTEGER,
+                     (region INTEGER FOREIGN,
+                      tile_id INTEGER,
                       L REAL,
                       a REAL,
                       b REAL,
