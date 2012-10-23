@@ -43,7 +43,7 @@ def simple(image_dir, target_filename, dimensions, output_file):
     img = open(target_filename)
     img = tune(img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
-    analyze(tiles, 'temp.db')
+    analyze(tiles)
     mos = photomosaic(tiles, 'temp.db')
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
@@ -90,7 +90,7 @@ def dominant_color(img, clusters=5, size=50):
     return map(int, dominant_color) # Avoid returning np.uint8 type.
 
 def connect(db_path):
-    "Connect to, and if need be create, a sqlite database at db_path."
+    "Connect to a sqlite database at db_path. If it does not exist, create it."
     try:
         db = sqlite3.connect(db_path)
     except IOError:
@@ -100,6 +100,10 @@ def connect(db_path):
     return db
 
 def create_tables(db):
+    """Create Images for image meta info, Color for RGB values and LabColor
+    for LAB values. RGB and LAB are used for different steps, RGB for levels
+    adjustments are LAB for measure perceived color difference precisely.
+    Thus Color and LabColor are organized somewhat differently."""
     c = db.cursor()
     c.execute("""CREATE TABLE IF NOT EXISTS Images
                  (image_id INTEGER PRIMARY KEY,
@@ -134,8 +138,8 @@ def create_tables(db):
     db.commit()
 
 def insert(filename, w, h, rgb, lab, db):
-    """Insert image info in the Images table. Insert the dominant
-    color of each of its regions in the Colors table."""
+    """Insert image info in the Images table and color information in the
+    Color and LabColor tables."""
     c = db.cursor()
     try:
         c.execute("""INSERT INTO Images (usages, w, h, filename)
@@ -367,29 +371,55 @@ def choose_match(lab, db, tolerance=2):
     JND = 2.3 # "just noticeable difference"
     c = db.cursor()
     try:
+        # Before we compute the exact color distance E, 
+        # which is expensive and requires
+        # adding 12 numbers in quadrature, the WHERE clause computes
+        # a simpler upper bound on E and filters out disqualifying rows.
+        # The survivors are ranked by their exact E plus a random component
+        # determined by the tolerance. Thus, decisive winners are chosen
+        # deterministically, but if there are many good matches, one is taken
+        # at random.
+        (L1, a1, b1), (L2, a2, b2), (L3, a3, b3), (L4, a4, b4) = lab
+        tokens = {'L1': L1, 'a1': a1, 'b1': b1,
+                  'L2': L2, 'a2': a2, 'b2': b2,
+                  'L3': L3, 'a3': a3, 'b3': b3,
+                  'L4': L4, 'a4': a4, 'b4': b4,
+                  'tol': tolerance*JND}
         c.execute("""SELECT
                      image_id,
-                     L1 as Esq,
-                     L1-({L1}) + L2-({L2}) + L3-({L3}) + L4-({L4}) as dL,
+                     ((L1-({L1}))*(L1-({L1}))
+                       + (a1-({a1}))*(a1-({a1})) 
+                       + (b1-({b1}))*(b1-({b1}))
+                       + (L2-({L2}))*(L2-({L2}))
+                       + (a2-({a2}))*(a2-({a2})) 
+                       + (b2-({b2}))*(b2-({b2}))
+                       + (L3-({L3}))*(L3-({L3}))
+                       + (a3-({a3}))*(a3-({a3})) 
+                       + (b3-({b3}))*(b3-({b3}))
+                       + (L4-({L4}))*(L4-({L4}))
+                       + (a4-({a4}))*(a4-({a4}))
+                       + (b4-({b4}))*(b4-({b4})))/4. as E_sq,
+                     (L1-({L1}) + L2-({L2}) + L3-({L3}) + L4-({L4}))/4. as dL,
                      filename
                      FROM LabColors
                      JOIN Images using (image_id)
                      WHERE
-                       L1-(?) + a1-(?) + b1-(?)
-                     + L2-(?) + a2-(?) + b2-(?)
-                     + L3-(?) + a3-(?) + b3-(?)
-                     + L4-(?) + a4-(?) + b4-(?)
-                     < 4*?
-                     ORDER BY RANDOM()""",
-                     tuple([ch for reg in lab for ch in reg] 
-                           + [JND*tolerance]))
-        match = c.fetchall()
+                     L1-({L1}) + a1-({a1}) + b1-({b1})
+                       + L2-({L2}) + a2-({a2}) + b2-({b2})
+                       + L3-({L3}) + a3-({a3}) + b3-({b3})
+                       + L4-({L4}) + a4-({a4}) + b4-({b4})
+                     < 4*{tol}
+                     ORDER BY
+                     E_sq + {tol}*{tol}*RANDOM()/9223372036854775808. ASC
+                     LIMIT 1""".format(**tokens))
+                     # 9223372036854775808 is the range of sqlite RANDOM()
+        match = c.fetchone()
         if not match:
             return choose_match(lab, db, tolerance + 1)
     finally:
         c.close()
     logger.debug("%s", match)
-    return match[0]
+    return match
 
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
