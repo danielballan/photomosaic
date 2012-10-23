@@ -192,6 +192,14 @@ def pool(image_dir, db_name):
     finally:
         db.close()
 
+def open(target_filename):
+    "Just a wrapper for Image.open from PIL"
+    try:
+        return Image.open(target_filename)
+    except IOError:
+        logger.warning("Cannot open %s as an image.", target_filename)
+        return
+
 def plot_histograms(hist, title=''):
     "Plot an RGB histogram given as a dictionary with channel keys."
     import matplotlib.pyplot as plt
@@ -208,14 +216,6 @@ def plot_histograms(hist, title=''):
     red.set_title(title)
     fig.show()
 
-def open(target_filename):
-    "Just a wrapper for Image.open from PIL"
-    try:
-        return Image.open(target_filename)
-    except IOError:
-        logger.warning("Cannot open %s as an image.", target_filename)
-        return
-
 def tune(target_img, db_name, quiet=True):
     """Adjsut the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
@@ -224,12 +224,19 @@ def tune(target_img, db_name, quiet=True):
         pool_hist = pool_histogram(db)
     finally:
         db.close()
-    palette = compute_palette(pool_hist)
-    adjusted_img = adjust_levels(target_img, palette)
+    keys = 'red', 'green', 'blue'
+    channels = dict(zip(keys, target_img.split()))
+    target_hist = {}
+    for ch in keys:
+        h = channels[ch].histogram()
+        normalized_h = [256./sum(h)*v for v in h]
+        target_hist[ch] = normalized_h
+    target_palette = compute_palette(target_hist)
+    pool_palette = compute_palette(pool_hist)
+    adjusted_img = adjust_levels(channels, target_palette, pool_palette)
     if not quiet:
         # Use the Image.histogram() method to examine the target image
         # before and after the alteration.
-        keys = 'red', 'green', 'blue'
         values = [channel.histogram() for channel in target_img.split()]
         totals = map(sum, values)
         norm = [map(lambda x: 256*x/totals[i], val) \
@@ -284,34 +291,29 @@ def compute_palette(hist):
         palette[ch] = p
     return palette
 
-def adjust_levels(target_img, palette):
-    "Transform the colors in the target_img according to palette."
+def adjust_levels(channels, from_palette, to_palette):
+    """Transform the colors of an image to match the color palette of
+    anotehr image. Palettes are histograms normalized to 256."""
     keys = 'red', 'green', 'blue'
-    channels = dict(zip(keys, target_img.split()))
+    f, g = from_palette, to_palette# compact notation
     logger.info("Computing image palette...")
-    target_hist = {}
-    for ch in keys:
-        h = channels[ch].histogram()
-        normalized_h = [256./sum(h)*v for v in h]
-        target_hist[ch] = normalized_h
-    target_palette = compute_palette(target_hist)
     logger.info("Building palette conversion function...")
     func = {} # function to transform color at each pixel
     for ch in keys:
-        def f(x):
+        def j(x):
            while True:
                try:
-                   inv_T = target_palette[ch].index(x)
+                   inv_f = f[ch].index(x)
                    break
                except ValueError:
                    if x < 255:
                        x += 1
                        continue 
                    else:
-                       inv_T = 255
+                       inv_f = 255
                        break
-           return palette[ch][inv_T]
-        func[ch] = f
+           return to_palette[ch][inv_f]
+        func[ch] = j 
     adjusted_channels = [Image.eval(channels[ch], func[ch]) for ch in keys]
     return Image.merge('RGB', adjusted_channels)
 
