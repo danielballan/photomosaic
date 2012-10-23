@@ -343,7 +343,7 @@ def create_target_table(db):
     try:
         c.execute("DROP TABLE IF EXISTS Target")
         c.execute("""CREATE TABLE Target
-                     (region INTEGER FOREIGN,
+                     (region INTEGER,
                       tile_id INTEGER,
                       L REAL,
                       a REAL,
