@@ -63,9 +63,9 @@ def xyz2CIE_Lab(xyz):
     zn = 108.883
     x, y, z = xyz
     fx, fy, fz = _f(x/xn), _f(y/yn), _f(z/zn)
-    L = max(0, 116*fy - 16) # Numerical errors can give small negative L.
-    a = 500*(fx - fy)
-    b = 200*(fy - fz)
+    L = int(max(0, 116*fy - 16)) # Numerical errors can give small negative L.
+    a = int(500*(fx - fy))
+    b = int(200*(fy - fz))
     return L, a, b
 
 def rgb2CIE_Lab(rgb):

@@ -111,9 +111,9 @@ def create_tables(db):
                  (color_id INTEGER PRIMARY KEY,
                   image_id INTEGER,
                   region INTEGER,
-                  L REAL,
-                  a REAL,
-                  b REAL,
+                  L INTEGER,
+                  a INTEGER,
+                  b INTEGER,
                   red INTEGER,
                   green INTEGER,
                   blue INTEGER)""")
@@ -250,10 +250,8 @@ def compute_palette(hist):
     # Integrate a histogram and round down.
     palette = {}
     for ch in ['red', 'green', 'blue']:
-        print hist[ch]
         integrals = np.cumsum(hist[ch])
         blocky_integrals = np.ceil(256*integrals - 0.01).astype(int)
-        print blocky_integrals
         p = []
         for i in range(256):
             p.append(np.where(blocky_integrals >= i - 1)[0][0])
@@ -342,9 +340,9 @@ def create_target_table(db):
         c.execute("""CREATE TABLE Target
                      (tile_id INTEGER,
                       region INTEGER,
-                      L REAL,
-                      a REAL,
-                      b REAL,
+                      L INTEGER,
+                      a INTEGER,
+                      b INTEGER,
                       red INTEGER,
                       green INTEGER,
                       blue INTEGER,
