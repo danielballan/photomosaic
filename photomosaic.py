@@ -94,7 +94,7 @@ def connect(db_path):
     try:
         db = sqlite3.connect(db_path)
     except IOError:
-        print 'Cannot connect to SQLite database at %s' % db_path
+        logger.error("Cannot connect to SQLite database at %s",  db_path)
         return
     db.row_factory = sqlite3.Row # Rows are dictionaries.
     return db
@@ -138,7 +138,8 @@ def insert(filename, w, h, rgb, lab, db):
                          (image_id, region, 
                          L, a, b, red, green, blue))
     except sqlite3.IntegrityError:
-        print "Image %s is already in the table. Skipping it." % filename
+        logger.warning("Image %s is already in the table. Skipping it.",
+                       filename)
     finally:
         c.close()
     
@@ -153,10 +154,11 @@ def pool(image_dir, db_name):
             try:
                 img = Image.open(filename)
             except IOError:
-                print 'Cannot open %s as an image. Skipping it.' % filename
+                logger.warning("Cannot open %s as an image. Skipping it.",
+                               filename)
                 continue
             if img.mode != 'RGB':
-                print 'RGB images only. Skipping %s.' % filename
+                logger.warning("RGB images only. Skipping %s.", filename)
                 continue
             w, h = img.size
             regions = split_quadrants(img)
@@ -189,7 +191,7 @@ def open(target_filename):
     try:
         return Image.open(target_filename)
     except IOError:
-        print "Cannot open %s as an image." % target_filename
+        logger.warning("Cannot open %s as an image.", target_filename)
         return
 
 def tune(target_img, db_name, dial=1, quiet=False):
@@ -308,6 +310,14 @@ class Tile(object):
     def match(self, value):
         self._match = value # sqlite Row object
 
+    @property
+    def match_count(self):
+        return self._match_count
+
+    @match_count.setter
+    def match_count(self, value):
+        self._match_count = value
+
 
 def partition(img, dimensions):
     "Partition the target image into a list of Tile objects."
@@ -409,28 +419,46 @@ def join(db):
         c.close()
     db.commit()
 
-def choose_match(tile_id, db, tolerance=10):
-    """Average perceived color difference E and lightness difference dL
-    over the regions of each possible match. Rank them in E, and take
-    the best image for each target tile. Allow duplicates."""
-    query = """SELECT 
-               image_id,
-               Esq,
-               dL,
-               filename 
-               FROM BigJoin
-               JOIN Images using (image_id)
-               WHERE tile_id=? AND Esq < {tolerance} 
-               ORDER BY RANDOM()
-               LIMIT 1""".format(tolerance=tolerance)
+def choose_match(tile_id, db, tolerance=2):
+    """If there is are good matches (within tolerance times the 'just noticeable
+    difference'), return one at random. If not, choose the closest match
+    deterministically. Return the match (as a sqlite Row dictionary) and the
+    number of good matches."""
+    JND = 2.3 # "just noticeable difference"
     c = db.cursor()
     try:
-        c.execute(query, (tile_id,))
+        c.execute("""SELECT COUNT(*)
+                     FROM BigJoin
+                     WHERE tile_id=? AND Esq < ?""",
+                     (tile_id, (tolerance*JND)**2))
+        match_count, = c.fetchone()
+        if match_count > 0:
+            c.execute("""SELECT 
+                     image_id,
+                     Esq,
+                     dL,
+                     filename 
+                     FROM BigJoin
+                     JOIN Images using (image_id)
+                     WHERE tile_id=? AND Esq < ? 
+                     ORDER BY RANDOM()
+                     LIMIT 1""", (tile_id, (tolerance*JND)**2))
+        else:
+            c.execute("""SELECT 
+                     image_id,
+                     Esq,
+                     dL,
+                     filename 
+                     FROM BigJoin
+                     JOIN Images using (image_id)
+                     WHERE tile_id=?
+                     ORDER BY Esq ASC
+                     LIMIT 1""", (tile_id,))
         match = c.fetchone()
-        # if none order by Esq and choose top
     finally:
         c.close()
-    return match
+    logger.debug("%s", match)
+    return match, match_count
 
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
@@ -492,14 +520,15 @@ def prepare_tile(filename, size, dL=None):
         new_img = shrink_to_brighten(new_img, size, dL)
     return new_img
 
-def photomosaic(tiles, db_name, vary_size=False, randomize=5, 
+def photomosaic(tiles, db_name, vary_size=False, tolerance=2,
                 random_margins=False):
     """Take the tiles from target() and return a mosaic image."""
     db = connect(db_name)
     try:
         pbar = progress_bar(len(tiles), "Choosing matching tiles")
         for tile in tiles:
-            tile.match = choose_match(tile.tile_id, db)
+            tile.match, tile.match_count = choose_match(tile.tile_id, db,
+                                                        tolerance)
             pbar.next()
         pbar = progress_bar(len(tiles), "Scaling tiles")
         for tile in tiles:
@@ -520,6 +549,10 @@ def photomosaic(tiles, db_name, vary_size=False, randomize=5,
         mosaic.paste(tile, pos)
         pbar.next()
     return mosaic
+
+def plot_match_stats(tiles):
+    "Evalute the quality of the matching."
+    pass
 
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
