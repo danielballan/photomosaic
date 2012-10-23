@@ -6,8 +6,6 @@ Split tiles
 Mask image: black -> no tile, gray -> probabilistic
 
 Performance:
-int Lab
-Fast RGB -> XYZ -> LAB using Image.convert()
 
 Diagnostics:
 sqlite3.set_progress_handler(handler, n) # handler is called every n calls
