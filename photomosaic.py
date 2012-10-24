@@ -615,7 +615,7 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
         # the depth of the tile, and its lightness compared to the target
         # image, dL.
         if vary_size and tile.depth < 2:
-            dL = tilematch['dL']
+            dL = tile.match['dL']
         else:
             dL = None
         new_img = prepare_tile(tile.match['filename'],
