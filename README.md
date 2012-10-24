@@ -21,11 +21,12 @@ Alternatively, you can run the process one step at a time. This gives access to 
     import photomosaic as pm
     
     pm.pool('folder-of-many-images/', 'imagepool.db')
-    img = pm.open('original.jpg')
-    img = pm.tune(img, 'imagepool.db') # Adjust colors levels to what's availabe in the pool.
+    orig_img = pm.open('original.jpg')
+    img = pm.tune(orig_img, 'imagepool.db') # Adjust colors levels to what's availabe in the pool.
     tiles = pm.partition(img, (10, 10))
     pm.analyze(tiles)
     mosaic = pm.photomosaic(tiles, 'imagepool.db')
+    mosaic = pm.untune(mosaic, orig_img) # Transform the color palette back.
     mosaic.save('mosaic.jpg')
 
 Remarks on each step:
