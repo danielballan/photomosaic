@@ -240,19 +240,24 @@ def plot_histograms(hist, title=''):
     red.set_title(title)
     fig.show()
 
-def img_histogram(img):
+def img_histogram(img, mask=None):
     keys = 'red', 'green', 'blue'
     channels = dict(zip(keys, img.split()))
     hist= {}
     for ch in keys:
-        h = channels[ch].histogram()
+        if mask:
+            h = channels[ch].histogram(mask.convert("1"))
+        else:
+            h = channels[ch].histogram()
         normalized_h = [256./sum(h)*v for v in h]
         hist[ch] = normalized_h
     return hist
 
-def untune(mos, orig_img):
+def untune(mos, orig_img, mask=None):
+    if mask:
+        m = crop_to_fit(mask, mos.size)
     orig_palette = compute_palette(img_histogram(orig_img))
-    mos_palette = compute_palette(img_histogram(mos))
+    mos_palette = compute_palette(img_histogram(mos, m))
     return adjust_levels(mos, mos_palette, orig_palette)
 
 def tune(target_img, db_name, quiet=True):
@@ -353,10 +358,12 @@ class Tile(object):
     """Tile wraps the Image class, so all methods that apply to images (show,
     save, crop, size, ...) apply to Tiles. Tiles also store contextual
     information that is used to reassembled them in the end."""
-    def __init__(self, img, x, y, ancestry=[], ancestor_size=None):
+    def __init__(self, img, x, y, mask=None, ancestry=[], ancestor_size=None):
         self._img = img
         self.x = x
         self.y = y
+        self._mask = mask.convert("L") if mask else None
+        self._blank = None # meaning undetermined (so far)
         self._container_size = self._img.size
         self._ancestry = ancestry
         self._depth = len(self._ancestry)
@@ -364,6 +371,14 @@ class Tile(object):
             self._ancestor_size = ancestor_size
         else:
             self._ancestor_size = self._container_size
+
+    def crop(self, *args):
+        if self._mask: self._mask.crop(*args)
+        return self._img.crop(*args)
+
+    def resize(self, *args):
+        if self._mask: self._mask.resize(*args)
+        return self._img.resize(*args)
 
     def __getattr__(self, key):
         if key == '_img':
@@ -416,6 +431,43 @@ class Tile(object):
     @match.setter
     def match(self, value):
         self._match = value # sqlite Row object
+
+    @property
+    def blank(self):
+        return self._blank
+
+    def determine_blankness(self, min_depth=1):
+        """Decide whether this tile is blank. Where the mask is grey, tiles
+        and blanked probabilitisically. The kwarg min_depth limits this
+        scattered behavior to small tiles."""
+        if not self._mask: # no mask
+            self._blank = False
+            return
+        brightest_pixel = self._mask.getextrema()[1]
+        if brightest_pixel == 0: # black mask 
+            self._blank = True
+        elif brightest_pixel == 255: # white mask
+            self._blank = False
+        elif self._depth < min_depth: # gray mask -- big tile
+            self._blank = True
+        elif 255*np.random.rand() > brightest_pixel: # small tile
+            self._blank = True
+        else:
+            self._blank = False
+        return
+
+    def straddles_mask_edge(self):
+        """A tile straddles an edge if it contains PURE white (255) and some
+        nonwhite. A tile that contains varying shades of gray does not
+        straddle an edge."""
+        if not self._mask:
+            return False
+        darkest_pixel, brightest_pixel = self._mask.getextrema()
+        if brightest_pixel != 255:
+            return False
+        if darkest_pixel == 255:
+            return False
+        return True
  
     def dynamic_range(self):
         """What is the dynamic range in this image? Return the
@@ -430,17 +482,22 @@ class Tile(object):
         children = []
         for y in [0, 1]:
             for x in [0, 1]:
-                tile_img = self._img.crop((x*width, 
-                                    y*height,
-                                    (x + 1)*width, 
-                                    (y + 1)*height))
+                tile_img = self._img.crop((x*width, y*height,
+                                    (x + 1)*width, (y + 1)*height))
+                if self._mask:
+                    mask_img = self._mask.crop((x*width, y*height,
+                                         (x + 1)*width, (y + 1)*height))
+                else:
+                    mask_img = None
                 child = Tile(tile_img, self.x, self.y,
+                             mask=mask_img,
                              ancestry=self._ancestry + [(x, y)],
                              ancestor_size=self._ancestor_size)
                 children.append(child)
         return children
 
-def partition(img, dimensions, depth=0, hdr=80):
+def partition(img, dimensions, mask=None, depth=0, hdr=80,
+              debris=False, min_debris_depth=1):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
@@ -448,26 +505,33 @@ def partition(img, dimensions, depth=0, hdr=80):
     factor = dimensions[0]*2**depth, dimensions[1]*2**depth
     new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
                       for i in [0, 1]])
-    logger.info("""Resizing image to %s, a round number for partitioning.
-                If necessary, I will crop to fit.""",
+    logger.info("Resizing image to %s, a round number for partitioning. "
+                "If necessary, I will crop to fit.",
                 new_size)
     img = crop_to_fit(img, new_size)
+    if mask:
+        mask = crop_to_fit(mask, new_size)
+        if not debris:
+            mask = mask.convert("1") # no gray
     width = img.size[0] // dimensions[0] 
     height = img.size[1] // dimensions[1]
     tiles = []
     for y in range(dimensions[1]):
         for x in range(dimensions[0]):
-            tile_img = img.crop((x*width, 
-                                y*height,
-                                (x + 1)*width, 
-                                (y + 1)*height))
-            tile = Tile(tile_img, x, y)
+            tile_img = img.crop((x*width, y*height,
+                                (x + 1)*width, (y + 1)*height))
+            if mask:
+                mask_img = mask.crop((x*width, y*height,
+                                     (x + 1)*width, (y + 1)*height))
+            else:
+                mask_img = None
+            tile = Tile(tile_img, x, y, mask=mask_img)
             tiles.append(tile)
     for g in xrange(depth):
         old_tiles = tiles
         tiles = []
         for tile in old_tiles:
-            if tile.dynamic_range() > hdr:
+            if tile.dynamic_range() > hdr or tile.straddles_mask_edge():
                 # Keep children; discard parent.
                 tiles += tile.procreate()
             else:
@@ -475,6 +539,10 @@ def partition(img, dimensions, depth=0, hdr=80):
                 tiles.append(tile)
         logging.info("There are %d tiles in generation %d",
                      len(tiles), g)
+    # Now that all tiles have been made and subdivided, decide which are blank.
+    [tile.determine_blankness(min_debris_depth) for tile in tiles]
+    logger.info("%d tiles are set to be blank",
+                len([1 for tile in tiles if tile.blank]))
     return tiles
 
 def analyze(tiles):
@@ -482,6 +550,9 @@ def analyze(tiles):
     in the Tile object."""
     pbar = progress_bar(len(tiles), "Analyzing images")
     for tile in tiles:
+        if tile.blank:
+            pbar.next()
+            continue
         regions = split_quadrants(tile)
         tile.rgb = map(dominant_color, regions) 
         tile.lab = map(cs.rgb2lab, tile.rgb)
@@ -627,6 +698,9 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
             reset_usage(db)
             pbar = progress_bar(len(tiles), "Choosing matching tiles")
             for tile in tiles:
+                if tile.blank:
+                    pbar.next()
+                    continue
                 usage_penalty=0 if tile.depth > 1 else 1
                 tile.match = choose_match(tile.lab, db, tolerance,
                                           usage_penalty)
@@ -638,6 +712,9 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
         # Size variation is contingent on the boolean option vary_size,
         # the depth of the tile, and its lightness compared to the target
         # image, dL.
+        if tile.blank:
+            pbar.next()
+            continue
         if vary_size and tile.depth < 2:
             dL = tile.match['dL']
         else:
@@ -659,6 +736,9 @@ def assemble_tiles(tiles, random_margins=False):
                          zip(*[tiles[0].ancestor_size, dimensions]))
     mos = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
+        if tile.blank:
+            pbar.next()
+            continue
         pos = tile_position(tile, random_margins)
         mos.paste(tile, pos)
         pbar.next()
