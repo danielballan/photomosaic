@@ -293,11 +293,9 @@ def compute_palette(hist):
 
 def adjust_levels(channels, from_palette, to_palette):
     """Transform the colors of an image to match the color palette of
-    anotehr image. Palettes are histograms normalized to 256."""
+    another image."""
     keys = 'red', 'green', 'blue'
-    f, g = from_palette, to_palette# compact notation
-    logger.info("Computing image palette...")
-    logger.info("Building palette conversion function...")
+    f, g = from_palette, to_palette # compact notation
     func = {} # function to transform color at each pixel
     for ch in keys:
         def j(x):
