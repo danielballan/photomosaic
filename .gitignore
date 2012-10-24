@@ -6,3 +6,4 @@ progress/*
 *.db
 *.db-journal
 *.backup
+artwork/*
