@@ -465,8 +465,8 @@ def partition(img, dimensions, mask=None, depth=0, hdr=80):
     factor = dimensions[0]*2**depth, dimensions[1]*2**depth
     new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
                       for i in [0, 1]])
-    logger.info("""Resizing image to %s, a round number for partitioning.
-                If necessary, I will crop to fit.""",
+    logger.info("Resizing image to %s, a round number for partitioning. "
+                "If necessary, I will crop to fit.",
                 new_size)
     img = crop_to_fit(img, new_size)
     if mask: mask = crop_to_fit(mask, new_size)
