@@ -217,19 +217,24 @@ def plot_histograms(hist, title=''):
     red.set_title(title)
     fig.show()
 
-def img_histogram(img):
+def img_histogram(img, mask=None):
     keys = 'red', 'green', 'blue'
     channels = dict(zip(keys, img.split()))
     hist= {}
     for ch in keys:
-        h = channels[ch].histogram()
+        if mask:
+            h = channels[ch].histogram(mask.convert("1"))
+        else:
+            h = channels[ch].histogram()
         normalized_h = [256./sum(h)*v for v in h]
         hist[ch] = normalized_h
     return hist
 
-def untune(mos, orig_img):
+def untune(mos, orig_img, mask=None):
+    if mask:
+        m = crop_to_fit(mask, mos.size)
     orig_palette = compute_palette(img_histogram(orig_img))
-    mos_palette = compute_palette(img_histogram(mos))
+    mos_palette = compute_palette(img_histogram(mos, m))
     return adjust_levels(mos, mos_palette, orig_palette)
 
 def tune(target_img, db_name, quiet=True):

@@ -102,6 +102,10 @@ Again, examine the effect before proceeding.
 
     pm.assemble_tiles(tiles)
 
+*Important*: If you use tune/untune, you should provide untune with the mask, or the solid background will seriously distort the palette. The call is:
+
+    mos = pm.untune(mos, orig_img, mask)
+
 ### Tile matching and repetition
 
 This is how tile images are chosen:
