@@ -408,16 +408,23 @@ class Tile(object):
     def blank(self):
         return self._blank
 
-    def determine_blankness(self):
-        "Decide whether this tile is blank."
+    def determine_blankness(self, min_depth=1):
+        """Decide whether this tile is blank. Where the mask is grey, tiles
+        and blanked probabilitisically. The kwarg min_depth limits this
+        scattered behavior to small tiles."""
         if not self._mask: # no mask
             self._blank = False
         brightest_pixel = self._mask.getextrema()[1]
-        if brightest_pixel == 0: # white mask
+        if brightest_pixel == 0: # black mask 
             self._blank = True
-        elif brightest_pixel == 255: # black mask
+        elif brightest_pixel == 255: # white mask
             self._blank = False
-        self._blank = 255*np.random.rand() > brightest_pixel # grey mask
+        elif self._depth < min_depth: # gray mask -- big tile
+            self._blank = True
+        elif 255*np.random.rand() > brightest_pixel: # small tile
+            self._blank = True
+        else:
+            self._blank = False
 
     def straddles_mask_edge(self):
         """A tile straddles an edge if it contains PURE white (255) and some
@@ -457,7 +464,8 @@ class Tile(object):
                 children.append(child)
         return children
 
-def partition(img, dimensions, mask=None, depth=0, hdr=80):
+def partition(img, dimensions, mask=None, depth=0, hdr=80,
+              scatter=False, scatter_min_depth=1):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
@@ -469,7 +477,10 @@ def partition(img, dimensions, mask=None, depth=0, hdr=80):
                 "If necessary, I will crop to fit.",
                 new_size)
     img = crop_to_fit(img, new_size)
-    if mask: mask = crop_to_fit(mask, new_size)
+    if mask:
+        mask = crop_to_fit(mask, new_size)
+        if not scatter:
+            mask = mask.convert("1") # no gray
     width = img.size[0] // dimensions[0] 
     height = img.size[1] // dimensions[1]
     tiles = []
@@ -497,7 +508,7 @@ def partition(img, dimensions, mask=None, depth=0, hdr=80):
         logging.info("There are %d tiles in generation %d",
                      len(tiles), g)
     # Now that all tiles have been made and subdivided, decide which are blank.
-    [tile.determine_blankness() for tile in tiles]
+    [tile.determine_blankness(scatter_min_depth) for tile in tiles]
     logger.info("%d tiles are set to be blank",
                 len([1 for tile in tiles if tile.blank]))
     return tiles
