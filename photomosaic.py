@@ -496,6 +496,8 @@ def partition(img, dimensions, mask=None, depth=0, hdr=80):
                 tiles.append(tile)
         logging.info("There are %d tiles in generation %d",
                      len(tiles), g)
+    # Now that all tiles have been made and subdivided, decide which are blank.
+    tile.determine_blankness()
     return tiles
 
 def analyze(tiles):
@@ -503,7 +505,6 @@ def analyze(tiles):
     in the Tile object."""
     pbar = progress_bar(len(tiles), "Analyzing images")
     for tile in tiles:
-        tile.determine_blankness()
         if tile.blank: continue
         regions = split_quadrants(tile)
         tile.rgb = map(dominant_color, regions) 
