@@ -4,4 +4,5 @@ images/*
 *.swp
 progress/*
 *.db
+*.db-journal
 *.backup
