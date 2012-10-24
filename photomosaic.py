@@ -216,6 +216,21 @@ def plot_histograms(hist, title=''):
     red.set_title(title)
     fig.show()
 
+def img_histogram(img):
+    keys = 'red', 'green', 'blue'
+    channels = dict(zip(keys, img.split()))
+    hist= {}
+    for ch in keys:
+        h = channels[ch].histogram()
+        normalized_h = [256./sum(h)*v for v in h]
+        hist[ch] = normalized_h
+    return hist
+
+def untune(orig_img, mosaic):
+    orig_palette = compute_palette(img_histogram(orig_img))
+    mos_palette = compute_palette(img_histogram(mosaic))
+    return adjust_levels(mosaic, mos_palette, orig_palette)
+
 def tune(target_img, db_name, quiet=True):
     """Adjsut the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
@@ -224,19 +239,13 @@ def tune(target_img, db_name, quiet=True):
         pool_hist = pool_histogram(db)
     finally:
         db.close()
-    keys = 'red', 'green', 'blue'
-    channels = dict(zip(keys, target_img.split()))
-    target_hist = {}
-    for ch in keys:
-        h = channels[ch].histogram()
-        normalized_h = [256./sum(h)*v for v in h]
-        target_hist[ch] = normalized_h
-    target_palette = compute_palette(target_hist)
     pool_palette = compute_palette(pool_hist)
-    adjusted_img = adjust_levels(channels, target_palette, pool_palette)
+    target_palette = compute_palette(img_histogram(target_img))
+    adjusted_img = adjust_levels(target_img, target_palette, pool_palette)
     if not quiet:
         # Use the Image.histogram() method to examine the target image
         # before and after the alteration.
+        keys = 'red', 'green', 'blue'
         values = [channel.histogram() for channel in target_img.split()]
         totals = map(sum, values)
         norm = [map(lambda x: 256*x/totals[i], val) \
@@ -291,10 +300,11 @@ def compute_palette(hist):
         palette[ch] = p
     return palette
 
-def adjust_levels(channels, from_palette, to_palette):
+def adjust_levels(target_img, from_palette, to_palette):
     """Transform the colors of an image to match the color palette of
     another image."""
     keys = 'red', 'green', 'blue'
+    channels = dict(zip(keys, target_img.split()))
     f, g = from_palette, to_palette # compact notation
     func = {} # function to transform color at each pixel
     for ch in keys:
