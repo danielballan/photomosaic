@@ -336,6 +336,7 @@ class Tile(object):
         self.y = y
         self._container_size = self._img.size
         self._ancestry = ancestry
+        self._depth = len(self._ancestry)
         if ancestor_size:
             self._ancestor_size = ancestor_size
         else:
@@ -356,6 +357,10 @@ class Tile(object):
     @property
     def ancestry(self):
         return self._ancestry
+
+    @property
+    def depth(self):
+        return self._depth
 
     @property
     def ancestor_size(self):
@@ -565,7 +570,7 @@ def tile_position(tile, random_margins=False):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
     ancestor_pos = tile.x*tile.ancestor_size[0], tile.y*tile.ancestor_size[1]
-    if len(tile.ancestry) == 0:
+    if tile.depth == 0:
         return ancestor_pos
     else:
         x_size, y_size = tile.ancestor_size
@@ -598,7 +603,7 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
             reset_usage(db)
             pbar = progress_bar(len(tiles), "Choosing matching tiles")
             for tile in tiles:
-                usage_penalty=0 if len(tile.ancestry) > 1 else 1
+                usage_penalty=0 if tile.depth > 1 else 1
                 tile.match = choose_match(tile.lab, db, tolerance,
                                           usage_penalty)
                 pbar.next()
@@ -606,7 +611,13 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
             db.close()
     pbar = progress_bar(len(tiles), "Scaling tiles")
     for tile in tiles:
-        dL = tile.match['dL'] if vary_size else None
+        # Size variation is contingent on the boolean option vary_size,
+        # the depth of the tile, and its lightness compared to the target
+        # image, dL.
+        if vary_size and tile.depth < 2:
+            dL = tilematch['dL']
+        else:
+            dL = None
         new_img = prepare_tile(tile.match['filename'],
                                tile.container_size,
                                dL)
