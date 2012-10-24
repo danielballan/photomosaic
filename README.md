@@ -68,6 +68,8 @@ A traditional photomosaic is a regular array of tiles. For a different effect, t
     tiles = pm.partition(img, (10, 10), depth=4, hdr=80) # many tiles
     tiles = pm.partition(img, (10, 10), depth=4, hdr=200) # or fewer tiles
 
+Logs displayed by ``tiles()`` tell you how many tiles have been made, in total, after each generation. 2000-6000 is a reasonable range to aim for. You can go higher if you're willing to wait for ``mosaic()`` to run for more than 10 minutes.
+
 ### Photomosaics with curved edges (masked images)
 
 #### Simple cut-outs 
