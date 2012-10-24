@@ -3,3 +3,5 @@
 images/*
 *.swp
 progress/*
+*.db
+*.backup
