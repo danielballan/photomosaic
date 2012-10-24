@@ -462,16 +462,13 @@ def crop_to_fit(img, tile_size):
     tile_w, tile_h = tile_size
     img_aspect = img_w/img_h
     tile_aspect = tile_w/tile_h
-    print 'hello again'
     if img_aspect > tile_aspect:
-        print "too wide"
         # It's too wide.
         crop_h = img_h
         crop_w = int(round(crop_h*tile_aspect))
         x_offset = int((img_w - crop_w)/2)
         y_offset = 0
     else:
-        print "too tall"
         # It's too tall.
         crop_w = img_w
         crop_h = int(round(crop_w/tile_aspect))
