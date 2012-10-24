@@ -329,12 +329,16 @@ class Tile(object):
     """Tile wraps the Image class, so all methods that apply to images (show,
     save, crop, size, ...) apply to Tiles. Tiles also store contextual
     information that is used to reassembled them in the end."""
-    def __init__(self, img, x, y, ancestry=None):
+    def __init__(self, img, x, y, ancestry=[], ancestor_size=None):
         self._img = img
         self.x = x
         self.y = y
-        self.container_size = self._img.size
-        self.ancestry = ancestry 
+        self._container_size = self._img.size
+        self._ancestry = ancestry
+        if ancestor_size:
+            self._ancestor_size = ancestor_size
+        else:
+            self._ancestor_size = self._container_size
 
     def __getattr__(self, key):
         if key == '_img':
@@ -343,10 +347,22 @@ class Tile(object):
 
     def substitute_img(self, img):
         self._img = img
-        self.container_size = self._img.size
+        self._container_size = self._img.size
 
     def pos(self):
         return self.x, self.y 
+
+    @property
+    def ancestry(self):
+        return self._ancestry
+
+    @property
+    def ancestor_size(self):
+        return self._ancestor_size
+
+    @property
+    def container_size(self):
+        return self._container_size
 
     @property
     def rgb(self):
@@ -371,8 +387,32 @@ class Tile(object):
     @match.setter
     def match(self, value):
         self._match = value # sqlite Row object
+ 
+    def dynamic_range(self):
+        """What is the dynamic range in this image? Return the
+        average dynamic range over RGB channels."""
+        return sum(map(lambda (x, y): y - x, self._img.getextrema()))//3
 
-def partition(img, dimensions):
+    def procreate(self):
+        """Divide image into quadrants, make each into a child tile,
+        and return them all in a list.""" 
+        width = self._img.size[0] // 2
+        height = self._img.size[1] // 2
+        children = []
+        for y in [0, 1]:
+            for x in [0, 1]:
+                tile_img = self._img.crop((x*width, 
+                                    y*height,
+                                    (x + 1)*width, 
+                                    (y + 1)*height))
+                child = Tile(tile_img, self.x, self.y,
+                             ancestry=self._ancestry + [(x, y)],
+                             ancestor_size=self._ancestor_size)
+                print child.ancestry
+                children.append(child)
+        return children
+
+def partition(img, dimensions, depth=0, hdr=200):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
@@ -385,7 +425,22 @@ def partition(img, dimensions):
                                 y*height,
                                 (x + 1)*width, 
                                 (y + 1)*height))
-            tiles.append(Tile(tile_img, x, y))
+            tile = Tile(tile_img, x, y)
+            tiles.append(tile)
+    for g in xrange(depth):
+        print 'len(tiles)', len(tiles)
+        old_tiles = tiles
+        tiles = []
+        print len(old_tiles)
+        for tile in old_tiles:
+            if tile.dynamic_range() > hdr:
+                # Keep children; discard parent.
+                tiles += tile.procreate()
+            else:
+                # Keep tile -- no children.
+                tiles.append(tile)
+        logging.info("There are %d tiles in generation %d",
+                     len(tiles), g)
     return tiles
 
 def analyze(tiles):
@@ -498,8 +553,18 @@ def shrink_to_brighten(img, tile_size, dL):
 def tile_position(tile, random_margins=False):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
-    pos = tile.x*tile.container_size[0], tile.y*tile.container_size[1]
-    return pos
+    ancestor_pos = tile.x*tile.ancestor_size[0], tile.y*tile.ancestor_size[1]
+    print ancestor_pos
+    if len(tile.ancestry) == 0:
+        print 'grandtile'
+        return ancestor_pos
+    else:
+        print tile.ancestry
+        x_size, y_size = tile.ancestor_size
+        rel_pos = [[x*x_size/2**(gen + 1), y*y_size/2**(gen + 1)] \
+                           for gen, (x, y) in enumerate(tile.ancestry)]
+        pos = map(sum, zip(*[ancestor_pos] + rel_pos))
+        return pos
 
 @memo
 def prepare_tile(filename, size, dL=None):
