@@ -460,20 +460,24 @@ def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
     img_w, img_h = img.size
     tile_w, tile_h = tile_size
-    img_aspect = int(round(img_w/img_h))
-    tile_aspect = int(round(tile_w/tile_h))
+    img_aspect = img_w/img_h
+    tile_aspect = tile_w/tile_h
+    print 'hello again'
     if img_aspect > tile_aspect:
+        print "too wide"
         # It's too wide.
         crop_h = img_h
-        crop_w = crop_h*tile_aspect
-        x_offset = (img_w - crop_w) // 2
+        crop_w = int(round(crop_h*tile_aspect))
+        x_offset = int((img_w - crop_w)/2)
         y_offset = 0
     else:
+        print "too tall"
         # It's too tall.
         crop_w = img_w
-        crop_h = crop_w // tile_aspect
+        crop_h = int(round(crop_w/tile_aspect))
         x_offset = 0
-        y_offset = (img_h - crop_h) // 2
+        y_offset = int((img_h - crop_h)/2)
+    print "outside"
     img = img.crop((x_offset,
                     y_offset,
                     x_offset + crop_w,
