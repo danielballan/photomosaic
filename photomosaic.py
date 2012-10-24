@@ -44,7 +44,7 @@ def simple(target_filename, dimensions, output_file):
     img = tune(orig_img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
     analyze(tiles)
-    mos = photomosaic(tiles, 'temp.db')
+    mos = mosaic(tiles, 'temp.db')
     mos = untune(mos, img)
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
@@ -227,10 +227,10 @@ def img_histogram(img):
         hist[ch] = normalized_h
     return hist
 
-def untune(mosaic, orig_img):
+def untune(mos, orig_img):
     orig_palette = compute_palette(img_histogram(orig_img))
     mos_palette = compute_palette(img_histogram(mosaic))
-    return adjust_levels(mosaic, mos_palette, orig_palette)
+    return adjust_levels(mos, mos_palette, orig_palette)
 
 def tune(target_img, db_name, quiet=True):
     """Adjsut the levels of the image to match the colors available in the
@@ -576,7 +576,7 @@ def prepare_tile(filename, size, dL=None):
         new_img = shrink_to_brighten(new_img, size, dL)
     return new_img
 
-def photomosaic(tiles, db_name, vary_size=False, tolerance=1,
+def mosaic(tiles, db_name, vary_size=False, tolerance=1,
                 random_margins=False, skip_matching=False):
     """Take the tiles from target() and return a mosaic image."""
     if not skip_matching:
@@ -596,8 +596,8 @@ def photomosaic(tiles, db_name, vary_size=False, tolerance=1,
                                dL)
         tile.substitute_img(new_img)
         pbar.next()
-        mosaic = assemble_tiles(tiles, random_margins)
-    return mosaic
+        mos = assemble_tiles(tiles, random_margins)
+    return mos
 
 def assemble_tiles(tiles, random_margins=False):
     pbar = progress_bar(len(tiles), "Building mosaic")
@@ -606,12 +606,12 @@ def assemble_tiles(tiles, random_margins=False):
     dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in tiles]))
     mosaic_size = map(lambda (x, y): x*y,
                          zip(*[tiles[0].ancestor_size, dimensions]))
-    mosaic = Image.new('RGB', mosaic_size, background)
+    mos = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
-        mosaic.paste(tile, pos)
+        mos.paste(tile, pos)
         pbar.next()
-    return mosaic
+    return mos
 
 def plot_match_stats(tiles):
     "Evalute the quality of the matching."

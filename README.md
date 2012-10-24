@@ -25,9 +25,9 @@ Alternatively, you can run the process one step at a time. This gives access to 
     img = pm.tune(orig_img, 'imagepool.db') # Adjust colors levels to what's availabe in the pool.
     tiles = pm.partition(img, (10, 10))
     pm.analyze(tiles)
-    mosaic = pm.photomosaic(tiles, 'imagepool.db')
-    mosaic = pm.untune(mosaic, orig_img) # Transform the color palette back.
-    mosaic.save('mosaic.jpg')
+    mos = pm.mosaic(tiles, 'imagepool.db')
+    mos = pm.untune(mosaic, orig_img) # Transform the color palette back.
+    mos.save('mosaic.jpg')
 
 Remarks on each step:
 
@@ -57,17 +57,17 @@ Related Project
 Advanced Usage
 --------------
 
-A traditional photomosaic is a regular array of tiles. For a looser, scattered effect (imitating some works by [this artist](http://www.flickr.com/photos/tsevis/collections/)) tiles can be individually shrunk in place, leaving a margin that reveals the background. If the background is white, the overall effect is to lighten that tile.
+A traditional photomosaic is a regular array of tiles. For a different effect, the size of the tiles can be varied. Small tiles are best used in regions of high contrast. Start with big tiles, such as 10x10. Use the ``depth`` keyword to control how many times a tile can decide to subdivide into quarters, based on the contrast within it.
+
+    tiles = pm.partition(img, (10, 10), depth=4)
+
+``depth`` puts a limit on how far tile-splitting can go, but it does not control how many tiles will decide to split. ``hdr`` for "high dynamic range" sets that contrast level beyond which tiles will subdivide.
+
+    tiles = pm.partition(img, (10, 10), depth=4, hdr=50) # many tiles
+    tiles = pm.partition(img, (10, 10), depth=4, hdr=200) # or fewer tiles
+
+For a looser, scattered effect (imitating some works by [this artist](http://www.flickr.com/photos/tsevis/collections/)) tiles can be individually shrunk in place, leaving a margin that reveals the background. If the background is white, the overall effect is to lighten that tile.
 
 Thus, shrinking is applied to all tiles that are darker than their targets, and it is applied in proportion to that descrepancy.
 
-    ...
-    img = photomosaic(tiles, 'imagepool.db', vary_size=True)
-
-By default, a shrunken tile is placed in the center of its space, leaving even margins. For artistic effect, they can be randomly nudged off center.
-
-    ...
-    img = photomosaic(tiles, 'imagepool.db', vary_size=True,
-                      random_margins=True)
-
-
+    img = mosaic(tiles, 'imagepool.db', vary_size=True)
