@@ -418,6 +418,17 @@ class Tile(object):
         elif brightest_pixel == 255: # black mask
             self._blank = False
         self._blank = 255*np.random.rand() > brightest_pixel # grey mask
+
+    def straddles_mask_edge(self):
+        """A tile straddles an edge if it contains PURE white (255) and some
+        nonwhite. A tile that contains varying shades of gray does not
+        straddle an edge."""
+        darkest_pixel, brightest_pixel = self._mask.getextrema()
+        if brightest_pixel != 255:
+            return False
+        if darkest_pixel == 255:
+            return False
+        return True
  
     def dynamic_range(self):
         """What is the dynamic range in this image? Return the
@@ -477,7 +488,7 @@ def partition(img, dimensions, mask=None, depth=0, hdr=80):
         old_tiles = tiles
         tiles = []
         for tile in old_tiles:
-            if tile.dynamic_range() > hdr:
+            if tile.dynamic_range() > hdr or tile.straddles_mask_edge():
                 # Keep children; discard parent.
                 tiles += tile.procreate()
             else:
