@@ -72,4 +72,4 @@ Thus, shrinking is applied to all tiles that are darker than their targets, and 
 
     img = mosaic(tiles, 'imagepool.db', vary_size=True)
 
-By default, ``mosaic()`` begins by choosing the best match for each tile. You can experiment with different settings and rebuild the mosaic without 
+When experimenting with ``mosaic()``, you only need to choose matches the first time. On repeated calls, use the keyword ``skip_matching=True``.
