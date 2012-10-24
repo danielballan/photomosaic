@@ -330,10 +330,11 @@ class Tile(object):
     """Tile wraps the Image class, so all methods that apply to images (show,
     save, crop, size, ...) apply to Tiles. Tiles also store contextual
     information that is used to reassembled them in the end."""
-    def __init__(self, img, x, y, ancestry=[], ancestor_size=None):
+    def __init__(self, img, x, y, mask=None, ancestry=[], ancestor_size=None):
         self._img = img
         self.x = x
         self.y = y
+        self._mask = mask
         self._container_size = self._img.size
         self._ancestry = ancestry
         self._depth = len(self._ancestry)
@@ -341,6 +342,14 @@ class Tile(object):
             self._ancestor_size = ancestor_size
         else:
             self._ancestor_size = self._container_size
+
+    def crop(self, *args):
+        if mask: self._mask.crop(args)
+        return _img.crop(args)
+
+    def resize(self, *args):
+        if mask: self._mask.resize(args)
+        return _img.resize(args)
 
     def __getattr__(self, key):
         if key == '_img':
