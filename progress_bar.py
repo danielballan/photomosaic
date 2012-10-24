@@ -28,5 +28,5 @@ def progress_bar(total_steps, message=''):
                         step, total_steps, round(elapsed))
         yield
         step += 1
-    logger.info("Completed in %s seconds.", time.clock() - start)
+    logger.info("Completed in %d seconds.", round(time.clock() - start))
     yield
