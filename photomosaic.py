@@ -522,7 +522,9 @@ def analyze(tiles):
     in the Tile object."""
     pbar = progress_bar(len(tiles), "Analyzing images")
     for tile in tiles:
-        if tile.blank: continue
+        if tile.blank:
+            pbar.next()
+            continue
         regions = split_quadrants(tile)
         tile.rgb = map(dominant_color, regions) 
         tile.lab = map(cs.rgb2lab, tile.rgb)
@@ -668,8 +670,9 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
             reset_usage(db)
             pbar = progress_bar(len(tiles), "Choosing matching tiles")
             for tile in tiles:
-                if tile.blank: continue
-                
+                if tile.blank:
+                    pbar.next()
+                    continue
                 usage_penalty=0 if tile.depth > 1 else 1
                 tile.match = choose_match(tile.lab, db, tolerance,
                                           usage_penalty)
@@ -681,7 +684,9 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
         # Size variation is contingent on the boolean option vary_size,
         # the depth of the tile, and its lightness compared to the target
         # image, dL.
-        if tile.blank: continue
+        if tile.blank:
+            pbar.next()
+            continue
         if vary_size and tile.depth < 2:
             dL = tile.match['dL']
         else:
@@ -703,7 +708,9 @@ def assemble_tiles(tiles, random_margins=False):
                          zip(*[tiles[0].ancestor_size, dimensions]))
     mos = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
-        if tile.blank: continue
+        if tile.blank:
+            pbar.next()
+            continue
         pos = tile_position(tile, random_margins)
         mos.paste(tile, pos)
         pbar.next()
