@@ -483,7 +483,7 @@ def partition(img, dimensions, mask=None, depth=0, hdr=80,
     img = crop_to_fit(img, new_size)
     if mask:
         mask = crop_to_fit(mask, new_size)
-        if not scatter:
+        if not debris:
             mask = mask.convert("1") # no gray
     width = img.size[0] // dimensions[0] 
     height = img.size[1] // dimensions[1]
