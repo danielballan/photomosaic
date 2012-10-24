@@ -456,12 +456,19 @@ def analyze(tiles):
         tile.lab = map(cs.rgb2lab, tile.rgb)
         pbar.next()
 
-def choose_match(lab, db, tolerance=1):
+def choose_match(lab, db, tolerance=1, usage_penalty=1):
     """If there is are good matches (within tolerance times the 'just noticeable
     difference'), return one at random. If not, choose the closest match
     deterministically. Return the match (as a sqlite Row dictionary) and the
     number of good matches."""
     JND = 2.3 # "just noticeable difference"
+    (L1, a1, b1), (L2, a2, b2), (L3, a3, b3), (L4, a4, b4) = lab
+    tokens = {'L1': L1, 'a1': a1, 'b1': b1,
+              'L2': L2, 'a2': a2, 'b2': b2,
+              'L3': L3, 'a3': a3, 'b3': b3,
+              'L4': L4, 'a4': a4, 'b4': b4,
+              'tol': tolerance*JND, 'usage_penalty': usage_penalty*JND}
+    
     c = db.cursor()
     try:
         # Before we compute the exact color distance E, 
@@ -472,12 +479,6 @@ def choose_match(lab, db, tolerance=1):
         # determined by the tolerance. Thus, decisive winners are chosen
         # deterministically, but if there are many good matches, one is taken
         # at random.
-        (L1, a1, b1), (L2, a2, b2), (L3, a3, b3), (L4, a4, b4) = lab
-        tokens = {'L1': L1, 'a1': a1, 'b1': b1,
-                  'L2': L2, 'a2': a2, 'b2': b2,
-                  'L3': L3, 'a3': a3, 'b3': b3,
-                  'L4': L4, 'a4': a4, 'b4': b4,
-                  'tol': tolerance*JND}
         c.execute("""SELECT
                      image_id,
                      ((L1-({L1}))*(L1-({L1}))
@@ -493,6 +494,7 @@ def choose_match(lab, db, tolerance=1):
                        + (a4-({a4}))*(a4-({a4}))
                        + (b4-({b4}))*(b4-({b4})))/4. as E_sq,
                      (L1-({L1}) + L2-({L2}) + L3-({L3}) + L4-({L4}))/4. as dL,
+                     usages,
                      filename
                      FROM LabColors
                      JOIN Images using (image_id)
@@ -503,12 +505,16 @@ def choose_match(lab, db, tolerance=1):
                        + L4-({L4}) + a4-({a4}) + b4-({b4})
                      < 4*{tol}
                      ORDER BY
-                     E_sq + {tol}*{tol}*RANDOM()/9223372036854775808. ASC
+                     E_sq 
+                     + {tol}*{tol}*RANDOM()/9223372036854775808.
+                     + {usage_penalty}*{usage_penalty}*usages ASC
                      LIMIT 1""".format(**tokens))
                      # 9223372036854775808 is the range of sqlite RANDOM()
         match = c.fetchone()
         if not match:
             return choose_match(lab, db, tolerance + 1)
+        c.execute("UPDATE Images SET usages=1+usages WHERE image_id=?",
+                  (match['image_id'],))
     finally:
         c.close()
     logger.debug("%s", match)
@@ -587,9 +593,12 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
     if not skip_matching:
         db = connect(db_name)
         try:
+            reset_usage(db)
             pbar = progress_bar(len(tiles), "Choosing matching tiles")
             for tile in tiles:
-                tile.match = choose_match(tile.lab, db, tolerance)
+                usage_penalty=0 if len(tiles.ancestry) > 1 else 1
+                tile.match = choose_match(tile.lab, db, tolerance,
+                                          usage_penalty)
                 pbar.next()
         finally:
             db.close()
@@ -601,7 +610,7 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
                                dL)
         tile.substitute_img(new_img)
         pbar.next()
-        mos = assemble_tiles(tiles, random_margins)
+    mos = assemble_tiles(tiles, random_margins)
     return mos
 
 def assemble_tiles(tiles, random_margins=False):
@@ -625,3 +634,11 @@ def plot_match_stats(tiles):
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
+
+def reset_usage(db):
+    try:
+        c = db.cursor()
+        c.execute("UPDATE Images SET usages=0")
+    finally:
+        c.close()
+    return
