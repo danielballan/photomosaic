@@ -762,3 +762,6 @@ def reset_usage(db):
     finally:
         c.close()
     return
+
+def testing():
+    pm.simple('images/samples', 'images/samples/dan-allan.jpg', (10,10), 'output.jpg')
