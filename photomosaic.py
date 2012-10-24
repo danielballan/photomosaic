@@ -465,7 +465,7 @@ class Tile(object):
         return children
 
 def partition(img, dimensions, mask=None, depth=0, hdr=80,
-              scatter=False, scatter_min_depth=1):
+              debris=False, min_debris_depth=1):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
@@ -508,7 +508,7 @@ def partition(img, dimensions, mask=None, depth=0, hdr=80,
         logging.info("There are %d tiles in generation %d",
                      len(tiles), g)
     # Now that all tiles have been made and subdivided, decide which are blank.
-    [tile.determine_blankness(scatter_min_depth) for tile in tiles]
+    [tile.determine_blankness(min_debris_depth) for tile in tiles]
     logger.info("%d tiles are set to be blank",
                 len([1 for tile in tiles if tile.blank]))
     return tiles

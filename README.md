@@ -57,6 +57,8 @@ Related Project
 Advanced Usage
 --------------
 
+### Varied tile size
+
 A traditional photomosaic is a regular array of tiles. For a different effect, the size of the tiles can be varied. Small tiles are best used in regions of high contrast. Start with big tiles, such as 10x10. Use the ``depth`` keyword to control how many times a tile can decide to subdivide into quarters, based on the contrast within it.
 
     tiles = pm.partition(img, (10, 10), depth=4)
@@ -66,7 +68,39 @@ A traditional photomosaic is a regular array of tiles. For a different effect, t
     tiles = pm.partition(img, (10, 10), depth=4, hdr=80) # many tiles
     tiles = pm.partition(img, (10, 10), depth=4, hdr=200) # or fewer tiles
 
-For a looser, scattered effect (imitating some works by [this artist](http://www.flickr.com/photos/tsevis/collections/)) tiles can be individually shrunk in place, leaving a margin that reveals the background. If the background is white, the overall effect is to lighten that tile.
+### Photomosaics with curved edges (masked images)
+
+### Basic masks
+
+Open a black-and-white image and pass it to partition. Color images work too; they will just be converted.
+
+    mask_img = pm.open('mask.jpg')
+    tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img)
+
+Tiles that fall wholly in the black area of the mask will be left blank. Tiles that straddle the edge, containing some white and some non-white, will forced to subdivide (up to the limit set by depth, as above). The subdivided tiles create a smooth-ish edge along the mask.
+
+To examine the effect before you proceed to crank through ``analyze()`` and ``mosaic()``, you can easily assemble the original tiles.
+
+    pm.assemble_tiles(tiles)
+
+#### Masked image with "debris"
+
+If the mask image contains grey, these areas can be filled with tiles probabilitically, creating the halo of debris, something like a partially completed puzzle.
+
+    mask_img = pm.open('mask-with-some-grey-in-it.jpg')
+    tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img, debris=True)
+
+To my eye, the effect is better with small tiles. You can limit random switching-on to N-children of the original 10x10 tiles. Use the kwarg ``min_depth``, which defaults to 1.
+
+    tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img, debris=True, min_debris_depth=2)
+
+Again, examine the effect before proceeding. 
+
+    pm.assemble_tiles(tiles)
+
+### Scattered tiles
+
+For a looser, even more scattered effect (imitating some works by [this artist](http://www.flickr.com/photos/tsevis/collections/)) tiles can be individually shrunk in place, leaving a margin that reveals the background. If the background is white, the overall effect is to lighten that tile.
 
 Thus, shrinking is applied to all tiles that are darker than their targets, and it is applied in proportion to that descrepancy.
 
