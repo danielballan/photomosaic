@@ -426,7 +426,7 @@ class Tile(object):
                 children.append(child)
         return children
 
-def partition(img, dimensions, depth=0, hdr=80):
+def partition(img, dimensions, mask=None, depth=0, hdr=80):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
@@ -438,16 +438,20 @@ def partition(img, dimensions, depth=0, hdr=80):
                 If necessary, I will crop to fit.""",
                 new_size)
     img = crop_to_fit(img, new_size)
+    if mask: mask = crop_to_fit(mask, new_size)
     width = img.size[0] // dimensions[0] 
     height = img.size[1] // dimensions[1]
     tiles = []
     for y in range(dimensions[1]):
         for x in range(dimensions[0]):
-            tile_img = img.crop((x*width, 
-                                y*height,
-                                (x + 1)*width, 
-                                (y + 1)*height))
-            tile = Tile(tile_img, x, y)
+            tile_img = img.crop((x*width, y*height,
+                                (x + 1)*width, (y + 1)*height))
+            if mask:
+                mask_img = mask.crop((x*width, y*height,
+                                     (x + 1)*width, (y + 1)*height))
+            else:
+                mask_img = None
+            tile = Tile(tile_img, x, y, mask=mask_img)
             tiles.append(tile)
     for g in xrange(depth):
         old_tiles = tiles
