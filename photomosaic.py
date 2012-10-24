@@ -691,7 +691,7 @@ def prepare_tile(filename, size, dL=None):
         new_img = shrink_to_brighten(new_img, size, dL)
     return new_img
 
-def mosaic(tiles, db_name, tolerance=1, usage_penalty=1,
+def mosaic(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2,
                 vary_size=False, random_margins=False, skip_matching=False):
     """Take the tiles and return a mosaic image."""
     if not skip_matching:
@@ -704,7 +704,7 @@ def mosaic(tiles, db_name, tolerance=1, usage_penalty=1,
                     pbar.next()
                     continue
                 tile.match = choose_match(tile.lab, db, tolerance,
-                    usage_penalty if tile.depth < 2 else 0)
+                    usage_penalty if tile.depth < usage_impunity else 0)
                 pbar.next()
         finally:
             db.close()

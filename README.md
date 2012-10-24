@@ -121,7 +121,7 @@ Example:
 
     pm.mosiac(tiles, tolerance=0.5, usage_penalty=3)
 
-N.B. If you use multiscale tiles, the smaller tiles can repeat with impunity. The usage limit only applied to original tiles than their immediate children.
+P.S. If you use multiscale tiles, the smaller tiles can repeat with impunity. The usage limit only applied to original tiles than their immediate children. There is a keyword argument for this as well, ``usage_impunity=2``, but unless you have a giant image pool, I wouldn't change it. 
 
 ### Scattered tiles
 
