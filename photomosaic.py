@@ -38,8 +38,7 @@ FORMAT = "%(name)s.%(funcName)s:  %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
-def simple(image_dir, target_filename, dimensions, output_file):
-    pool(image_dir, 'temp.db')
+def simple(target_filename, dimensions, output_file):
     orig_img = open(target_filename)
     img = tune(orig_img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
@@ -475,7 +474,6 @@ def crop_to_fit(img, tile_size):
         crop_h = int(round(crop_w/tile_aspect))
         x_offset = 0
         y_offset = int((img_h - crop_h)/2)
-    print "outside"
     img = img.crop((x_offset,
                     y_offset,
                     x_offset + crop_w,
