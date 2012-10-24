@@ -412,10 +412,15 @@ class Tile(object):
                 children.append(child)
         return children
 
-def partition(img, dimensions, depth=0, hdr=200):
+def partition(img, dimensions, depth=0, hdr=80):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
+    # img.size must have dimensions*2**depth as a factor.
+    factor = dimensions[0]*2**depth, dimensions[1]*2**depth
+    new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
+                      for i in [0, 1]])
+    img.resize(new_size)
     width = img.size[0] // dimensions[0] 
     height = img.size[1] // dimensions[1]
     tiles = []
