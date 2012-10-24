@@ -229,7 +229,7 @@ def img_histogram(img):
 
 def untune(mos, orig_img):
     orig_palette = compute_palette(img_histogram(orig_img))
-    mos_palette = compute_palette(img_histogram(mosaic))
+    mos_palette = compute_palette(img_histogram(mos))
     return adjust_levels(mos, mos_palette, orig_palette)
 
 def tune(target_img, db_name, quiet=True):
