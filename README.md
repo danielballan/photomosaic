@@ -57,7 +57,7 @@ Related Project
 Advanced Usage
 --------------
 
-### Varied tile size
+### Multiscale tiles
 
 A traditional photomosaic is a regular array of tiles. For a different effect, the size of the tiles can be varied. Small tiles are best used in regions of high contrast. Start with big tiles, such as 10x10. Use the ``depth`` keyword to control how many times a tile can decide to subdivide into quarters, based on the contrast within it.
 
@@ -70,16 +70,18 @@ A traditional photomosaic is a regular array of tiles. For a different effect, t
 
 ### Photomosaics with curved edges (masked images)
 
-### Basic masks
+#### Simple cut-outs 
 
-Open a black-and-white image and pass it to partition. Color images work too; they will just be converted.
+Create a black-and-white image the same size and your target image. White areas will be kept, and black areas will be masked. Open the image and pass it to ``partition``. Color images work too; they will just be converted.
 
     mask_img = pm.open('mask.jpg')
-    tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img)
+    tiles = pm.partition(img, (10, 10), mask=mask_img)
 
-Tiles that fall wholly in the black area of the mask will be left blank. Tiles that straddle the edge, containing some white and some non-white, will forced to subdivide (up to the limit set by depth, as above). The subdivided tiles create a smooth-ish edge along the mask.
+Tiles that fall wholly in the black area of the mask will be left blank. Of course, small tiles are better for tracing a curved edge. When you invoke multiscale tiling along with the mask, small tiles will fill in along the edge. Any tiles that straddle the edge of the mask, containing some white and some non-white, are forced to subdivide -- down to the limit set by depth, as above.
 
-To examine the effect before you proceed to crank through ``analyze()`` and ``mosaic()``, you can easily assemble the original tiles.
+    tiles = pm.partition(img, (10, 10), mask=mask_img, depth=4)
+
+To examine the effect before you proceed with ``analyze()`` and ``mosaic()``, you can easily assemble the original tiles.
 
     pm.assemble_tiles(tiles)
 
@@ -90,13 +92,28 @@ If the mask image contains grey, these areas can be filled with tiles probabilit
     mask_img = pm.open('mask-with-some-grey-in-it.jpg')
     tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img, debris=True)
 
-To my eye, the effect is better with small tiles. You can limit random switching-on to N-children of the original 10x10 tiles. Use the kwarg ``min_depth``, which defaults to 1.
+To my eye, the effect is better with small tiles. You can limit debris to N-children of the original 10x10 tiles. Use the kwarg ``min_debris_depth``, which defaults to 1.
 
     tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img, debris=True, min_debris_depth=2)
 
 Again, examine the effect before proceeding. 
 
     pm.assemble_tiles(tiles)
+
+### Tile matching and repetition
+
+This is how tile images are chosen:
+* Images are rated by their closeness to the target tile. Technical details: "Closeness" is Euclidean distance in Lab color space, which is a good proxy to perceived color difference. The closeness is measured separately in the four quadrants of the tile, and then averaged.
+* Ratings are adjusted randomly by up to 2.3, which is the "just-noticeable difference" in color. Thus, if one match is much better than the others, it will be chosen, but if ther many good candidates, one is taken at random.
+* An image's rating is downgraded in proportion to the number of times it has already been used. By default, its rating is downgrade one 2.3 times the number of usages.
+
+To adjust the random component, use ``tolerance``, which sets the maximum random ratings bump in units of JND (the just-noticeable difference).
+
+To specifically suppress repetition, you can increase the penalty for reuse. The parameter is ``usage_penalty``, and again its default value is 1, in the units of JND.
+
+Example:
+
+    pm.mosiac(tiles, tolerance=0.5, usage_penalty=3)
 
 ### Scattered tiles
 
