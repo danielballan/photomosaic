@@ -20,6 +20,7 @@ from __future__ import division
 import os
 import logging
 import time
+import operator
 import random
 import numpy as np
 import scipy
@@ -408,7 +409,6 @@ class Tile(object):
                 child = Tile(tile_img, self.x, self.y,
                              ancestry=self._ancestry + [(x, y)],
                              ancestor_size=self._ancestor_size)
-                print child.ancestry
                 children.append(child)
         return children
 
@@ -428,10 +428,8 @@ def partition(img, dimensions, depth=0, hdr=200):
             tile = Tile(tile_img, x, y)
             tiles.append(tile)
     for g in xrange(depth):
-        print 'len(tiles)', len(tiles)
         old_tiles = tiles
         tiles = []
-        print len(old_tiles)
         for tile in old_tiles:
             if tile.dynamic_range() > hdr:
                 # Keep children; discard parent.
@@ -554,16 +552,13 @@ def tile_position(tile, random_margins=False):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
     ancestor_pos = tile.x*tile.ancestor_size[0], tile.y*tile.ancestor_size[1]
-    print ancestor_pos
     if len(tile.ancestry) == 0:
-        print 'grandtile'
         return ancestor_pos
     else:
-        print tile.ancestry
         x_size, y_size = tile.ancestor_size
-        rel_pos = [[x*x_size/2**(gen + 1), y*y_size/2**(gen + 1)] \
+        rel_pos = [[x*x_size//2**(gen + 1), y*y_size//2**(gen + 1)] \
                            for gen, (x, y) in enumerate(tile.ancestry)]
-        pos = map(sum, zip(*[ancestor_pos] + rel_pos))
+        pos = tuple(map(sum, zip(*[ancestor_pos] + rel_pos)))
         return pos
 
 @memo
@@ -593,16 +588,23 @@ def photomosaic(tiles, db_name, vary_size=False, tolerance=1,
         pbar = progress_bar(len(tiles), "Scaling tiles")
         for tile in tiles:
             dL = tile.match['dL'] if vary_size else None
-            new_img = prepare_tile(tile.match['filename'], tile.size, dL)
+            new_img = prepare_tile(tile.match['filename'],
+                                   tile.container_size,
+                                   dL)
             tile.substitute_img(new_img)
             pbar.next()
+        mosaic = assemble_tiles(tiles, random_margins)
     finally:
         db.close()
+    return mosaic
+
+def assemble_tiles(tiles, random_margins=False):
     pbar = progress_bar(len(tiles), "Building mosaic")
     background = (255, 255, 255)
     # Infer dimensions so they don't have to be passed in the function call.
     dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in tiles]))
-    mosaic_size = tiles[0].size[0]*dimensions[0], tiles[0].size[1]*dimensions[1]
+    mosaic_size = map(lambda (x, y): x*y,
+                         zip(*[tiles[0].ancestor_size, dimensions]))
     mosaic = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
         pos = tile_position(tile, random_margins)
