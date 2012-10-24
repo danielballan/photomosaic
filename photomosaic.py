@@ -138,6 +138,24 @@ def create_tables(db):
     c.close()
     db.commit()
 
+def in_db(filename, db):
+    c = db.cursor()
+    try: 
+        c.execute("SELECT count(*) FROM Images WHERE filename=?", (filename,))
+        return c.fetchone()[0] > 0
+    finally:
+        c.close()
+    return False
+
+def get_size(db):
+    c = db.cursor()
+    try: 
+        c.execute("SELECT count(*) FROM Images")
+        return c.fetchone()[0] 
+    finally:
+        c.close()
+    return 0   
+
 def insert(filename, w, h, rgb, lab, db):
     """Insert image info in the Images table and color information in the
     Color and LabColor tables."""
@@ -172,6 +190,10 @@ def pool(image_dir, db_name):
         pbar = progress_bar(file_count, "Analyzing images and building db")
         walker = DirectoryWalker(image_dir)
         for filename in walker:
+            if in_db(filename, db):
+                logger.warning("Image %s is already in the table. Skipping it."%filename)
+                pbar.next()
+                continue
             try:
                 img = Image.open(filename)
             except IOError:
@@ -190,6 +212,7 @@ def pool(image_dir, db_name):
             insert(filename, w, h, rgb, lab, db)
             pbar.next()
         db.commit()
+        logger.info('Collection %s built with %d images'%(db_name, get_size(db)))
     finally:
         db.close()
 
