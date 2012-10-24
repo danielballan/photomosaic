@@ -334,7 +334,8 @@ class Tile(object):
         self._img = img
         self.x = x
         self.y = y
-        self._mask = mask
+        self._mask = mask.convert("L") if mask else None
+        self._blank = None # meaning undetermined (so far)
         self._container_size = self._img.size
         self._ancestry = ancestry
         self._depth = len(self._ancestry)
@@ -344,12 +345,12 @@ class Tile(object):
             self._ancestor_size = self._container_size
 
     def crop(self, *args):
-        if mask: self._mask.crop(args)
-        return _img.crop(args)
+        if self._mask: self._mask.crop(*args)
+        return self._img.crop(*args)
 
     def resize(self, *args):
-        if mask: self._mask.resize(args)
-        return _img.resize(args)
+        if self._mask: self._mask.resize(*args)
+        return self._img.resize(*args)
 
     def __getattr__(self, key):
         if key == '_img':
@@ -402,6 +403,21 @@ class Tile(object):
     @match.setter
     def match(self, value):
         self._match = value # sqlite Row object
+
+    @property
+    def blank(self):
+        return self._blank
+
+    def determine_blankness(self):
+        "Decide whether this tile is blank."
+        if not self._mask: # no mask
+            self._blank = False
+        brightest_pixel = self._mask.getextrema()[1]
+        if brightest_pixel == 0: # white mask
+            self._blank = True
+        elif brightest_pixel == 255: # black mask
+            self._blank = False
+        self._blank = 255*np.random.rand() > brightest_pixel # grey mask
  
     def dynamic_range(self):
         """What is the dynamic range in this image? Return the
@@ -416,11 +432,15 @@ class Tile(object):
         children = []
         for y in [0, 1]:
             for x in [0, 1]:
-                tile_img = self._img.crop((x*width, 
-                                    y*height,
-                                    (x + 1)*width, 
-                                    (y + 1)*height))
+                tile_img = self._img.crop((x*width, y*height,
+                                    (x + 1)*width, (y + 1)*height))
+                if self._mask:
+                    mask_img = self._mask.crop((x*width, y*height,
+                                         (x + 1)*width, (y + 1)*height))
+                else:
+                    mask_img = None
                 child = Tile(tile_img, self.x, self.y,
+                             mask=mask_img,
                              ancestry=self._ancestry + [(x, y)],
                              ancestor_size=self._ancestor_size)
                 children.append(child)
@@ -472,6 +492,8 @@ def analyze(tiles):
     in the Tile object."""
     pbar = progress_bar(len(tiles), "Analyzing images")
     for tile in tiles:
+        tile.determine_blankness()
+        if tile.blank: continue
         regions = split_quadrants(tile)
         tile.rgb = map(dominant_color, regions) 
         tile.lab = map(cs.rgb2lab, tile.rgb)
@@ -617,6 +639,8 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
             reset_usage(db)
             pbar = progress_bar(len(tiles), "Choosing matching tiles")
             for tile in tiles:
+                if tile.blank: continue
+                
                 usage_penalty=0 if tile.depth > 1 else 1
                 tile.match = choose_match(tile.lab, db, tolerance,
                                           usage_penalty)
@@ -628,6 +652,7 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
         # Size variation is contingent on the boolean option vary_size,
         # the depth of the tile, and its lightness compared to the target
         # image, dL.
+        if tile.blank: continue
         if vary_size and tile.depth < 2:
             dL = tile.match['dL']
         else:
@@ -649,6 +674,7 @@ def assemble_tiles(tiles, random_margins=False):
                          zip(*[tiles[0].ancestor_size, dimensions]))
     mos = Image.new('RGB', mosaic_size, background)
     for tile in tiles:
+        if tile.blank: continue
         pos = tile_position(tile, random_margins)
         mos.paste(tile, pos)
         pbar.next()
