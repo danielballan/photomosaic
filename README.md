@@ -122,13 +122,3 @@ Example:
     pm.mosiac(tiles, tolerance=0.5, usage_penalty=3)
 
 P.S. If you use multiscale tiles, the smaller tiles can repeat with impunity. The usage limit only applied to original tiles than their immediate children. There is a keyword argument for this as well, ``usage_impunity=2``, but unless you have a giant image pool, I wouldn't change it. 
-
-### Scattered tiles
-
-For a looser, even more scattered effect (imitating some works by [this artist](http://www.flickr.com/photos/tsevis/collections/)) tiles can be individually shrunk in place, leaving a margin that reveals the background. If the background is white, the overall effect is to lighten that tile.
-
-Thus, shrinking is applied to all tiles that are darker than their targets, and it is applied in proportion to that descrepancy.
-
-    img = mosaic(tiles, 'imagepool.db', vary_size=True)
-
-When experimenting with ``mosaic()``, you only need to choose matches the first time. On repeated calls, use the keyword ``skip_matching=True``.
