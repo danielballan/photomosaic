@@ -598,7 +598,7 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
             reset_usage(db)
             pbar = progress_bar(len(tiles), "Choosing matching tiles")
             for tile in tiles:
-                usage_penalty=0 if len(tiles.ancestry) > 1 else 1
+                usage_penalty=0 if len(tile.ancestry) > 1 else 1
                 tile.match = choose_match(tile.lab, db, tolerance,
                                           usage_penalty)
                 pbar.next()
