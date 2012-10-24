@@ -577,25 +577,26 @@ def prepare_tile(filename, size, dL=None):
     return new_img
 
 def photomosaic(tiles, db_name, vary_size=False, tolerance=1,
-                random_margins=False):
+                random_margins=False, skip_matching=False):
     """Take the tiles from target() and return a mosaic image."""
-    db = connect(db_name)
-    try:
-        pbar = progress_bar(len(tiles), "Choosing matching tiles")
-        for tile in tiles:
-            tile.match = choose_match(tile.lab, db, tolerance)
-            pbar.next()
-        pbar = progress_bar(len(tiles), "Scaling tiles")
-        for tile in tiles:
-            dL = tile.match['dL'] if vary_size else None
-            new_img = prepare_tile(tile.match['filename'],
-                                   tile.container_size,
-                                   dL)
-            tile.substitute_img(new_img)
-            pbar.next()
+    if not skip_matching:
+        db = connect(db_name)
+        try:
+            pbar = progress_bar(len(tiles), "Choosing matching tiles")
+            for tile in tiles:
+                tile.match = choose_match(tile.lab, db, tolerance)
+                pbar.next()
+        finally:
+            db.close()
+    pbar = progress_bar(len(tiles), "Scaling tiles")
+    for tile in tiles:
+        dL = tile.match['dL'] if vary_size else None
+        new_img = prepare_tile(tile.match['filename'],
+                               tile.container_size,
+                               dL)
+        tile.substitute_img(new_img)
+        pbar.next()
         mosaic = assemble_tiles(tiles, random_margins)
-    finally:
-        db.close()
     return mosaic
 
 def assemble_tiles(tiles, random_margins=False):
