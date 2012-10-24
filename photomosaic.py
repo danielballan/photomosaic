@@ -665,18 +665,32 @@ def shrink_to_brighten(img, tile_size, dL):
     img = crop_to_fit(img, shrunk_size) 
     return img 
 
-def tile_position(tile, random_margins=False):
+def tile_position(tile, random_floating=False):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
+    # Sum position of original ancestor tile, relative position of this tile's
+    # container, and any margins that this tile has.
     ancestor_pos = tile.x*tile.ancestor_size[0], tile.y*tile.ancestor_size[1]
     if tile.depth == 0:
-        return ancestor_pos
+        rel_pos = (0, 0)
     else:
         x_size, y_size = tile.ancestor_size
         rel_pos = [[x*x_size//2**(gen + 1), y*y_size//2**(gen + 1)] \
                            for gen, (x, y) in enumerate(tile.ancestry)]
-        pos = tuple(map(sum, zip(*[ancestor_pos] + rel_pos)))
-        return pos
+        
+    if tile.container_size == tile.size:
+        floating_pos = [0, 0]
+    else:
+        margin = map(lambda (x, y): x - y,
+                     zip(*[tile.container_size, tile.size])//2)
+        print margin
+        if random_floating:
+            floating_pos = np.randint(0, margin[0]), np.randint(0, margin[1])
+        else:
+            floating_pos = margin
+    print floating_pos
+    pos = tuple(map(sum, zip(*([ancestor_pos] + [rel_pos] + [floating_pos]))))
+    return pos
 
 @memo
 def prepare_tile(filename, size, dL=None):
@@ -694,7 +708,8 @@ def prepare_tile(filename, size, dL=None):
     return new_img
 
 def mosaic(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2,
-                vary_size=False, random_margins=False, skip_matching=False):
+           floating=False, random_floating=False,
+           skip_matching=False):
     """Take the tiles and return a mosaic image."""
     if not skip_matching:
         db = connect(db_name)
@@ -712,13 +727,13 @@ def mosaic(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2,
             db.close()
     pbar = progress_bar(len(tiles), "Scaling tiles")
     for tile in tiles:
-        # Size variation is contingent on the boolean option vary_size,
+        # Size variation is contingent on the boolean option floating,
         # the depth of the tile, and its lightness compared to the target
         # image, dL.
         if tile.blank:
             pbar.next()
             continue
-        if vary_size and tile.depth < 2:
+        if floating and tile.depth < 2:
             dL = tile.match['dL']
         else:
             dL = None
@@ -727,10 +742,10 @@ def mosaic(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2,
                                dL)
         tile.substitute_img(new_img)
         pbar.next()
-    mos = assemble_tiles(tiles, random_margins)
+    mos = assemble_tiles(tiles, random_floating)
     return mos
 
-def assemble_tiles(tiles, random_margins=False):
+def assemble_tiles(tiles, random_floating=False):
     pbar = progress_bar(len(tiles), "Building mosaic")
     background = (255, 255, 255)
     # Infer dimensions so they don't have to be passed in the function call.
@@ -742,7 +757,7 @@ def assemble_tiles(tiles, random_margins=False):
         if tile.blank:
             pbar.next()
             continue
-        pos = tile_position(tile, random_margins)
+        pos = tile_position(tile, random_floating)
         mos.paste(tile, pos)
         pbar.next()
     return mos
