@@ -420,7 +420,9 @@ def partition(img, dimensions, depth=0, hdr=80):
     factor = dimensions[0]*2**depth, dimensions[1]*2**depth
     new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
                       for i in [0, 1]])
-    img.resize(new_size)
+    logger.info("Resizing image to %s, a round number for partitioning.",
+                new_size)
+    img = img.resize(new_size)
     width = img.size[0] // dimensions[0] 
     height = img.size[1] // dimensions[1]
     tiles = []
