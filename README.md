@@ -121,6 +121,8 @@ Example:
 
     pm.mosiac(tiles, tolerance=0.5, usage_penalty=3)
 
+N.B. If you use multiscale tiles, the smaller tiles can repeat with impunity. The usage limit only applied to original tiles than their immediate children.
+
 ### Scattered tiles
 
 For a looser, even more scattered effect (imitating some works by [this artist](http://www.flickr.com/photos/tsevis/collections/)) tiles can be individually shrunk in place, leaving a margin that reveals the background. If the background is white, the overall effect is to lighten that tile.

@@ -704,7 +704,7 @@ def mosaic(tiles, db_name, tolerance=1, usage_penalty=1,
                     pbar.next()
                     continue
                 tile.match = choose_match(tile.lab, db, tolerance,
-                    usage_penalty if tile_depth < 2 else 0)
+                    usage_penalty if tile.depth < 2 else 0)
                 pbar.next()
         finally:
             db.close()
