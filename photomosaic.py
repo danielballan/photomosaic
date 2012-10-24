@@ -258,8 +258,10 @@ def img_histogram(img, mask=None):
 def untune(mos, orig_img, mask=None):
     if mask:
         m = crop_to_fit(mask, mos.size)
+        mos_palette = compute_palette(img_histogram(mos, m))
+    else:
+        mos_palette = compute_palette(img_histogram(mos))
     orig_palette = compute_palette(img_histogram(orig_img))
-    mos_palette = compute_palette(img_histogram(mos, m))
     return adjust_levels(mos, mos_palette, orig_palette)
 
 def tune(target_img, db_name, quiet=True):
