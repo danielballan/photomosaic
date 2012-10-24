@@ -40,11 +40,12 @@ logger = logging.getLogger(__name__)
 
 def simple(image_dir, target_filename, dimensions, output_file):
     pool(image_dir, 'temp.db')
-    img = open(target_filename)
-    img = tune(img, 'temp.db', quiet=True)
+    orig_img = open(target_filename)
+    img = tune(orig_img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
     analyze(tiles)
     mos = photomosaic(tiles, 'temp.db')
+    mos = untune(mos, img)
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
 
@@ -226,7 +227,7 @@ def img_histogram(img):
         hist[ch] = normalized_h
     return hist
 
-def untune(orig_img, mosaic):
+def untune(mosaic, orig_img):
     orig_palette = compute_palette(img_histogram(orig_img))
     mos_palette = compute_palette(img_histogram(mosaic))
     return adjust_levels(mosaic, mos_palette, orig_palette)
