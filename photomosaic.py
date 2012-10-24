@@ -39,7 +39,9 @@ FORMAT = "%(name)s.%(funcName)s:  %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
-def simple(target_filename, dimensions, output_file):
+def simple(image_dir, target_filename, dimensions, output_file):
+    "A convenient wrapper for producing a traditional photomosaic."
+    pool(image_dir, 'temp.db')
     orig_img = open(target_filename)
     img = tune(orig_img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
@@ -689,9 +691,9 @@ def prepare_tile(filename, size, dL=None):
         new_img = shrink_to_brighten(new_img, size, dL)
     return new_img
 
-def mosaic(tiles, db_name, vary_size=False, tolerance=1,
-                random_margins=False, skip_matching=False):
-    """Take the tiles from target() and return a mosaic image."""
+def mosaic(tiles, db_name, tolerance=1, usage_penalty=1,
+                vary_size=False, random_margins=False, skip_matching=False):
+    """Take the tiles and return a mosaic image."""
     if not skip_matching:
         db = connect(db_name)
         try:
@@ -701,9 +703,8 @@ def mosaic(tiles, db_name, vary_size=False, tolerance=1,
                 if tile.blank:
                     pbar.next()
                     continue
-                usage_penalty=0 if tile.depth > 1 else 1
                 tile.match = choose_match(tile.lab, db, tolerance,
-                                          usage_penalty)
+                    usage_penalty if tile_depth < 2 else 0)
                 pbar.next()
         finally:
             db.close()
