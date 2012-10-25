@@ -201,12 +201,12 @@ def pool(image_dir, db_name):
             except IOError:
                 logger.warning("Cannot open %s as an image. Skipping it.",
                                filename)
-                continue
                 pbar.next()
+                continue
             if img.mode != 'RGB':
                 logger.warning("RGB images only. Skipping %s.", filename)
-                continue
                 pbar.next()
+                continue
             w, h = img.size
             regions = split_quadrants(img)
             rgb = map(dominant_color, regions) 
@@ -396,6 +396,13 @@ class Tile(object):
     def pos(self):
         return self.x, self.y 
 
+    def avg_color(self):
+        t = [0]*3
+        for rgb in self._rgb:
+            for i, c in enumerate(rgb):
+                t[i] += c
+        return [a/len(self._rgb) for a in t] 
+
     @property
     def ancestry(self):
         return self._ancestry
@@ -554,13 +561,17 @@ def analyze(tiles):
     in the Tile object."""
     pbar = progress_bar(len(tiles), "Analyzing images")
     for tile in tiles:
-        if tile.blank:
-            pbar.next()
-            continue
-        regions = split_quadrants(tile)
-        tile.rgb = map(dominant_color, regions) 
-        tile.lab = map(cs.rgb2lab, tile.rgb)
+        analyze_one(tile)
         pbar.next()
+
+def analyze_one(tile):
+    """"Determine dominant colors of target tiles, and save that information
+    in the Tile object."""
+    if tile.blank:
+        return
+    regions = split_quadrants(tile)
+    tile.rgb = map(dominant_color, regions) 
+    tile.lab = map(cs.rgb2lab, tile.rgb)
 
 def choose_match(lab, db, tolerance=1, usage_penalty=1):
     """If there is are good matches (within tolerance times the 'just noticeable
