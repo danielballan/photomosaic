@@ -201,12 +201,12 @@ def pool(image_dir, db_name):
             except IOError:
                 logger.warning("Cannot open %s as an image. Skipping it.",
                                filename)
-                continue
                 pbar.next()
+                continue
             if img.mode != 'RGB':
                 logger.warning("RGB images only. Skipping %s.", filename)
-                continue
                 pbar.next()
+                continue
             w, h = img.size
             regions = split_quadrants(img)
             rgb = map(dominant_color, regions) 
