@@ -54,7 +54,7 @@ tiles = pm.partition(img, (10, 10), depth=DEPTH)
 for tile in sorted(tiles, key=analyze_sort):
     pm.analyze_one(tile)
     tx,ty = pm.tile_position(tile)
-    w,h = tile._img.size
+    w,h = tile.size
     for (x,y), color in zip(locs, tile.rgb):
         rect = (Wx+tx + w*x/2,Hx+ty+h*y/2,w/2,h/2)
         pygame.draw.rect(screen, color, rect)
@@ -69,7 +69,7 @@ try:
             continue
         tile.match = pm.choose_match(tile.lab, db)
         tx,ty = pm.tile_position(tile)
-        w,h = tile._img.size
+        w,h = tile.size
         draw_scaled(tile.match[4], tx+Wx, ty+Hx, w, h)
         pygame.display.flip()
         
