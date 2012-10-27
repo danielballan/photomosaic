@@ -178,6 +178,9 @@ def insert(filename, w, h, rgb, lab, db):
     except sqlite3.IntegrityError:
         logger.warning("Image %s is already in the table. Skipping it.",
                        filename)
+    except:
+        logger.warning("Unknown problem with image %s. Skipping it.",
+                       filename)
     finally:
         c.close()
     
@@ -208,9 +211,14 @@ def pool(image_dir, db_name):
                 pbar.next()
                 continue
             w, h = img.size
-            regions = split_quadrants(img)
-            rgb = map(dominant_color, regions) 
-            lab = map(cs.rgb2lab, rgb)
+            try:
+                regions = split_quadrants(img)
+                rgb = map(dominant_color, regions) 
+                lab = map(cs.rgb2lab, rgb)
+            except:
+                logger.warning("Unknown problem analyzing %s. Skipping it.",
+                               filename)
+                continue
             insert(filename, w, h, rgb, lab, db)
             pbar.next()
         db.commit()
