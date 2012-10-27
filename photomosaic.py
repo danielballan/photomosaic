@@ -20,7 +20,6 @@ from __future__ import division
 import os
 import logging
 import time
-import operator
 import random
 import numpy as np
 import scipy
@@ -663,7 +662,7 @@ def shrink_by_lightness(tile_size, dL):
     shrunk_size = [int(scaling*dim) for dim in tile_size]
     return shrunk_size
 
-def tile_position(tile, size, scatter=False):
+def tile_position(tile, size, scatter=False, margin=0):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
     # Sum position of original ancestor tile, relative position of this tile's
@@ -677,16 +676,12 @@ def tile_position(tile, size, scatter=False):
                            for gen, (x, y) in enumerate(tile.ancestry)]
         
     if tile.size == size:
-        padded_pos = [0, 0]
+        padding = [0, 0]
     else:
-        padding = map(lambda (x, y): (x - y)//2,
-                     zip(*([size, tile.size])))
-        if scatter:
-            padded_pos = [np.randint(0, 1 + padding[0]),
-                            np.randint(0, 1 + padding[1])]
-        else:
-            padded_pos = margin
-    pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [padded_pos]))))
+        padding = map(lambda (x, y): (x - y)//2, zip(*([size, tile.size])))
+    if scatter:
+        padding = [random.randint(0, 1 + margin), random.randint(0, 1 + margin)]
+    pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [padding]))))
     return pos
 
 @memo
@@ -710,7 +705,8 @@ def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
     finally:
         db.close()
 
-def mosaic(tiles, pad=False, scatter=False, background=(255, 255, 255)):
+def mosaic(tiles, pad=False, scatter=False, margin=0,
+           background=(255, 255, 255)):
     """Return the mosaic image.""" 
     # Infer dimensions so they don't have to be passed in the function call.
     dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in tiles]))
@@ -718,13 +714,19 @@ def mosaic(tiles, pad=False, scatter=False, background=(255, 255, 255)):
                          zip(*[tiles[0].ancestor_size, dimensions]))
     mos = Image.new('RGB', mosaic_size, background)
     pbar = progress_bar(len(tiles), "Scaling and placing tiles")
+    random.shuffle(tiles)
     for tile in tiles:
         if tile.blank:
             pbar.next()
             continue
-        size = shrink_by_lightness(tile.size, dL) if pad else tile.size
-        pos = tile_position(tile, size, scatter)
-        mos.paste(tile.match_img.resize(size), pos)
+        if pad:
+            size = shrink_by_lightness(tile.size, tile.match['dL'])
+            if margin == 0:
+                margin = min(tile.size[0] - size[0], tile.size[1] - size[1])
+        else:
+            size = tile.size
+        pos = tile_position(tile, size, scatter, margin)
+        mos.paste(crop_to_fit(tile.match_img, size), pos)
         pbar.next()
     return mos
 
