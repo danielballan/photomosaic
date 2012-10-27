@@ -368,13 +368,12 @@ class Tile(object):
         self.y = y
         self._mask = mask.convert("L") if mask else None
         self._blank = None # meaning undetermined (so far)
-        self._container_size = self._img.size
         self._ancestry = ancestry
         self._depth = len(self._ancestry)
         if ancestor_size:
             self._ancestor_size = ancestor_size
         else:
-            self._ancestor_size = self._container_size
+            self._ancestor_size = self.size
 
     def crop(self, *args):
         if self._mask: self._mask.crop(*args)
@@ -388,9 +387,6 @@ class Tile(object):
         if key == '_img':
             raise AttributeError()
         return getattr(self._img, key)
-
-    def substitute_img(self, img):
-        self._img = img
 
     def pos(self):
         return self.x, self.y 
@@ -406,10 +402,6 @@ class Tile(object):
     @property
     def ancestor_size(self):
         return self._ancestor_size
-
-    @property
-    def container_size(self):
-        return self._container_size
 
     @property
     def rgb(self):
@@ -434,6 +426,15 @@ class Tile(object):
     @match.setter
     def match(self, value):
         self._match = value # sqlite Row object
+        try:
+            self._match_img = open_tile(self._match['filename'])
+        except IOError:
+            logger.error("The filename specified in the database as %s "
+                         "cannot be found. Check: %s", match['filename'])
+
+    @property
+    def match_img(self):
+        return self._match_img
 
     @property
     def blank(self):
@@ -650,21 +651,19 @@ def crop_to_fit(img, tile_size):
     img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
     return img
 
-def shrink_to_brighten(img, tile_size, dL):
-    """Return an image smaller than a tile. Its white margins
-    will effect lightness. Also, varied tile size looks nice.
-    The greater the greater the lightness discrepancy dL
-    the smaller the tile is shrunk."""
+def shrink_by_lightness(tile_size, dL):
+    """The greater the greater the lightness discrepancy dL
+    the smaller the tile will shrunk."""
+    if dL < 0:
+        return tile_size
     MAX_dL = 100 # the largest possible distance in Lab space
     MIN = 0.5 # not so close small that it's a speck
     MAX = 0.95 # not so close to unity that is looks accidental
-    assert dL < 0, "Only shrink image when tile is too dark."
     scaling = MAX - (MAX - MIN)*(-dL)/MAX_dL
     shrunk_size = [int(scaling*dim) for dim in tile_size]
-    img = crop_to_fit(img, shrunk_size) 
-    return img 
+    return shrunk_size
 
-def tile_position(tile, random_floating=False):
+def tile_position(tile, size, scatter=False):
     """Return the x, y position of the tile in the mosaic, according for
     possible margins and optional random nudges for a 'scattered' look.""" 
     # Sum position of original ancestor tile, relative position of this tile's
@@ -677,93 +676,57 @@ def tile_position(tile, random_floating=False):
         rel_pos = [[x*x_size//2**(gen + 1), y*y_size//2**(gen + 1)] \
                            for gen, (x, y) in enumerate(tile.ancestry)]
         
-    if tile.container_size == tile.size:
-        floating_pos = [0, 0]
+    if tile.size == size:
+        padded_pos = [0, 0]
     else:
-        margin = map(lambda (x, y): (x - y)//2,
-                     zip(*[tile.container_size, tile.size]))
-        if random_floating:
-            floating_pos = [np.randint(0, margin[0]), np.randint(0, margin[1])]
+        padding = map(lambda (x, y): (x - y)//2,
+                     zip(*([size, tile.size])))
+        if scatter:
+            padded_pos = [np.randint(0, 1 + padding[0]),
+                            np.randint(0, 1 + padding[1])]
         else:
-            floating_pos = margin
-    print ancestor_pos, rel_pos, floating_pos
-    print zip(*([ancestor_pos] + rel_pos + [floating_pos]))
-    pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [floating_pos]))))
+            padded_pos = margin
+    pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [padded_pos]))))
     return pos
 
 @memo
-def prepare_tile(filename, size, dL=None):
-    """This memoized function only executes once for a given set of args.
-    Hence, multiple (same-sized) tiles of the same image are speedy."""
-    new_img = Image.open(filename)
-    if (dL is None or dL >= 0):
-        # Either we are not shrinking tiles (dL = None) or
-        # the match is brighter than the target. Leave it alone.
-        new_img = crop_to_fit(new_img, size)
-    else:
-        # Match is darker than target.
-        # Shrink it to leave white padding.
-        new_img = shrink_to_brighten(new_img, size, dL)
-    return new_img
+def open_tile(filename):
+    """This memoized function only opens each image once."""
+    return Image.open(filename)
 
-def mosaic(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2,
-           floating=False, random_floating=False,
-           skip_matching=False):
-    """Take the tiles and return a mosaic image."""
-    if not skip_matching:
-        db = connect(db_name)
-        try:
-            reset_usage(db)
-            pbar = progress_bar(len(tiles), "Choosing matching tiles")
-            for tile in tiles:
-                if tile.blank:
-                    pbar.next()
-                    continue
-                tile.match = choose_match(tile.lab, db, tolerance,
-                    usage_penalty if tile.depth < usage_impunity else 0)
+def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
+    """Assign each tile a new image, and open that image in the Tile object."""
+    db = connect(db_name)
+    try:
+        reset_usage(db)
+        pbar = progress_bar(len(tiles), "Choosing matching tiles")
+        for tile in tiles:
+            if tile.blank:
                 pbar.next()
-        finally:
-            db.close()
-    pbar = progress_bar(len(tiles), "Scaling tiles")
-    for tile in tiles:
-        # Size variation is contingent on the boolean option floating,
-        # the depth of the tile, and its lightness compared to the target
-        # image, dL.
-        if tile.blank:
+                continue
+            tile.match = choose_match(tile.lab, db, tolerance,
+                usage_penalty if tile.depth < usage_impunity else 0)
             pbar.next()
-            continue
-        if floating and tile.depth < 2:
-            dL = tile.match['dL']
-        else:
-            dL = None
-        new_img = prepare_tile(tile.match['filename'],
-                               tile.container_size,
-                               dL)
-        tile.substitute_img(new_img)
-        pbar.next()
-    mos = assemble_tiles(tiles, random_floating)
-    return mos
+    finally:
+        db.close()
 
-def assemble_tiles(tiles, random_floating=False):
-    pbar = progress_bar(len(tiles), "Building mosaic")
-    background = (255, 255, 255)
+def mosaic(tiles, pad=False, scatter=False, background=(255, 255, 255)):
+    """Return the mosaic image.""" 
     # Infer dimensions so they don't have to be passed in the function call.
     dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in tiles]))
     mosaic_size = map(lambda (x, y): x*y,
                          zip(*[tiles[0].ancestor_size, dimensions]))
     mos = Image.new('RGB', mosaic_size, background)
+    pbar = progress_bar(len(tiles), "Scaling and placing tiles")
     for tile in tiles:
         if tile.blank:
             pbar.next()
             continue
-        pos = tile_position(tile, random_floating)
-        mos.paste(tile, pos)
+        size = shrink_by_lightness(tile.size, dL) if pad else tile.size
+        pos = tile_position(tile, size, scatter)
+        mos.paste(tile.match_img.resize(size), pos)
         pbar.next()
     return mos
-
-def plot_match_stats(tiles):
-    "Evalute the quality of the matching."
-    pass
 
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
