@@ -266,13 +266,14 @@ def img_histogram(img, mask=None):
 def untune(mos, orig_img, mask=None):
     if mask:
         m = crop_to_fit(mask, mos.size)
+        orig_palette = compute_palette(img_histogram(orig_img, m))
         mos_palette = compute_palette(img_histogram(mos, m))
     else:
+        orig_palette = compute_palette(img_histogram(orig_img))
         mos_palette = compute_palette(img_histogram(mos))
-    orig_palette = compute_palette(img_histogram(orig_img))
     return adjust_levels(mos, mos_palette, orig_palette)
 
-def tune(target_img, db_name, quiet=True):
+def tune(target_img, db_name, mask=None, quiet=True):
     """Adjsut the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
     db = connect(db_name)
@@ -281,7 +282,11 @@ def tune(target_img, db_name, quiet=True):
     finally:
         db.close()
     pool_palette = compute_palette(pool_hist)
-    target_palette = compute_palette(img_histogram(target_img))
+    if mask:
+        m = crop_to_fit(mask, mos.size)
+        target_palette = compute_palette(img_histogram(target_img, m))
+    else:
+        target_palette = compute_palette(img_histogram(target_img))
     adjusted_img = adjust_levels(target_img, target_palette, pool_palette)
     if not quiet:
         # Use the Image.histogram() method to examine the target image
