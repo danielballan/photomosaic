@@ -391,7 +391,6 @@ class Tile(object):
 
     def substitute_img(self, img):
         self._img = img
-        self._container_size = self._img.size
 
     def pos(self):
         return self.x, self.y 
@@ -658,7 +657,7 @@ def shrink_to_brighten(img, tile_size, dL):
     the smaller the tile is shrunk."""
     MAX_dL = 100 # the largest possible distance in Lab space
     MIN = 0.5 # not so close small that it's a speck
-    MAX = 0.9 # not so close to unity that is looks accidental
+    MAX = 0.95 # not so close to unity that is looks accidental
     assert dL < 0, "Only shrink image when tile is too dark."
     scaling = MAX - (MAX - MIN)*(-dL)/MAX_dL
     shrunk_size = [int(scaling*dim) for dim in tile_size]
@@ -670,9 +669,9 @@ def tile_position(tile, random_floating=False):
     possible margins and optional random nudges for a 'scattered' look.""" 
     # Sum position of original ancestor tile, relative position of this tile's
     # container, and any margins that this tile has.
-    ancestor_pos = tile.x*tile.ancestor_size[0], tile.y*tile.ancestor_size[1]
+    ancestor_pos = [tile.x*tile.ancestor_size[0], tile.y*tile.ancestor_size[1]]
     if tile.depth == 0:
-        rel_pos = (0, 0)
+        rel_pos = [[0, 0]]
     else:
         x_size, y_size = tile.ancestor_size
         rel_pos = [[x*x_size//2**(gen + 1), y*y_size//2**(gen + 1)] \
@@ -681,15 +680,15 @@ def tile_position(tile, random_floating=False):
     if tile.container_size == tile.size:
         floating_pos = [0, 0]
     else:
-        margin = map(lambda (x, y): x - y,
-                     zip(*[tile.container_size, tile.size])//2)
-        print margin
+        margin = map(lambda (x, y): (x - y)//2,
+                     zip(*[tile.container_size, tile.size]))
         if random_floating:
-            floating_pos = np.randint(0, margin[0]), np.randint(0, margin[1])
+            floating_pos = [np.randint(0, margin[0]), np.randint(0, margin[1])]
         else:
             floating_pos = margin
-    print floating_pos
-    pos = tuple(map(sum, zip(*([ancestor_pos] + [rel_pos] + [floating_pos]))))
+    print ancestor_pos, rel_pos, floating_pos
+    print zip(*([ancestor_pos] + rel_pos + [floating_pos]))
+    pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [floating_pos]))))
     return pos
 
 @memo
