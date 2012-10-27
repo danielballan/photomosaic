@@ -108,6 +108,10 @@ Again, examine the effect before proceeding.
     img = pm.tune(orig_img, img, mask)
     mos = pm.untune(mos, img, orig_img, mask)
 
+Sometimes, fully untuing looks too harsh. You can hedge by setting ``amount`` to some value less than 1.
+
+    mos = pm.untune(mos, img, orig_img, mask, amount=0.4)
+
 ### Tile matching and repetition
 
 This is how tile images are chosen:

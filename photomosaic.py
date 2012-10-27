@@ -728,7 +728,7 @@ def tile_position(tile, size, scatter=False, margin=0):
 def open_tile(filename, temp_size=(100,100)):
     """This memoized function only opens each image once."""
     im = Image.open(filename)
-    im.thumbnail(temp_size)
+    im.thumbnail(temp_size) # Resize to fit within temp_size without cropping.
     return im
 
 def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
