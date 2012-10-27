@@ -45,8 +45,9 @@ def simple(image_dir, target_filename, dimensions, output_file):
     img = tune(orig_img, 'temp.db', quiet=True)
     tiles = partition(img, dimensions)
     analyze(tiles)
-    mos = mosaic(tiles, 'temp.db')
-    mos = untune(mos, img)
+    matchmaker(tiles, 'temp.db')
+    mos = mosaic(tiles)
+    mos = untune(mos, img, orig_img)
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
 
@@ -254,14 +255,16 @@ def img_histogram(img, mask=None):
         hist[ch] = normalized_h
     return hist
 
-def untune(mos, orig_img, mask=None):
+def untune(mos, img, orig_img, mask=None, amount=1):
     if mask:
-        m = crop_to_fit(mask, mos.size)
-        mos_palette = compute_palette(img_histogram(mos, m))
+        m = crop_to_fit(mask, img.size)
+        orig_palette = compute_palette(img_histogram(orig_img, m))
+        img_palette = compute_palette(img_histogram(img, m))
     else:
-        mos_palette = compute_palette(img_histogram(mos))
-    orig_palette = compute_palette(img_histogram(orig_img))
-    return adjust_levels(mos, mos_palette, orig_palette)
+        orig_palette = compute_palette(img_histogram(orig_img))
+        img_palette = compute_palette(img_histogram(img))
+    return Image.blend(mos, adjust_levels(mos, img_palette, orig_palette),
+                          amount)
 
 def tune(target_img, db_name, quiet=True):
     """Adjsut the levels of the image to match the colors available in the
@@ -426,10 +429,13 @@ class Tile(object):
     def match(self, value):
         self._match = value # sqlite Row object
         try:
-            self._match_img = open_tile(self._match['filename'])
+            self._match_img = open_tile(self._match['filename'],
+                (self._ancestor_size[1], self.ancestor_size[0]))
+                # Reversed on purpose, for thumbnail. Largest possible size
+                # we could want later.
         except IOError:
-            logger.error("The filename specified in the database as %s "
-                         "cannot be found. Check: %s", match['filename'])
+            logger.error("The filename specified in the database as "
+                         "cannot be found. Check: %s", self._match['filename'])
 
     @property
     def match_img(self):
@@ -650,15 +656,16 @@ def crop_to_fit(img, tile_size):
     img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
     return img
 
-def shrink_by_lightness(tile_size, dL):
+def shrink_by_lightness(pad, tile_size, dL):
     """The greater the greater the lightness discrepancy dL
     the smaller the tile will shrunk."""
-    if dL < 0:
+    sgn = lambda x: (x > 0) - (x < 0)
+    if sgn(pad)*dL < 0:
         return tile_size
     MAX_dL = 100 # the largest possible distance in Lab space
     MIN = 0.5 # not so close small that it's a speck
     MAX = 0.95 # not so close to unity that is looks accidental
-    scaling = MAX - (MAX - MIN)*(-dL)/MAX_dL
+    scaling = MAX - (MAX - MIN)*(-pad*dL)/MAX_dL
     shrunk_size = [int(scaling*dim) for dim in tile_size]
     return shrunk_size
 
@@ -685,16 +692,18 @@ def tile_position(tile, size, scatter=False, margin=0):
     return pos
 
 @memo
-def open_tile(filename):
+def open_tile(filename, temp_size=(100,100)):
     """This memoized function only opens each image once."""
-    return Image.open(filename)
+    im = Image.open(filename)
+    im.thumbnail(temp_size)
+    return im
 
 def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
     """Assign each tile a new image, and open that image in the Tile object."""
     db = connect(db_name)
     try:
         reset_usage(db)
-        pbar = progress_bar(len(tiles), "Choosing matching tiles")
+        pbar = progress_bar(len(tiles), "Choosing and loading matching images")
         for tile in tiles:
             if tile.blank:
                 pbar.next()
@@ -720,7 +729,7 @@ def mosaic(tiles, pad=False, scatter=False, margin=0,
             pbar.next()
             continue
         if pad:
-            size = shrink_by_lightness(tile.size, tile.match['dL'])
+            size = shrink_by_lightness(pad, tile.size, tile.match['dL'])
             if margin == 0:
                 margin = min(tile.size[0] - size[0], tile.size[1] - size[1])
         else:
@@ -728,6 +737,23 @@ def mosaic(tiles, pad=False, scatter=False, margin=0,
         pos = tile_position(tile, size, scatter, margin)
         mos.paste(crop_to_fit(tile.match_img, size), pos)
         pbar.next()
+    return mos
+
+def assemble_tiles(tiles):
+    """This is not used to build the final mosaic. It's a handy function for
+    assembling new tiles (without blanks) to see how partitioning looks."""
+    # Infer dimensions so they don't have to be passed in the function call.
+    dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in tiles]))
+    mosaic_size = map(lambda (x, y): x*y,
+                         zip(*[tiles[0].ancestor_size, dimensions]))
+    background = (255, 255, 255)
+    mos = Image.new('RGB', mosaic_size, background)
+    for tile in tiles:
+        if tile.blank:
+            continue
+        shrunk = tile.size[0]-4, tile.size[1]-4
+        pos = tile_position(tile, shrunk, False, 0)
+        mos.paste(tile.resize(shrunk), pos)
     return mos
 
 def color_hex(rgb):
