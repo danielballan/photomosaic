@@ -265,15 +265,6 @@ def img_histogram(img, mask=None):
 
 def untune(mos, img, orig_img, mask=None, amount=1):
     if mask:
-<<<<<<< HEAD
-        m = crop_to_fit(mask, mos.size)
-        orig_palette = compute_palette(img_histogram(orig_img, m))
-        mos_palette = compute_palette(img_histogram(mos, m))
-    else:
-        orig_palette = compute_palette(img_histogram(orig_img))
-        mos_palette = compute_palette(img_histogram(mos))
-    return adjust_levels(mos, mos_palette, orig_palette)
-=======
         m = crop_to_fit(mask, img.size)
         orig_palette = compute_palette(img_histogram(orig_img, m))
         img_palette = compute_palette(img_histogram(img, m))
@@ -282,7 +273,6 @@ def untune(mos, img, orig_img, mask=None, amount=1):
         img_palette = compute_palette(img_histogram(img))
     return Image.blend(mos, adjust_levels(mos, img_palette, orig_palette),
                           amount)
->>>>>>> float
 
 def tune(target_img, db_name, mask=None, quiet=True):
     """Adjsut the levels of the image to match the colors available in the
