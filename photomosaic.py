@@ -283,7 +283,7 @@ def tune(target_img, db_name, mask=None, quiet=True):
         db.close()
     pool_palette = compute_palette(pool_hist)
     if mask:
-        m = crop_to_fit(mask, mos.size)
+        m = crop_to_fit(mask, target_img.size)
         target_palette = compute_palette(img_histogram(target_img, m))
     else:
         target_palette = compute_palette(img_histogram(target_img))
