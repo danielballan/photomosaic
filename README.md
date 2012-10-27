@@ -60,9 +60,7 @@ Advanced Usage
 
 ### Multiscale tiles
 
-A traditional photomosaic is a regular array of tiles. For a different effect, 
- 
-    tiles = pm.partition(img, (10, 10), depth=4)
+A traditional photomosaic is a regular array of tiles. For a different effect, allow tiles to split rescursively.
  
     tiles = pm.partition(img, (10, 10), depth=4)
 
@@ -71,7 +69,7 @@ Tiles with high contrast will split. ``depth`` limits how small tile-splitting c
     tiles = pm.partition(img, (10, 10), depth=4, hdr=80) # many tiles
     tiles = pm.partition(img, (10, 10), depth=4, hdr=200) # or fewer tiles
 
-Logs displayed by ``tiles()`` tell you how many tiles have been made, in total, after each generation. 2000-6000 is a reasonable range to aim for. You can go higher if you're willing to wait for ``analyze`` and ``matchmaker`` to run for more than 10 minutes together.
+Logs displayed by ``partition`` tell you how many tiles have been made, in total, after each generation. 2000-6000 is a reasonable range to aim for. You can go higher if you're willing to wait for ``analyze`` and ``matchmaker`` to run for more than 10 minutes together.
 
 ### Photomosaics with curved edges (masked images)
 
@@ -125,6 +123,11 @@ To adjust the random component, use ``tolerance``, which sets the maximum random
 
 To specifically suppress repetition, increase the penalty for reuse. The parameter is ``usage_penalty``. Its default value is 1, in the units of JND.
 
+Example:
+
+    pm.mosiac(tiles, tolerance=0.5, usage_penalty=3)
+
+P.S. If you use multiscale tiles, you should let the smaller tiles repeat with impunity. By default, the usage limit only applies to original tiles than their immediate children. There is a parameter for this, ``usage_impunity=2``, but unless you have a giant image pool, I wouldn't change it.
 
 ### Scattered tiles
 
