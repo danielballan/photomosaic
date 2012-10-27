@@ -60,16 +60,18 @@ Advanced Usage
 
 ### Multiscale tiles
 
-A traditional photomosaic is a regular array of tiles. For a different effect, the size of the tiles can be varied. Small tiles are best used in regions of high contrast. Start with big tiles, such as 10x10. Use the ``depth`` keyword to control how many times a tile can decide to subdivide into quarters, based on the contrast within it.
-
+A traditional photomosaic is a regular array of tiles. For a different effect, 
+ 
+    tiles = pm.partition(img, (10, 10), depth=4)
+ 
     tiles = pm.partition(img, (10, 10), depth=4)
 
-``depth`` puts a limit on how far tile-splitting can go, but it does not control how many tiles will decide to split. ``hdr`` for "high dynamic range" sets that contrast level beyond which tiles will subdivide.
+Tiles with high contrast will split. ``depth`` limits how small tile-splitting can go, but it does not control how many tiles will decide to split. ``hdr`` for "high dynamic range" sets a contrast threshold, a maximum allowed difference between the brightest and darkest pixel in any channel. (This is crude measure of contrast, but it's fast to compute.)
 
     tiles = pm.partition(img, (10, 10), depth=4, hdr=80) # many tiles
     tiles = pm.partition(img, (10, 10), depth=4, hdr=200) # or fewer tiles
 
-Logs displayed by ``tiles()`` tell you how many tiles have been made, in total, after each generation. 2000-6000 is a reasonable range to aim for. You can go higher if you're willing to wait for ``matchmaker()`` to run for more than 10 minutes.
+Logs displayed by ``tiles()`` tell you how many tiles have been made, in total, after each generation. 2000-6000 is a reasonable range to aim for. You can go higher if you're willing to wait for ``analyze`` and ``matchmaker`` to run for more than 10 minutes together.
 
 ### Photomosaics with curved edges (masked images)
 
@@ -80,17 +82,17 @@ Create a black-and-white image the same size and your target image. White areas 
     mask_img = pm.open('mask.jpg')
     tiles = pm.partition(img, (10, 10), mask=mask_img)
 
-Tiles that fall wholly in the black area of the mask will be left blank. Of course, small tiles are better for tracing a curved edge. When you invoke multiscale tiling along with the mask, small tiles will fill in along the edge. Any tiles that straddle the edge of the mask, containing some white and some non-white, are forced to subdivide -- down to the limit set by depth, as above.
+Tiles that fall wholly in the black area of the mask will be left blank. Of course, a curved edge is better traced by tiles that are small. When you invoke multiscale tiling along with the mask, small tiles will fill in along the edge. Any tiles that straddle the edge of the mask, containing some white and some non-white, are forced to subdivide. They subdivide down to the limit set by ``depth``, as explained above, so, for a smoother edge, increase depth.
 
     tiles = pm.partition(img, (10, 10), mask=mask_img, depth=4)
 
-To examine the effect before you proceed with ``analyze``, ``matchmaker``, and ``mosaic``, you can easily assemble the original tiles.
+To examine the effect of the blank tiles before you proceed with ``analyze()`` and ``mosaic()``, assemble them.
 
     pm.assemble_tiles(tiles)
 
 #### Masked image with "debris"
 
-If the mask image contains grey, these areas can be filled with tiles probabilitically, creating the halo of debris, something like a partially completed puzzle.
+If the mask image contains grey, these areas can be filled with tiles probabilitically, creating the halo of debris that looks like a partly completed jigsaw puzzle.
 
     mask_img = pm.open('mask-with-some-grey-in-it.jpg')
     tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img, debris=True)
@@ -99,7 +101,7 @@ To my eye, the effect is better with small tiles. You can limit debris to N-chil
 
     tiles = pm.partition(img, (10, 10), depth=4, mask=mask_img, debris=True, min_debris_depth=2)
 
-Again, examine the effect before proceeding. 
+Again, examine the effect before proceeding.
 
     pm.assemble_tiles(tiles)
 
@@ -115,19 +117,14 @@ Sometimes, fully untuing looks too harsh. You can hedge by setting ``amount`` to
 ### Tile matching and repetition
 
 This is how tile images are chosen:
-* Images are rated by their closeness to the target tile. Technical details: "Closeness" is Euclidean distance in Lab color space, which is a good proxy to perceived color difference. The closeness is measured separately in the four quadrants of the tile, and then averaged.
-* Ratings are adjusted randomly by up to 2.3, which is the "just-noticeable difference" in color. Thus, if one match is much better than the others, it will be chosen, but if ther many good candidates, one is taken at random.
-* An image's rating is downgraded in proportion to the number of times it has already been used. By default, its rating is downgrade one 2.3 times the number of usages.
+* Images are rated by their closeness to the target tile. Technical details: "Closeness" is Euclidean distance in Lab color space, which is a good proxy to perceived color difference. The distance is measured separately for each of the four quadrants of the tile and then averaged.
+* Ratings are adjusted randomly by up to 2.3, which is the "just-noticeable difference" in color determined by [experiments](https://lirias.kuleuven.be/bitstream/123456789/71963/1/509.pdf). Thus, if one match is much better than the others, it will be chosen, but if there are many good candidates, one is taken at random.
+* An image's rating is downgraded in proportion to the number of times it has already been used.
 
-To adjust the random component, use ``tolerance``, which sets the maximum random ratings bump in units of JND (the just-noticeable difference).
+To adjust the random component, use ``tolerance``, which sets the maximum random ratings bump in units of JND, just-noticeable difference.
 
-To specifically suppress repetition, you can increase the penalty for reuse. The parameter is ``usage_penalty``, and again its default value is 1, in the units of JND.
+To specifically suppress repetition, increase the penalty for reuse. The parameter is ``usage_penalty``. Its default value is 1, in the units of JND.
 
-Example:
-
-    pm.matchmaker(tiles, tolerance=0.5, usage_penalty=3)
-
-P.S. If you use multiscale tiles, the smaller tiles can repeat with impunity. The usage limit only applied to original tiles than their immediate children. There is a keyword argument for this as well, ``usage_impunity=2``, but unless you have a giant image pool, I wouldn't change it. 
 
 ### Scattered tiles
 
@@ -153,5 +150,8 @@ To place image randomly within a window of their location, turn on scattering a 
 
     mos = mosaic(tiles, scatter=True, margin=10)
 
-Tiles are "shuffled" before they are placed into the image, so the overlapping is nicely arbitrary, not top-to-bottom or left-to-right.
+Tiles are "shuffled" before they are placed into the image, so the overlapping is nicely disordered, not top-to-bottom or left-to-right.
 
+#### Pad & Scatter
+
+Finally, if you turn on ``scatter`` and ``pad`` but leave ``margin`` to its default value of 0, each padded tile will be placed randomly off-center within its own padding, but it will not leave that box to overlap with other tiles. Unpadded tiles will not shift at all.
