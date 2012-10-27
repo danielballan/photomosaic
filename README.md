@@ -149,7 +149,7 @@ To make padding more dramatic, set ``pad`` with a higher absolute value.
 
 #### Scatter image placement
 
-To place image randomly within a window of their location, turn on scattering a specify a margin in pixels.
+To place image randomly within a window around their original location, turn on scattering a specify a margin in pixels.
 
     mos = mosaic(tiles, scatter=True, margin=10)
 
