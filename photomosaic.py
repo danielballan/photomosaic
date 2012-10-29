@@ -737,7 +737,7 @@ def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
     finally:
         db.close()
 
-def mosaic(tiles, pad=False, scatter=False, margin=0,
+def mosaic(tiles, pad=False, scatter=False, margin=0, scaled_margin=False,
            background=(255, 255, 255)):
     """Return the mosaic image.""" 
     # Infer dimensions so they don't have to be passed in the function call.
@@ -757,7 +757,10 @@ def mosaic(tiles, pad=False, scatter=False, margin=0,
                 margin = min(tile.size[0] - size[0], tile.size[1] - size[1])
         else:
             size = tile.size
-        pos = tile_position(tile, size, scatter, margin)
+        if scaled_margin:
+            pos = tile_position(tile, size, scatter, margin//(1 + tile.depth))
+        else:
+            pos = tile_position(tile, size, scatter, margin)
         mos.paste(crop_to_fit(tile.match_img, size), pos)
         pbar.next()
     return mos
