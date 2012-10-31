@@ -275,7 +275,7 @@ def untune(mos, img, orig_img, mask=None, amount=1):
                           amount)
 
 def tune(target_img, db_name, mask=None, quiet=True):
-    """Adjsut the levels of the image to match the colors available in the
+    """Adjust the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
     db = connect(db_name)
     try:
@@ -525,10 +525,17 @@ class Tile(object):
         return children
 
 def partition(img, dimensions, mask=None, depth=0, hdr=80,
-              debris=False, min_debris_depth=1):
+              debris=False, min_debris_depth=1, base_width=None):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
+    if base_width is not None:
+        cwidth = img.size[0] / dimensions[0]
+        width = base_width * dimensions[0]
+        factor = base_width / cwidth
+        height = int(img.size[1] * factor)
+        print img.size, dimensions, width, height
+        img = crop_to_fit(img, (width, height))
     # img.size must have dimensions*2**depth as a factor.
     factor = dimensions[0]*2**depth, dimensions[1]*2**depth
     new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
