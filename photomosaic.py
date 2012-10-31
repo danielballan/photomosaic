@@ -265,7 +265,6 @@ def img_histogram(img, mask=None):
 
 def untune(mos, img, orig_img, mask=None, amount=1):
     if mask:
-<<<<<<< HEAD
         m = crop_to_fit(mask, mos.size)
         orig_palette = compute_palette(img_histogram(orig_img, m))
         mos_palette = compute_palette(img_histogram(mos, m))
@@ -273,19 +272,9 @@ def untune(mos, img, orig_img, mask=None, amount=1):
         orig_palette = compute_palette(img_histogram(orig_img))
         mos_palette = compute_palette(img_histogram(mos))
     return adjust_levels(mos, mos_palette, orig_palette)
-=======
-        m = crop_to_fit(mask, img.size)
-        orig_palette = compute_palette(img_histogram(orig_img, m))
-        img_palette = compute_palette(img_histogram(img, m))
-    else:
-        orig_palette = compute_palette(img_histogram(orig_img))
-        img_palette = compute_palette(img_histogram(img))
-    return Image.blend(mos, adjust_levels(mos, img_palette, orig_palette),
-                          amount)
->>>>>>> float
 
 def tune(target_img, db_name, mask=None, quiet=True):
-    """Adjsut the levels of the image to match the colors available in the
+    """Adjust the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
     db = connect(db_name)
     try:
@@ -535,10 +524,17 @@ class Tile(object):
         return children
 
 def partition(img, dimensions, mask=None, depth=0, hdr=80,
-              debris=False, min_debris_depth=1):
+              debris=False, min_debris_depth=1, base_width=None):
     "Partition the target image into a list of Tile objects."
     if isinstance(dimensions, int):
         dimensions = dimensions, dimensions
+    if base_width is not None:
+        cwidth = img.size[0] / dimensions[0]
+        width = base_width * dimensions[0]
+        factor = base_width / cwidth
+        height = int(img.size[1] * factor)
+        print img.size, dimensions, width, height
+        img = crop_to_fit(img, (width, height))
     # img.size must have dimensions*2**depth as a factor.
     factor = dimensions[0]*2**depth, dimensions[1]*2**depth
     new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
