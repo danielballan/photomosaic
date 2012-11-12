@@ -450,7 +450,7 @@ class Tile(object):
         self._match = value # sqlite Row object
         try:
             self._match_img = open_tile(self._match['filename'],
-                (self._ancestor_size[1], self.ancestor_size[0]))
+                (2*self._ancestor_size[1], 2*self.ancestor_size[0]))
                 # Reversed on purpose, for thumbnail. Largest possible size
                 # we could want later.
         except IOError:
@@ -728,7 +728,7 @@ def tile_position(tile, size, scatter=False, margin=0):
 def open_tile(filename, temp_size=(100,100)):
     """This memoized function only opens each image once."""
     im = Image.open(filename)
-    im.thumbnail(temp_size) # Resize to fit within temp_size without cropping.
+    im.thumbnail(temp_size, Image.ANTIALIAS) # Resize to fit within temp_size without cropping.
     return im
 
 def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
