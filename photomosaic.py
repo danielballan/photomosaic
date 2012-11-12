@@ -27,6 +27,7 @@ import scipy.misc
 from scipy.cluster import vq
 from scipy import interpolate
 import Image
+import ImageFilter
 import sqlite3
 import color_spaces as cs
 from directory_walker import DirectoryWalker
@@ -499,8 +500,10 @@ class Tile(object):
  
     def dynamic_range(self):
         """What is the dynamic range in this image? Return the
-        average dynamic range over RGB channels."""
-        return sum(map(lambda (x, y): y - x, self._img.getextrema()))//3
+        average dynamic range over RGB channels. Blur the image
+        first to smooth away outliers."""
+        return sum(map(lambda (x, y): y - x, 
+                       self._img.filter(ImageFilter.BLUR).getextrema()))//3
 
     def procreate(self):
         """Divide image into quadrants, make each into a child tile,
@@ -784,7 +787,7 @@ def assemble_tiles(tiles):
     for tile in tiles:
         if tile.blank:
             continue
-        shrunk = tile.size[0]-4, tile.size[1]-4
+        shrunk = tile.size[0]-2, tile.size[1]-2
         pos = tile_position(tile, shrunk, False, 0)
         mos.paste(tile.resize(shrunk), pos)
     return mos
