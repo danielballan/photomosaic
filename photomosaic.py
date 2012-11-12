@@ -775,7 +775,7 @@ def mosaic(tiles, pad=False, scatter=False, margin=0, scaled_margin=False,
         pbar.next()
     return mos
 
-def assemble_tiles(tiles):
+def assemble_tiles(tiles, margin=1):
     """This is not used to build the final mosaic. It's a handy function for
     assembling new tiles (without blanks) to see how partitioning looks."""
     # Infer dimensions so they don't have to be passed in the function call.
@@ -787,7 +787,7 @@ def assemble_tiles(tiles):
     for tile in tiles:
         if tile.blank:
             continue
-        shrunk = tile.size[0]-2, tile.size[1]-2
+        shrunk = tile.size[0]-2*int(margin), tile.size[1]-2*int(margin)
         pos = tile_position(tile, shrunk, False, 0)
         mos.paste(tile.resize(shrunk), pos)
     return mos
