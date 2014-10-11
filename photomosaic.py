@@ -28,11 +28,11 @@ from scipy.cluster import vq
 from scipy import interpolate
 import Image
 import ImageFilter
-import sqlite3
 import color_spaces as cs
 from directory_walker import DirectoryWalker
 from memo import memo
 from progress_bar import progress_bar
+from sql_image_pool import SqlImagePool
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
@@ -93,110 +93,17 @@ def dominant_color(img, clusters=5, size=50):
     dominant_color = colors[counts.argmax()]
     return map(int, dominant_color) # Avoid returning np.uint8 type.
 
-def connect(db_path):
-    "Connect to a sqlite database at db_path. If it does not exist, create it."
-    try:
-        db = sqlite3.connect(db_path)
-    except IOError:
-        logger.error("Cannot connect to SQLite database at %s",  db_path)
-        return
-    db.row_factory = sqlite3.Row # Rows are dictionaries.
-    return db
-
-def create_tables(db):
-    """Create Images for image meta info, Color for RGB values and LabColor
-    for LAB values. RGB and LAB are used for different steps, RGB for levels
-    adjustments are LAB for measure perceived color difference precisely.
-    Thus Color and LabColor are organized somewhat differently."""
-    c = db.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS Images
-                 (image_id INTEGER PRIMARY KEY,
-                  usages INTEGER,
-                  w INTEGER,
-                  h INTEGER,
-                  filename TEXT UNIQUE)""")
-    c.execute("""CREATE TABLE IF NOT EXISTS Colors
-                 (color_id INTEGER PRIMARY KEY,
-                  image_id INTEGER,
-                  region INTEGER,
-                  red INTEGER,
-                  green INTEGER,
-                  blue INTEGER)""")
-    c.execute("""CREATE TABLE IF NOT EXISTS LabColors
-                 (labcolor_id INTEGER PRIMARY KEY,
-                  image_id INTEGER,
-                  region INTEGER,
-                  L1 REAL,
-                  a1 REAL,
-                  b1 REAL,
-                  L2 REAL,
-                  a2 REAL,
-                  b2 REAL,
-                  L3 REAL,
-                  a3 REAL,
-                  b3 REAL,
-                  L4 REAL,
-                  a4 REAL,
-                  b4 REAL)""")
-    c.close()
-    db.commit()
-
-def in_db(filename, db):
-    c = db.cursor()
-    try: 
-        c.execute("SELECT count(*) FROM Images WHERE filename=?", (filename,))
-        return c.fetchone()[0] > 0
-    finally:
-        c.close()
-    return False
-
-def get_size(db):
-    c = db.cursor()
-    try: 
-        c.execute("SELECT count(*) FROM Images")
-        return c.fetchone()[0] 
-    finally:
-        c.close()
-    return 0   
-
-def insert(filename, w, h, rgb, lab, db):
-    """Insert image info in the Images table and color information in the
-    Color and LabColor tables."""
-    c = db.cursor()
-    try:
-        c.execute("""INSERT INTO Images (usages, w, h, filename)
-                     VALUES (?, ?, ?, ?)""",
-                  (0, w, h, filename))
-        image_id = c.lastrowid
-        c.executemany("""INSERT INTO Colors (image_id, region, red, green, blue)
-                         VALUES (?, ?, ?, ?, ?)""",
-                         [tuple([image_id, region] + list(colors)) \
-                          for region, colors in enumerate(rgb)])
-        c.execute("""INSERT INTO LabColors (image_id,
-                     L1, a1, b1, L2, a2, b2, L3, a3, b3, L4, a4, b4)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                     tuple([image_id] + [ch for reg in lab for ch in reg]))
-    except sqlite3.IntegrityError:
-        logger.warning("Image %s is already in the table. Skipping it.",
-                       filename)
-    except:
-        logger.warning("Unknown problem with image %s. Skipping it.",
-                       filename)
-    finally:
-        c.close()
-    
 def pool(image_dir, db_name):
     """Analyze all the images in image_dir, and store the results in
     a sqlite database at db_name."""
-    db = connect(db_name)
+    p = SqlImagePool(db_name)
     try:
-        create_tables(db)
         walker = DirectoryWalker(image_dir)
         file_count = len(list(walker)) # stupid but needed but progress bar
         pbar = progress_bar(file_count, "Analyzing images and building db")
-        walker = DirectoryWalker(image_dir)
+
         for filename in walker:
-            if in_db(filename, db):
+            if filename in p:
                 logger.warning("Image %s is already in the table. Skipping it."%filename)
                 pbar.next()
                 continue
@@ -220,12 +127,11 @@ def pool(image_dir, db_name):
                 logger.warning("Unknown problem analyzing %s. Skipping it.",
                                filename)
                 continue
-            insert(filename, w, h, rgb, lab, db)
+            p.insert(filename, w, h, rgb, lab)
             pbar.next()
-        db.commit()
-        logger.info('Collection %s built with %d images'%(db_name, get_size(db)))
+        logger.info('Collection %s built with %d images'%(db_name, len(p)))
     finally:
-        db.close()
+        p.close()
 
 def open(target_filename):
     "Just a wrapper for Image.open from PIL"
@@ -278,11 +184,11 @@ def untune(mos, img, orig_img, mask=None, amount=1):
 def tune(target_img, db_name, mask=None, quiet=True):
     """Adjust the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
-    db = connect(db_name)
+    p = SqlImagePool(db_name)
     try:
-        pool_hist = pool_histogram(db)
+        pool_hist = p.pool_histogram()
     finally:
-        db.close()
+        p.close()
     pool_palette = compute_palette(pool_hist)
     if mask:
         m = crop_to_fit(mask, target_img.size)
@@ -308,30 +214,6 @@ def tune(target_img, db_name, mask=None, quiet=True):
         plot_histograms(orig_hist, title='Unaltered target image')
         plot_histograms(adjusted_hist, title='Adjusted target image')
     return adjusted_img
-
-def pool_histogram(db):
-    """Generate a histogram of the images in the pool.
-    Return a dictionary of the channels red, green blue.
-    Each dict entry contains a list of the frequencies correspond to the
-    domain 0 - 255.""" 
-    hist = {}
-    c = db.cursor()
-    try: 
-        for ch in ['red', 'green', 'blue']:
-            c.execute("""SELECT {ch}, count(*)
-                         FROM Colors 
-                         GROUP BY {ch}""".format(ch=ch))
-            values, counts = zip(*c.fetchall())
-            # Normalize the histogram to 256 for readability,
-            # and fill in 0 for missing entries.
-            full_domain = range(0,256)
-            N = sum(counts)
-            all_counts = [256./N*counts[values.index(i)] if i in values else 0 \
-                          for i in full_domain]
-            hist[ch] = all_counts
-    finally:
-        c.close()
-    return hist
 
 def compute_palette(hist):
     """A palette maps a channel into the space of available colors, gleaned
