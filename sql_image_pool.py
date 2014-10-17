@@ -94,12 +94,6 @@ class SqlImagePool(ImagePool):
         domain 0 - 255.""" 
         hist = {}
         c = self.db.cursor()
-        c.execute("SELECT * FROM sqlite_master WHERE type='table';")
-        for x in c.fetchall():
-            print '\n==========\n'.join(map(str, x))
-            print
-            print
-        exit(0)
         try: 
             for ch in ['red', 'green', 'blue']:
                 c.execute("""SELECT {ch}, count(*)
@@ -116,6 +110,78 @@ class SqlImagePool(ImagePool):
         finally:
             c.close()
         return hist
+            
+    def reset_usage(self):
+        try:
+            c = self.db.cursor()
+            c.execute("UPDATE Images SET usages=0")
+        finally:
+            c.close()
+        return
+        
+    def choose_match(self, lab, tolerance=1, usage_penalty=1):
+        """If there is are good matches (within tolerance times the 'just noticeable
+        difference'), return one at random. If not, choose the closest match
+        deterministically. Return the match (as a sqlite Row dictionary) and the
+        number of good matches."""
+        JND = 2.3 # "just noticeable difference"
+        (L1, a1, b1), (L2, a2, b2), (L3, a3, b3), (L4, a4, b4) = lab
+        tokens = {'L1': L1, 'a1': a1, 'b1': b1,
+                  'L2': L2, 'a2': a2, 'b2': b2,
+                  'L3': L3, 'a3': a3, 'b3': b3,
+                  'L4': L4, 'a4': a4, 'b4': b4,
+                  'tol': tolerance*JND, 'usage_penalty': usage_penalty*JND}
+        
+        c = self.db.cursor()
+        try:
+            # Before we compute the exact color distance E, 
+            # which is expensive and requires
+            # adding 12 numbers in quadrature, the WHERE clause computes
+            # a simpler upper bound on E and filters out disqualifying rows.
+            # The survivors are ranked by their exact E plus a random component
+            # determined by the tolerance. Thus, decisive winners are chosen
+            # deterministically, but if there are many good matches, one is taken
+            # at random.
+            c.execute("""SELECT
+                         image_id,
+                         ((L1-({L1}))*(L1-({L1}))
+                           + (a1-({a1}))*(a1-({a1})) 
+                           + (b1-({b1}))*(b1-({b1}))
+                           + (L2-({L2}))*(L2-({L2}))
+                           + (a2-({a2}))*(a2-({a2})) 
+                           + (b2-({b2}))*(b2-({b2}))
+                           + (L3-({L3}))*(L3-({L3}))
+                           + (a3-({a3}))*(a3-({a3})) 
+                           + (b3-({b3}))*(b3-({b3}))
+                           + (L4-({L4}))*(L4-({L4}))
+                           + (a4-({a4}))*(a4-({a4}))
+                           + (b4-({b4}))*(b4-({b4})))/4. as E_sq,
+                         (L1-({L1}) + L2-({L2}) + L3-({L3}) + L4-({L4}))/4. as dL,
+                         usages,
+                         filename
+                         FROM LabColors
+                         JOIN Images using (image_id)
+                         WHERE
+                         L1-({L1}) + a1-({a1}) + b1-({b1})
+                           + L2-({L2}) + a2-({a2}) + b2-({b2})
+                           + L3-({L3}) + a3-({a3}) + b3-({b3})
+                           + L4-({L4}) + a4-({a4}) + b4-({b4})
+                         < 4*{tol}
+                         ORDER BY
+                         E_sq 
+                         + {tol}*{tol}*RANDOM()/9223372036854775808.
+                         + {usage_penalty}*{usage_penalty}*usages ASC
+                         LIMIT 1""".format(**tokens))
+                         # 9223372036854775808 is the range of sqlite RANDOM()
+            match = c.fetchone()
+            if not match:
+                return self.choose_match(lab, tolerance + 1)
+            c.execute("UPDATE Images SET usages=1+usages WHERE image_id=?",
+                      (match['image_id'],))
+        finally:
+            c.close()
+        logger.debug("%s", match)
+        return match
             
     def __contains__(self, filename):
         c = self.db.cursor()

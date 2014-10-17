@@ -482,70 +482,6 @@ def analyze_one(tile):
     tile.rgb = map(dominant_color, regions) 
     tile.lab = map(cs.rgb2lab, tile.rgb)
 
-def choose_match(lab, db, tolerance=1, usage_penalty=1):
-    """If there is are good matches (within tolerance times the 'just noticeable
-    difference'), return one at random. If not, choose the closest match
-    deterministically. Return the match (as a sqlite Row dictionary) and the
-    number of good matches."""
-    JND = 2.3 # "just noticeable difference"
-    (L1, a1, b1), (L2, a2, b2), (L3, a3, b3), (L4, a4, b4) = lab
-    tokens = {'L1': L1, 'a1': a1, 'b1': b1,
-              'L2': L2, 'a2': a2, 'b2': b2,
-              'L3': L3, 'a3': a3, 'b3': b3,
-              'L4': L4, 'a4': a4, 'b4': b4,
-              'tol': tolerance*JND, 'usage_penalty': usage_penalty*JND}
-    
-    c = db.cursor()
-    try:
-        # Before we compute the exact color distance E, 
-        # which is expensive and requires
-        # adding 12 numbers in quadrature, the WHERE clause computes
-        # a simpler upper bound on E and filters out disqualifying rows.
-        # The survivors are ranked by their exact E plus a random component
-        # determined by the tolerance. Thus, decisive winners are chosen
-        # deterministically, but if there are many good matches, one is taken
-        # at random.
-        c.execute("""SELECT
-                     image_id,
-                     ((L1-({L1}))*(L1-({L1}))
-                       + (a1-({a1}))*(a1-({a1})) 
-                       + (b1-({b1}))*(b1-({b1}))
-                       + (L2-({L2}))*(L2-({L2}))
-                       + (a2-({a2}))*(a2-({a2})) 
-                       + (b2-({b2}))*(b2-({b2}))
-                       + (L3-({L3}))*(L3-({L3}))
-                       + (a3-({a3}))*(a3-({a3})) 
-                       + (b3-({b3}))*(b3-({b3}))
-                       + (L4-({L4}))*(L4-({L4}))
-                       + (a4-({a4}))*(a4-({a4}))
-                       + (b4-({b4}))*(b4-({b4})))/4. as E_sq,
-                     (L1-({L1}) + L2-({L2}) + L3-({L3}) + L4-({L4}))/4. as dL,
-                     usages,
-                     filename
-                     FROM LabColors
-                     JOIN Images using (image_id)
-                     WHERE
-                     L1-({L1}) + a1-({a1}) + b1-({b1})
-                       + L2-({L2}) + a2-({a2}) + b2-({b2})
-                       + L3-({L3}) + a3-({a3}) + b3-({b3})
-                       + L4-({L4}) + a4-({a4}) + b4-({b4})
-                     < 4*{tol}
-                     ORDER BY
-                     E_sq 
-                     + {tol}*{tol}*RANDOM()/9223372036854775808.
-                     + {usage_penalty}*{usage_penalty}*usages ASC
-                     LIMIT 1""".format(**tokens))
-                     # 9223372036854775808 is the range of sqlite RANDOM()
-        match = c.fetchone()
-        if not match:
-            return choose_match(lab, db, tolerance + 1)
-        c.execute("UPDATE Images SET usages=1+usages WHERE image_id=?",
-                  (match['image_id'],))
-    finally:
-        c.close()
-    logger.debug("%s", match)
-    return match
-
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
     img_w, img_h = img.size
@@ -615,19 +551,19 @@ def open_tile(filename, temp_size=(100,100)):
 
 def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
     """Assign each tile a new image, and open that image in the Tile object."""
-    db = connect(db_name)
+    p = SqlImagePool(db_name)
     try:
-        reset_usage(db)
+        p.reset_usage()
         pbar = progress_bar(len(tiles), "Choosing and loading matching images")
         for tile in tiles:
             if tile.blank:
                 pbar.next()
                 continue
-            tile.match = choose_match(tile.lab, db, tolerance,
+            tile.match = p.choose_match(tile.lab, tolerance,
                 usage_penalty if tile.depth < usage_impunity else 0)
             pbar.next()
     finally:
-        db.close()
+        p.close()
 
 def mosaic(tiles, pad=False, scatter=False, margin=0, scaled_margin=False,
            background=(255, 255, 255)):
@@ -677,14 +613,6 @@ def assemble_tiles(tiles, margin=1):
 def color_hex(rgb):
     "Convert [r, g, b] to a HEX value with a leading # character."
     return '#' + ''.join(chr(c) for c in rgb).encode('hex')
-
-def reset_usage(db):
-    try:
-        c = db.cursor()
-        c.execute("UPDATE Images SET usages=0")
-    finally:
-        c.close()
-    return
 
 def testing():
     pm.simple('images/samples', 'images/samples/dan-allan.jpg', (10,10), 'output.jpg')
