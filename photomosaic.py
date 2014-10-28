@@ -29,7 +29,6 @@ from scipy import interpolate
 import Image
 import ImageFilter
 import color_spaces as cs
-from directory_walker import DirectoryWalker
 from progress_bar import progress_bar
 from sql_image_pool import SqlImagePool
 from tile import Tile
@@ -41,16 +40,18 @@ logger = logging.getLogger(__name__)
 
 def simple(image_dir, target_filename, dimensions, output_file):
     "A convenient wrapper for producing a traditional photomosaic."
-    pool(image_dir, 'temp.db')
+    pool = SqlImagePool('temp.db')
+    pool.add_directory(image_dir)
     orig_img = open(target_filename)
-    img = tune(orig_img, 'temp.db', quiet=True)
+    img = tune(orig_img, pool, quiet=True)
     tiles = partition(img, dimensions)
     analyze(tiles)
-    matchmaker(tiles, 'temp.db')
+    matchmaker(tiles, pool)
     mos = mosaic(tiles)
     mos = untune(mos, img, orig_img)
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
+    pool.close()
 
 def split_regions(img, split_dim):
     """Split an image into subregions.
@@ -92,46 +93,6 @@ def dominant_color(img, clusters=5, size=50):
     counts, bins = scipy.histogram(vecs, len(colors))
     dominant_color = colors[counts.argmax()]
     return map(int, dominant_color) # Avoid returning np.uint8 type.
-
-def pool(image_dir, db_name):
-    """Analyze all the images in image_dir, and store the results in
-    a sqlite database at db_name."""
-    p = SqlImagePool(db_name)
-    try:
-        walker = DirectoryWalker(image_dir)
-        file_count = len(list(walker)) # stupid but needed but progress bar
-        pbar = progress_bar(file_count, "Analyzing images and building db")
-
-        for filename in walker:
-            if filename in p:
-                logger.warning("Image %s is already in the table. Skipping it."%filename)
-                pbar.next()
-                continue
-            try:
-                img = Image.open(filename)
-            except IOError:
-                logger.warning("Cannot open %s as an image. Skipping it.",
-                               filename)
-                pbar.next()
-                continue
-            if img.mode != 'RGB':
-                logger.warning("RGB images only. Skipping %s.", filename)
-                pbar.next()
-                continue
-            w, h = img.size
-            try:
-                regions = split_quadrants(img)
-                rgb = map(dominant_color, regions) 
-                lab = map(cs.rgb2lab, rgb)
-            except:
-                logger.warning("Unknown problem analyzing %s. Skipping it.",
-                               filename)
-                continue
-            p.insert(filename, w, h, rgb, lab)
-            pbar.next()
-        logger.info('Collection %s built with %d images'%(db_name, len(p)))
-    finally:
-        p.close()
 
 def open(target_filename):
     "Just a wrapper for Image.open from PIL"
@@ -181,14 +142,10 @@ def untune(mos, img, orig_img, mask=None, amount=1):
     return Image.blend(mos, adjust_levels(mos, img_palette, orig_palette),
                           amount)
 
-def tune(target_img, db_name, mask=None, quiet=True):
+def tune(target_img, pool, mask=None, quiet=True):
     """Adjust the levels of the image to match the colors available in the
-    th pool. Return the adjusted image. Optionally plot some histograms."""
-    p = SqlImagePool(db_name)
-    try:
-        pool_hist = p.pool_histogram()
-    finally:
-        p.close()
+    the pool. Return the adjusted image. Optionally plot some histograms."""
+    pool_hist = pool.pool_histogram()
     pool_palette = compute_palette(pool_hist)
     if mask:
         m = crop_to_fit(mask, target_img.size)
@@ -389,21 +346,17 @@ def tile_position(tile, size, scatter=False, margin=0):
     return pos
 
 
-def matchmaker(tiles, db_name, tolerance=1, usage_penalty=1, usage_impunity=2):
+def matchmaker(tiles, pool, tolerance=1, usage_penalty=1, usage_impunity=2):
     """Assign each tile a new image, and open that image in the Tile object."""
-    p = SqlImagePool(db_name)
-    try:
-        p.reset_usage()
-        pbar = progress_bar(len(tiles), "Choosing and loading matching images")
-        for tile in tiles:
-            if tile.blank:
-                pbar.next()
-                continue
-            tile.match = p.choose_match(tile.lab, tolerance,
-                usage_penalty if tile.depth < usage_impunity else 0)
+    pool.reset_usage()
+    pbar = progress_bar(len(tiles), "Choosing and loading matching images")
+    for tile in tiles:
+        if tile.blank:
             pbar.next()
-    finally:
-        p.close()
+            continue
+        tile.match = pool.choose_match(tile.lab, tolerance,
+            usage_penalty if tile.depth < usage_impunity else 0)
+        pbar.next()
 
 def mosaic(tiles, pad=False, scatter=False, margin=0, scaled_margin=False,
            background=(255, 255, 255)):
