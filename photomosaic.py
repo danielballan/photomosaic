@@ -102,6 +102,8 @@ def untune(mos, img, orig_img, mask=None, amount=1):
 def tune(target_img, pool, mask=None, quiet=True):
     """Adjust the levels of the image to match the colors available in the
     the pool. Return the adjusted image. Optionally plot some histograms."""
+    if len(pool)==0:
+        return target_img
     pool_hist = pool.pool_histogram()
     pool_palette = compute_palette(pool_hist)
     if mask:
@@ -305,6 +307,9 @@ def tile_position(tile, size, scatter=False, margin=0):
 
 def matchmaker(tiles, pool, tolerance=1, usage_penalty=1, usage_impunity=2):
     """Assign each tile a new image, and open that image in the Tile object."""
+    if len(pool)==0:
+        logger.error('No images in pool to match!')
+        exit(-1)
     pool.reset_usage()
     pbar = progress_bar(len(tiles), "Choosing and loading matching images")
     for tile in tiles:
