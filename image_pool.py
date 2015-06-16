@@ -19,30 +19,34 @@ class ImagePool(dict):
         pbar = progress_bar(file_count, "Analyzing images and building db")
 
         for filename in walker:
-            if filename in self:
-                logger.warning("Image %s is already in the table. Skipping it."%filename)
-                pbar.next()
-                continue
-            try:
-                img = Image.open(filename)
-            except IOError:
-                logger.warning("Cannot open %s as an image. Skipping it.",
-                               filename)
-                pbar.next()
-                continue
-            if img.mode != 'RGB':
-                logger.warning("RGB images only. Skipping %s.", filename)
-                pbar.next()
-                continue
-            w, h = img.size
-            try:
-                regions = split_quadrants(img)
-                rgb = map(dominant_color, regions) 
-                lab = map(cs.rgb2lab, rgb)
-            except Exception as e:
-                logger.warning("Unknown problem analyzing %s. (%s) Skipping it.",
-                               filename, str(e))
-                continue
-            self.insert(filename, w, h, rgb, lab)
+            self.add_image(self, filename)
             pbar.next()
         logger.info('Collection %s built with %d images'%(self.db_name, len(self)))
+        
+    def add_image(self, filename):
+        if filename in self:
+            logger.warning("Image %s is already in the table. Skipping it."%filename)
+            return
+            
+        try:
+            img = Image.open(filename)
+        except IOError:
+            logger.warning("Cannot open %s as an image. Skipping it.",
+                           filename)
+            return
+            
+        if img.mode != 'RGB':
+            logger.warning("RGB images only. Skipping %s.", filename)
+            return
+            
+        w, h = img.size
+        try:
+            regions = split_quadrants(img)
+            rgb = map(dominant_color, regions) 
+            lab = map(cs.rgb2lab, rgb)
+        except Exception as e:
+            logger.warning("Unknown problem analyzing %s. (%s) Skipping it.",
+                           filename, str(e))
+            continue
+        self.insert(filename, w, h, rgb, lab)
+        return
