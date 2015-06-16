@@ -1,10 +1,6 @@
 import sqlite3
 from image_pool import ImagePool
 import logging
-from directory_walker import DirectoryWalker
-from progress_bar import progress_bar
-import Image
-from image_functions import *
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
@@ -65,42 +61,7 @@ class SqlImagePool(ImagePool):
         self.db_name = db_name
         self.db = connect(db_name)
         create_tables(self.db)
-        
-    def add_directory(self, image_dir):
-        walker = DirectoryWalker(image_dir)
-        file_count = len(list(walker)) # stupid but needed but progress bar
-        pbar = progress_bar(file_count, "Analyzing images and building db")
 
-        for filename in walker:
-            if filename in self:
-                logger.warning("Image %s is already in the table. Skipping it."%filename)
-                pbar.next()
-                continue
-            try:
-                img = Image.open(filename)
-            except IOError:
-                logger.warning("Cannot open %s as an image. Skipping it.",
-                               filename)
-                pbar.next()
-                continue
-            if img.mode != 'RGB':
-                logger.warning("RGB images only. Skipping %s.", filename)
-                pbar.next()
-                continue
-            w, h = img.size
-            try:
-                regions = split_quadrants(img)
-                rgb = map(dominant_color, regions) 
-                lab = map(cs.rgb2lab, rgb)
-            except Exception as e:
-                logger.warning("Unknown problem analyzing %s. (%s) Skipping it.",
-                               filename, str(e))
-                continue
-            self.insert(filename, w, h, rgb, lab)
-            pbar.next()
-        logger.info('Collection %s built with %d images'%(self.db_name, len(self)))
-
-            
     def insert(self, filename, w, h, rgb, lab):
         """Insert image info in the Images table and color information in the
         Color and LabColor tables."""
