@@ -3,6 +3,7 @@ from image_pool import ImagePool
 import logging
 from directory_walker import DirectoryWalker
 from progress_bar import progress_bar
+import Image
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
@@ -90,9 +91,9 @@ class SqlImagePool(ImagePool):
                 regions = split_quadrants(img)
                 rgb = map(dominant_color, regions) 
                 lab = map(cs.rgb2lab, rgb)
-            except:
-                logger.warning("Unknown problem analyzing %s. Skipping it.",
-                               filename)
+            except Exception as e:
+                logger.warning("Unknown problem analyzing %s. (%s) Skipping it.",
+                               filename, str(e))
                 continue
             self.insert(filename, w, h, rgb, lab)
             pbar.next()
