@@ -70,7 +70,7 @@ class SqlImagePool(ImagePool):
         pbar = progress_bar(file_count, "Analyzing images and building db")
 
         for filename in walker:
-            if filename in p:
+            if filename in self:
                 logger.warning("Image %s is already in the table. Skipping it."%filename)
                 pbar.next()
                 continue
