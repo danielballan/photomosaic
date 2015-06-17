@@ -20,6 +20,10 @@ def open(target_filename):
         logger.warning("Cannot open %s as an image.", target_filename)
         return
 
+def color_hex(rgb):
+    "Convert [r, g, b] to a HEX value with a leading # character."
+    return '#' + ''.join(chr(c) for c in rgb).encode('hex')
+
 def split_regions(img, split_dim):
     """Split an image into subregions.
     Use split_dim=2 or (2,2) or (2,3) etc.

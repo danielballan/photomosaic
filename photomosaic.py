@@ -316,10 +316,3 @@ def assemble_tiles(tiles, margin=1):
         pos = tile_position(tile, shrunk, False, 0)
         mos.paste(tile.resize(shrunk), pos)
     return mos
-
-def color_hex(rgb):
-    "Convert [r, g, b] to a HEX value with a leading # character."
-    return '#' + ''.join(chr(c) for c in rgb).encode('hex')
-
-def testing():
-    pm.simple('images/samples', 'images/samples/dan-allan.jpg', (10,10), 'output.jpg')
