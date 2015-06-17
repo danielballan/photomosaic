@@ -19,7 +19,7 @@ class ImagePool(dict):
         pbar = progress_bar(file_count, "Analyzing images and building db")
 
         for filename in walker:
-            self.add_image(self, filename)
+            self.add_image(filename)
             pbar.next()
         logger.info('Collection %s built with %d images'%(self.db_name, len(self)))
         
@@ -47,6 +47,6 @@ class ImagePool(dict):
         except Exception as e:
             logger.warning("Unknown problem analyzing %s. (%s) Skipping it.",
                            filename, str(e))
-            continue
+            return
         self.insert(filename, w, h, rgb, lab)
         return
