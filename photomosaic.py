@@ -41,6 +41,7 @@ def simple(image_dir, target_filename, dimensions, output_file):
     pool = SqlImagePool('temp.db')
     pool.add_directory(image_dir)
     orig_img = open(target_filename)
+    
     img = tune(orig_img, pool, quiet=True)
     tiles = partition(img, dimensions)
     analyze(tiles)
@@ -50,43 +51,6 @@ def simple(image_dir, target_filename, dimensions, output_file):
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
     pool.close()
-
-def open(target_filename):
-    "Just a wrapper for Image.open from PIL"
-    try:
-        return Image.open(target_filename)
-    except IOError:
-        logger.warning("Cannot open %s as an image.", target_filename)
-        return
-
-def plot_histograms(hist, title=''):
-    "Plot an RGB histogram given as a dictionary with channel keys."
-    import matplotlib.pyplot as plt
-    fig, (red, green, blue) = plt.subplots(3, sharex=True, sharey=True)
-    domain = range(0, 256)
-    red.fill_between(domain, hist['red'],
-                     facecolor='red')
-    green.fill_between(domain, 0, hist['green'],
-                       facecolor='green')
-    blue.fill_between(domain, 0, hist['blue'],
-                      facecolor='blue')
-    red.set_xlim(0,256)
-    red.set_ylim(ymin=0)
-    red.set_title(title)
-    fig.show()
-
-def img_histogram(img, mask=None):
-    keys = 'red', 'green', 'blue'
-    channels = dict(zip(keys, img.split()))
-    hist= {}
-    for ch in keys:
-        if mask:
-            h = channels[ch].histogram(mask.convert("1"))
-        else:
-            h = channels[ch].histogram()
-        normalized_h = [256./sum(h)*v for v in h]
-        hist[ch] = normalized_h
-    return hist
 
 def untune(mos, img, orig_img, mask=None, amount=1):
     if mask:
@@ -130,46 +94,6 @@ def tune(target_img, pool, mask=None, quiet=True):
         plot_histograms(orig_hist, title='Unaltered target image')
         plot_histograms(adjusted_hist, title='Adjusted target image')
     return adjusted_img
-
-def compute_palette(hist):
-    """A palette maps a channel into the space of available colors, gleaned
-    from a histogram of those colors."""
-    # Integrate a histogram and round down.
-    palette = {}
-    for ch in ['red', 'green', 'blue']:
-        integrals = np.cumsum(hist[ch])
-        blocky_integrals = np.floor(integrals + 0.01).astype(int)
-        bars = np.ediff1d(blocky_integrals,to_begin=blocky_integrals[0])
-        p = [[color]*freq for color, freq in enumerate(bars.tolist())]
-        p = [c for sublist in p for c in sublist]
-        assert len(p) == 256, "Palette should have 256 entries."
-        palette[ch] = p
-    return palette
-
-def adjust_levels(target_img, from_palette, to_palette):
-    """Transform the colors of an image to match the color palette of
-    another image."""
-    keys = 'red', 'green', 'blue'
-    channels = dict(zip(keys, target_img.split()))
-    f, g = from_palette, to_palette # compact notation
-    func = {} # function to transform color at each pixel
-    for ch in keys:
-        def j(x):
-           while True:
-               try:
-                   inv_f = f[ch].index(x)
-                   break
-               except ValueError:
-                   if x < 255:
-                       x += 1
-                       continue 
-                   else:
-                       inv_f = 255
-                       break
-           return to_palette[ch][inv_f]
-        func[ch] = j 
-    adjusted_channels = [Image.eval(channels[ch], func[ch]) for ch in keys]
-    return Image.merge('RGB', adjusted_channels)
 
 def partition(img, dimensions, mask=None, depth=0, hdr=80,
               debris=False, min_debris_depth=1, base_width=None):
