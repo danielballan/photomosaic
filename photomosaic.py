@@ -39,18 +39,44 @@ def simple(image_dir, target_filename, dimensions, output_file):
     "A convenient wrapper for producing a traditional photomosaic."
     pool = SqlImagePool('temp.db')
     pool.add_directory(image_dir)
-    orig_img = open(target_filename)
     
-    img = tune(orig_img, pool, quiet=True)
-    tiles = partition(img, dimensions)
-    analyze(tiles)
-    matchmaker(tiles, pool)
-    mos = mosaic(tiles)
-    mos = untune(mos, img, orig_img)
-    logger.info('Saving mosaic to %s', output_file)
-    mos.save(output_file)
+    p = Photomosaic(target_filename, pool)
+    p.partition_tiles(dimensions)
+    p.match()
+    p.save(output_file)
+    
     pool.close()
-
+    
+class Photomosaic:
+    def __init__(self, target_filename, pool, tuning=True):
+        self.orig_img = open(target_filename)
+        self.pool = pool
+        self.tuning = tuning
+        if tuning:
+            self.img = tune(self.orig_img, self.pool, quiet=True)
+        else:    
+            self.img = self.orig_img
+        self.mask = None
+        self.tiles = None
+        self.mos = None
+        
+    def partition_tiles(self, dimensions=(10,10)):
+        self.tiles = partition(self.img, dimensions)
+        analyze(self.tiles)
+        
+    def match(self):
+        matchmaker(self.tiles, self.pool)   
+        self.mos = mosaic(self.tiles)
+        
+    def save(self, output_file):
+        if self.tuning:
+            mos = untune(self.mos, self.img, self.orig_img)
+        else:
+            mos = self.mos
+                
+        logger.info('Saving mosaic to %s', output_file)
+        mos.save(output_file)
+        
 def untune(mos, img, orig_img, mask=None, amount=1):
     if mask:
         m = crop_to_fit(mask, img.size)
