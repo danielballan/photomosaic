@@ -48,15 +48,15 @@ def simple(image_dir, target_filename, dimensions, output_file):
     pool.close()
     
 class Photomosaic:
-    def __init__(self, target_filename, pool, tuning=True):
+    def __init__(self, target_filename, pool, mask=None, tuning=True):
         self.orig_img = open(target_filename)
         self.pool = pool
         self.tuning = tuning
+        self.set_mask(mask)
         if tuning:
-            self.img = tune(self.orig_img, self.pool, quiet=True)
+            self.img = self.tune(quiet=True)
         else:    
             self.img = self.orig_img
-        self.mask = None
         self.tiles = None
         self.mos = None
         
@@ -70,55 +70,58 @@ class Photomosaic:
         
     def save(self, output_file):
         if self.tuning:
-            mos = untune(self.mos, self.img, self.orig_img)
+            mos = self.untune()
         else:
             mos = self.mos
                 
         logger.info('Saving mosaic to %s', output_file)
         mos.save(output_file)
         
-def untune(mos, img, orig_img, mask=None, amount=1):
-    if mask:
-        m = crop_to_fit(mask, img.size)
-        orig_palette = compute_palette(img_histogram(orig_img, m))
-        img_palette = compute_palette(img_histogram(img, m))
-    else:
-        orig_palette = compute_palette(img_histogram(orig_img))
-        img_palette = compute_palette(img_histogram(img))
-    return Image.blend(mos, adjust_levels(mos, img_palette, orig_palette),
-                          amount)
+    def set_mask(self, mask):
+        self.mask = mask
+        if mask:
+            self.m = crop_to_fit(self.mask, self.orig_img.size)
+            self.target_palette = compute_palette(img_histogram(self.orig_img, m))
+        else:
+            self.m = None
+            self.target_palette = compute_palette(img_histogram(self.orig_img))
+        
 
-def tune(target_img, pool, mask=None, quiet=True):
-    """Adjust the levels of the image to match the colors available in the
-    the pool. Return the adjusted image. Optionally plot some histograms."""
-    if len(pool)==0:
-        return target_img
-    pool_hist = pool.pool_histogram()
-    pool_palette = compute_palette(pool_hist)
-    if mask:
-        m = crop_to_fit(mask, target_img.size)
-        target_palette = compute_palette(img_histogram(target_img, m))
-    else:
-        target_palette = compute_palette(img_histogram(target_img))
-    adjusted_img = adjust_levels(target_img, target_palette, pool_palette)
-    if not quiet:
-        # Use the Image.histogram() method to examine the target image
-        # before and after the alteration.
-        keys = 'red', 'green', 'blue'
-        values = [channel.histogram() for channel in target_img.split()]
-        totals = map(sum, values)
-        norm = [map(lambda x: 256*x/totals[i], val) \
-                for i, val in enumerate(values)]
-        orig_hist = dict(zip(keys, norm)) 
-        values = [channel.histogram() for channel in adjusted_img.split()]
-        totals = map(sum, values)
-        norm = [map(lambda x: 256*x/totals[i], val) \
-                for i, val in enumerate(values)]
-        adjusted_hist = dict(zip(keys, norm)) 
-        plot_histograms(pool_hist, title='Images in the pool')
-        plot_histograms(orig_hist, title='Unaltered target image')
-        plot_histograms(adjusted_hist, title='Adjusted target image')
-    return adjusted_img
+    def tune(self, quiet=True):
+        """Adjust the levels of the image to match the colors available in the
+        the pool. Return the adjusted image. Optionally plot some histograms."""
+        if len(self.pool)==0:
+            return self.orig_img
+        pool_hist = self.pool.pool_histogram()
+        pool_palette = compute_palette(pool_hist)
+        
+        adjusted_img = adjust_levels(self.orig_img, self.target_palette, pool_palette)
+        
+        if not quiet:
+            # Use the Image.histogram() method to examine the target image
+            # before and after the alteration.
+            keys = 'red', 'green', 'blue'
+            values = [channel.histogram() for channel in self.orig_img.split()]
+            totals = map(sum, values)
+            norm = [map(lambda x: 256*x/totals[i], val) \
+                    for i, val in enumerate(values)]
+            orig_hist = dict(zip(keys, norm)) 
+            values = [channel.histogram() for channel in adjusted_img.split()]
+            totals = map(sum, values)
+            norm = [map(lambda x: 256*x/totals[i], val) \
+                    for i, val in enumerate(values)]
+            adjusted_hist = dict(zip(keys, norm)) 
+            plot_histograms(pool_hist, title='Images in the pool')
+            plot_histograms(orig_hist, title='Unaltered target image')
+            plot_histograms(adjusted_hist, title='Adjusted target image')
+        return adjusted_img
+        
+    def untune(self, amount=1):
+        if self.mask:
+            img_palette = compute_palette(img_histogram(self.img, m))
+        else:    
+            img_palette = compute_palette(img_histogram(self.img))
+        return Image.blend(self.mos, adjust_levels(self.mos, img_palette, self.target_palette), amount)
 
 def partition(img, dimensions, mask=None, depth=0, hdr=80,
               debris=False, min_debris_depth=1, base_width=None):
