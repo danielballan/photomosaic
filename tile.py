@@ -1,6 +1,13 @@
 
 from memo import memo
 import Image
+import ImageFilter
+import logging
+
+# Configure logger.
+FORMAT = "%(name)s.%(funcName)s:  %(message)s"
+logging.basicConfig(level=logging.INFO, format=FORMAT)
+logger = logging.getLogger(__name__)
 
 @memo
 def open_tile(filename, temp_size=(100,100)):

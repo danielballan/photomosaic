@@ -24,7 +24,6 @@ import random
 import numpy as np
 #from scipy import interpolate
 import Image
-import ImageFilter
 import color_spaces as cs
 from progress_bar import progress_bar
 from sql_image_pool import SqlImagePool

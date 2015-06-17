@@ -5,6 +5,13 @@ import color_spaces as cs
 import numpy as np
 import Image
 
+import logging
+
+# Configure logger.
+FORMAT = "%(name)s.%(funcName)s:  %(message)s"
+logging.basicConfig(level=logging.INFO, format=FORMAT)
+logger = logging.getLogger(__name__)
+
 def open(target_filename):
     "Just a wrapper for Image.open from PIL"
     try:
