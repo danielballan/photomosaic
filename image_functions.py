@@ -1,3 +1,4 @@
+from __future__ import division
 import scipy
 import scipy.misc
 from scipy.cluster import vq
@@ -151,7 +152,7 @@ def crop_to_fit(img, tile_size):
         crop_w = img_w
         crop_h = int(round(crop_w/tile_aspect))
         x_offset = 0
-        y_offset = int((img_h - crop_h)/2)
+        y_offset = int((img_h - crop_h)/2)    
     img = img.crop((x_offset,
                     y_offset,
                     x_offset + crop_w,
