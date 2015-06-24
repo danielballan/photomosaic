@@ -133,3 +133,28 @@ def adjust_levels(target_img, from_palette, to_palette):
         func[ch] = j 
     adjusted_channels = [Image.eval(channels[ch], func[ch]) for ch in keys]
     return Image.merge('RGB', adjusted_channels)
+
+def crop_to_fit(img, tile_size):
+    "Return a copy of img cropped to precisely fill the dimesions tile_size."
+    img_w, img_h = img.size
+    tile_w, tile_h = tile_size
+    img_aspect = img_w/img_h
+    tile_aspect = tile_w/tile_h
+    if img_aspect > tile_aspect:
+        # It's too wide.
+        crop_h = img_h
+        crop_w = int(round(crop_h*tile_aspect))
+        x_offset = int((img_w - crop_w)/2)
+        y_offset = 0
+    else:
+        # It's too tall.
+        crop_w = img_w
+        crop_h = int(round(crop_w/tile_aspect))
+        x_offset = 0
+        y_offset = int((img_h - crop_h)/2)
+    img = img.crop((x_offset,
+                    y_offset,
+                    x_offset + crop_w,
+                    y_offset + crop_h))
+    img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
+    return img

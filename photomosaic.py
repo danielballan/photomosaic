@@ -61,7 +61,7 @@ class Photomosaic:
         self.mos = None
         
     def partition_tiles(self, dimensions=(10,10)):
-        self.tiles = self.partition_image(dimensions)
+        self.partition_image(dimensions)
         analyze(self.tiles)
         
     def partition_image(self, dimensions, depth=0, hdr=80,
@@ -105,6 +105,7 @@ class Photomosaic:
                     mask_img = None
                 tile = Tile(tile_img, x, y, mask=mask_img)
                 tiles.append(tile)
+                
         for g in xrange(depth):
             old_tiles = tiles
             tiles = []
@@ -121,9 +122,7 @@ class Photomosaic:
         [tile.determine_blankness(min_debris_depth) for tile in tiles]
         logger.info("%d tiles are set to be blank",
                     len([1 for tile in tiles if tile.blank]))
-        return tiles
-
-    
+        self.tiles = tiles    
         
     def match(self):
         matchmaker(self.tiles, self.pool)   
@@ -201,31 +200,6 @@ def analyze_one(tile):
     regions = split_quadrants(tile)
     tile.rgb = map(dominant_color, regions) 
     tile.lab = map(cs.rgb2lab, tile.rgb)
-
-def crop_to_fit(img, tile_size):
-    "Return a copy of img cropped to precisely fill the dimesions tile_size."
-    img_w, img_h = img.size
-    tile_w, tile_h = tile_size
-    img_aspect = img_w/img_h
-    tile_aspect = tile_w/tile_h
-    if img_aspect > tile_aspect:
-        # It's too wide.
-        crop_h = img_h
-        crop_w = int(round(crop_h*tile_aspect))
-        x_offset = int((img_w - crop_w)/2)
-        y_offset = 0
-    else:
-        # It's too tall.
-        crop_w = img_w
-        crop_h = int(round(crop_w/tile_aspect))
-        x_offset = 0
-        y_offset = int((img_h - crop_h)/2)
-    img = img.crop((x_offset,
-                    y_offset,
-                    x_offset + crop_w,
-                    y_offset + crop_h))
-    img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
-    return img
 
 def shrink_by_lightness(pad, tile_size, dL):
     """The greater the greater the lightness discrepancy dL
