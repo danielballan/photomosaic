@@ -61,8 +61,69 @@ class Photomosaic:
         self.mos = None
         
     def partition_tiles(self, dimensions=(10,10)):
-        self.tiles = partition(self.img, dimensions)
+        self.tiles = self.partition_image(dimensions)
         analyze(self.tiles)
+        
+    def partition_image(self, dimensions, depth=0, hdr=80,
+              debris=False, min_debris_depth=1, base_width=None):
+        "Partition the target image into a list of Tile objects."
+        if isinstance(dimensions, int):
+            dimensions = dimensions, dimensions
+        if base_width is not None:
+            cwidth = self.img.size[0] / dimensions[0]
+            width = base_width * dimensions[0]
+            factor = base_width / cwidth
+            height = int(self.img.size[1] * factor)
+            print self.img.size, dimensions, width, height
+            img = crop_to_fit(self.img, (width, height))
+        # img.size must have dimensions*2**depth as a factor.
+        factor = dimensions[0]*2**depth, dimensions[1]*2**depth
+        new_size = tuple([int(factor[i]*np.ceil(self.img.size[i]/factor[i])) \
+                          for i in [0, 1]])
+        logger.info("Resizing image to %s, a round number for partitioning. "
+                    "If necessary, I will crop to fit.",
+                    new_size)
+        img = crop_to_fit(self.img, new_size)
+        
+        mask = self.mask
+        
+        if mask:
+            mask = crop_to_fit(mask, new_size)
+            if not debris:
+                mask = mask.convert("1") # no gray
+        width = img.size[0] // dimensions[0] 
+        height = img.size[1] // dimensions[1]
+        tiles = []
+        for y in range(dimensions[1]):
+            for x in range(dimensions[0]):
+                tile_img = img.crop((x*width, y*height,
+                                    (x + 1)*width, (y + 1)*height))
+                if mask:
+                    mask_img = mask.crop((x*width, y*height,
+                                         (x + 1)*width, (y + 1)*height))
+                else:
+                    mask_img = None
+                tile = Tile(tile_img, x, y, mask=mask_img)
+                tiles.append(tile)
+        for g in xrange(depth):
+            old_tiles = tiles
+            tiles = []
+            for tile in old_tiles:
+                if tile.dynamic_range() > hdr or tile.straddles_mask_edge():
+                    # Keep children; discard parent.
+                    tiles += tile.procreate()
+                else:
+                    # Keep tile -- no children.
+                    tiles.append(tile)
+            logging.info("There are %d tiles in generation %d",
+                         len(tiles), g)
+        # Now that all tiles have been made and subdivided, decide which are blank.
+        [tile.determine_blankness(min_debris_depth) for tile in tiles]
+        logger.info("%d tiles are set to be blank",
+                    len([1 for tile in tiles if tile.blank]))
+        return tiles
+
+    
         
     def match(self):
         matchmaker(self.tiles, self.pool)   
@@ -123,61 +184,6 @@ class Photomosaic:
             img_palette = compute_palette(img_histogram(self.img))
         return Image.blend(self.mos, adjust_levels(self.mos, img_palette, self.target_palette), amount)
 
-def partition(img, dimensions, mask=None, depth=0, hdr=80,
-              debris=False, min_debris_depth=1, base_width=None):
-    "Partition the target image into a list of Tile objects."
-    if isinstance(dimensions, int):
-        dimensions = dimensions, dimensions
-    if base_width is not None:
-        cwidth = img.size[0] / dimensions[0]
-        width = base_width * dimensions[0]
-        factor = base_width / cwidth
-        height = int(img.size[1] * factor)
-        print img.size, dimensions, width, height
-        img = crop_to_fit(img, (width, height))
-    # img.size must have dimensions*2**depth as a factor.
-    factor = dimensions[0]*2**depth, dimensions[1]*2**depth
-    new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
-                      for i in [0, 1]])
-    logger.info("Resizing image to %s, a round number for partitioning. "
-                "If necessary, I will crop to fit.",
-                new_size)
-    img = crop_to_fit(img, new_size)
-    if mask:
-        mask = crop_to_fit(mask, new_size)
-        if not debris:
-            mask = mask.convert("1") # no gray
-    width = img.size[0] // dimensions[0] 
-    height = img.size[1] // dimensions[1]
-    tiles = []
-    for y in range(dimensions[1]):
-        for x in range(dimensions[0]):
-            tile_img = img.crop((x*width, y*height,
-                                (x + 1)*width, (y + 1)*height))
-            if mask:
-                mask_img = mask.crop((x*width, y*height,
-                                     (x + 1)*width, (y + 1)*height))
-            else:
-                mask_img = None
-            tile = Tile(tile_img, x, y, mask=mask_img)
-            tiles.append(tile)
-    for g in xrange(depth):
-        old_tiles = tiles
-        tiles = []
-        for tile in old_tiles:
-            if tile.dynamic_range() > hdr or tile.straddles_mask_edge():
-                # Keep children; discard parent.
-                tiles += tile.procreate()
-            else:
-                # Keep tile -- no children.
-                tiles.append(tile)
-        logging.info("There are %d tiles in generation %d",
-                     len(tiles), g)
-    # Now that all tiles have been made and subdivided, decide which are blank.
-    [tile.determine_blankness(min_debris_depth) for tile in tiles]
-    logger.info("%d tiles are set to be blank",
-                len([1 for tile in tiles if tile.blank]))
-    return tiles
 
 def analyze(tiles):
     """Determine dominant colors of target tiles, and save that information
