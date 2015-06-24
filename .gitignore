@@ -7,3 +7,4 @@ progress/*
 *.db-journal
 *.backup
 artwork/*
+results
