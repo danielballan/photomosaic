@@ -159,3 +159,16 @@ def crop_to_fit(img, tile_size):
                     y_offset + crop_h))
     img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
     return img
+    
+def shrink_by_lightness(pad, tile_size, dL):
+    """The greater the greater the lightness discrepancy dL
+    the smaller the tile will shrunk."""
+    sgn = lambda x: (x > 0) - (x < 0)
+    if sgn(pad)*dL < 0:
+        return tile_size
+    MAX_dL = 100 # the largest possible distance in Lab space
+    MIN = 0.5 # not so close small that it's a speck
+    MAX = 0.95 # not so close to unity that is looks accidental
+    scaling = MAX - (MAX - MIN)*(-pad*dL)/MAX_dL
+    shrunk_size = [int(scaling*dim) for dim in tile_size]
+    return shrunk_size
