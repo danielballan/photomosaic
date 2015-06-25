@@ -125,8 +125,22 @@ class Photomosaic:
             tile.analyze()
             pbar.next()
 
-    def match(self):
-        matchmaker(self.tiles, self.pool)   
+    def match(self, tolerance=1, usage_penalty=1, usage_impunity=2):
+        """Assign each tile a new image, and open that image in the Tile object."""
+        if len(self.pool)==0:
+            logger.error('No images in pool to match!')
+            exit(-1)
+        self.pool.reset_usage()
+        
+        pbar = progress_bar(len(self.tiles), "Choosing and loading matching images")
+        for tile in self.tiles:
+            if tile.blank:
+                pbar.next()
+                continue
+            tile.match = self.pool.choose_match(tile.lab, tolerance,
+                usage_penalty if tile.depth < usage_impunity else 0)
+            pbar.next()
+
         self.mos = mosaic(self.tiles)
         
     def save(self, output_file):
@@ -219,21 +233,6 @@ def tile_position(tile, size, scatter=False, margin=0):
     pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [padding]))))
     return pos
 
-
-def matchmaker(tiles, pool, tolerance=1, usage_penalty=1, usage_impunity=2):
-    """Assign each tile a new image, and open that image in the Tile object."""
-    if len(pool)==0:
-        logger.error('No images in pool to match!')
-        exit(-1)
-    pool.reset_usage()
-    pbar = progress_bar(len(tiles), "Choosing and loading matching images")
-    for tile in tiles:
-        if tile.blank:
-            pbar.next()
-            continue
-        tile.match = pool.choose_match(tile.lab, tolerance,
-            usage_penalty if tile.depth < usage_impunity else 0)
-        pbar.next()
 
 def mosaic(tiles, pad=False, scatter=False, margin=0, scaled_margin=False,
            background=(255, 255, 255)):
