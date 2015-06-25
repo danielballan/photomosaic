@@ -43,6 +43,7 @@ def simple(image_dir, target_filename, dimensions, output_file):
     p = Photomosaic(target_filename, pool)
     p.partition_tiles(dimensions)
     p.match()
+    p.assemble()
     p.save(output_file)
     
     pool.close()
@@ -140,8 +141,34 @@ class Photomosaic:
             tile.match = self.pool.choose_match(tile.lab, tolerance,
                 usage_penalty if tile.depth < usage_impunity else 0)
             pbar.next()
-
-        self.mos = mosaic(self.tiles)
+            
+    def assemble(self, pad=False, scatter=False, margin=0, scaled_margin=False,
+           background=(255, 255, 255)):
+        """Create the mosaic image.""" 
+        # Infer dimensions so they don't have to be passed in the function call.
+        dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in self.tiles]))
+        mosaic_size = map(lambda (x, y): x*y,
+                             zip(*[self.tiles[0].ancestor_size, dimensions]))
+        mos = Image.new('RGB', mosaic_size, background)
+        pbar = progress_bar(len(self.tiles), "Scaling and placing tiles")
+        random.shuffle(self.tiles)
+        for tile in self.tiles:
+            if tile.blank:
+                pbar.next()
+                continue
+            if pad:
+                size = shrink_by_lightness(pad, tile.size, tile.match['dL'])
+                if margin == 0:
+                    margin = min(tile.size[0] - size[0], tile.size[1] - size[1])
+            else:
+                size = tile.size
+            if scaled_margin:
+                pos = tile_position(tile, size, scatter, margin//(1 + tile.depth))
+            else:
+                pos = tile_position(tile, size, scatter, margin)
+            mos.paste(crop_to_fit(tile.match_img, size), pos)
+            pbar.next()
+        self.mos = mos
         
     def save(self, output_file):
         if self.tuning:
@@ -232,35 +259,6 @@ def tile_position(tile, size, scatter=False, margin=0):
         padding = [random.randint(0, 1 + margin), random.randint(0, 1 + margin)]
     pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [padding]))))
     return pos
-
-
-def mosaic(tiles, pad=False, scatter=False, margin=0, scaled_margin=False,
-           background=(255, 255, 255)):
-    """Return the mosaic image.""" 
-    # Infer dimensions so they don't have to be passed in the function call.
-    dimensions = map(max, zip(*[(1 + tile.x, 1 + tile.y) for tile in tiles]))
-    mosaic_size = map(lambda (x, y): x*y,
-                         zip(*[tiles[0].ancestor_size, dimensions]))
-    mos = Image.new('RGB', mosaic_size, background)
-    pbar = progress_bar(len(tiles), "Scaling and placing tiles")
-    random.shuffle(tiles)
-    for tile in tiles:
-        if tile.blank:
-            pbar.next()
-            continue
-        if pad:
-            size = shrink_by_lightness(pad, tile.size, tile.match['dL'])
-            if margin == 0:
-                margin = min(tile.size[0] - size[0], tile.size[1] - size[1])
-        else:
-            size = tile.size
-        if scaled_margin:
-            pos = tile_position(tile, size, scatter, margin//(1 + tile.depth))
-        else:
-            pos = tile_position(tile, size, scatter, margin)
-        mos.paste(crop_to_fit(tile.match_img, size), pos)
-        pbar.next()
-    return mos
 
 def assemble_tiles(tiles, margin=1):
     """This is not used to build the final mosaic. It's a handy function for
