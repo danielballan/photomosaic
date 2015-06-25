@@ -3,6 +3,7 @@ from memo import memo
 import Image
 import ImageFilter
 import logging
+from image_functions import *
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
@@ -108,6 +109,14 @@ class Tile(object):
     @property
     def blank(self):
         return self._blank
+        
+    def analyze(self):
+        """"Determine dominant colors of target tile, and save that information"""
+        if self.blank:
+            return
+        regions = split_quadrants(self)
+        self.rgb = map(dominant_color, regions) 
+        self.lab = map(cs.rgb2lab, self.rgb)
 
     def determine_blankness(self, min_depth=1):
         """Decide whether this tile is blank. Where the mask is grey, tiles

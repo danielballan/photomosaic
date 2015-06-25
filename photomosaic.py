@@ -60,11 +60,7 @@ class Photomosaic:
         self.tiles = None
         self.mos = None
         
-    def partition_tiles(self, dimensions=(10,10)):
-        self.partition_image(dimensions)
-        analyze(self.tiles)
-        
-    def partition_image(self, dimensions, depth=0, hdr=80,
+    def partition_tiles(self, dimensions=10, depth=0, hdr=80,
               debris=False, min_debris_depth=1, base_width=None):
         "Partition the target image into a list of Tile objects."
         if isinstance(dimensions, int):
@@ -122,8 +118,13 @@ class Photomosaic:
         [tile.determine_blankness(min_debris_depth) for tile in tiles]
         logger.info("%d tiles are set to be blank",
                     len([1 for tile in tiles if tile.blank]))
-        self.tiles = tiles    
-        
+        self.tiles = tiles
+
+        pbar = progress_bar(len(self.tiles), "Analyzing images")
+        for tile in self.tiles:
+            tile.analyze()
+            pbar.next()
+
     def match(self):
         matchmaker(self.tiles, self.pool)   
         self.mos = mosaic(self.tiles)
@@ -182,24 +183,6 @@ class Photomosaic:
         else:    
             img_palette = compute_palette(img_histogram(self.img))
         return Image.blend(self.mos, adjust_levels(self.mos, img_palette, self.target_palette), amount)
-
-
-def analyze(tiles):
-    """Determine dominant colors of target tiles, and save that information
-    in the Tile object."""
-    pbar = progress_bar(len(tiles), "Analyzing images")
-    for tile in tiles:
-        analyze_one(tile)
-        pbar.next()
-
-def analyze_one(tile):
-    """"Determine dominant colors of target tiles, and save that information
-    in the Tile object."""
-    if tile.blank:
-        return
-    regions = split_quadrants(tile)
-    tile.rgb = map(dominant_color, regions) 
-    tile.lab = map(cs.rgb2lab, tile.rgb)
 
 def shrink_by_lightness(pad, tile_size, dL):
     """The greater the greater the lightness discrepancy dL
