@@ -163,9 +163,9 @@ class Photomosaic:
             else:
                 size = tile.size
             if scaled_margin:
-                pos = tile_position(tile, size, scatter, margin//(1 + tile.depth))
+                pos = tile.get_position(size, scatter, margin//(1 + tile.depth))
             else:
-                pos = tile_position(tile, size, scatter, margin)
+                pos = tile.get_position(size, scatter, margin)
             mos.paste(crop_to_fit(tile.match_img, size), pos)
             pbar.next()
         self.mos = mos
@@ -225,27 +225,6 @@ class Photomosaic:
             img_palette = compute_palette(img_histogram(self.img))
         return Image.blend(self.mos, adjust_levels(self.mos, img_palette, self.target_palette), amount)
 
-def tile_position(tile, size, scatter=False, margin=0):
-    """Return the x, y position of the tile in the mosaic, according for
-    possible margins and optional random nudges for a 'scattered' look.""" 
-    # Sum position of original ancestor tile, relative position of this tile's
-    # container, and any margins that this tile has.
-    ancestor_pos = [tile.x*tile.ancestor_size[0], tile.y*tile.ancestor_size[1]]
-    if tile.depth == 0:
-        rel_pos = [[0, 0]]
-    else:
-        x_size, y_size = tile.ancestor_size
-        rel_pos = [[x*x_size//2**(gen + 1), y*y_size//2**(gen + 1)] \
-                           for gen, (x, y) in enumerate(tile.ancestry)]
-        
-    if tile.size == size:
-        padding = [0, 0]
-    else:
-        padding = map(lambda (x, y): (x - y)//2, zip(*([size, tile.size])))
-    if scatter:
-        padding = [random.randint(0, 1 + margin), random.randint(0, 1 + margin)]
-    pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [padding]))))
-    return pos
 
 def assemble_tiles(tiles, margin=1):
     """This is not used to build the final mosaic. It's a handy function for
@@ -260,6 +239,6 @@ def assemble_tiles(tiles, margin=1):
         if tile.blank:
             continue
         shrunk = tile.size[0]-2*int(margin), tile.size[1]-2*int(margin)
-        pos = tile_position(tile, shrunk, False, 0)
+        pos = tile.get_position(tile, shrunk, False, 0)
         mos.paste(tile.resize(shrunk), pos)
     return mos

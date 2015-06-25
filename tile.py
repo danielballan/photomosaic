@@ -179,3 +179,26 @@ class Tile(object):
                              ancestor_size=self._ancestor_size)
                 children.append(child)
         return children
+        
+    def get_position(self, size, scatter=False, margin=0):
+        """Return the x, y position of the tile in the mosaic, according for
+        possible margins and optional random nudges for a 'scattered' look.""" 
+        # Sum position of original ancestor tile, relative position of this tile's
+        # container, and any margins that this tile has.
+        ancestor_pos = [self.x*self.ancestor_size[0], self.y*self.ancestor_size[1]]
+        if self.depth == 0:
+            rel_pos = [[0, 0]]
+        else:
+            x_size, y_size = self.ancestor_size
+            rel_pos = [[x*x_size//2**(gen + 1), y*y_size//2**(gen + 1)] \
+                               for gen, (x, y) in enumerate(self.ancestry)]
+            
+        if self.size == size:
+            padding = [0, 0]
+        else:
+            padding = map(lambda (x, y): (x - y)//2, zip(*([size, self.size])))
+        if scatter:
+            padding = [random.randint(0, 1 + margin), random.randint(0, 1 + margin)]
+        pos = tuple(map(sum, zip(*([ancestor_pos] + rel_pos + [padding]))))
+        return pos
+
