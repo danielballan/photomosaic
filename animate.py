@@ -4,7 +4,7 @@ import random
 import operator
 from sql_image_pool import SqlImagePool
 from gui_utils import MosaicGUI
-from cli import args_parser
+from cli import *
 
 def color_sort(tile):
     return tile.avg_color()
@@ -23,7 +23,7 @@ locs = [[0,0], [1,0], [0,1], [1,1]]
 parser = args_parser()
 args = parser.parse_args()
 
-pool = SqlImagePool(args.database)
+pool = get_database(args)
 
 p = pm.Photomosaic(args.infile, pool, tuning=args.tune)
 W,H = p.orig_img.size
