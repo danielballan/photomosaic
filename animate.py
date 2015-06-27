@@ -1,12 +1,10 @@
 import photomosaic as pm
 import Image
-import sys
 import random
 import operator
 from sql_image_pool import SqlImagePool
 from gui_utils import MosaicGUI
-
-DEPTH = 2
+from cli import args_parser
 
 def color_sort(tile):
     return tile.avg_color()
@@ -22,13 +20,12 @@ match_sort = color_sort
 
 locs = [[0,0], [1,0], [0,1], [1,1]]
 
-infile = sys.argv[1]
-database = sys.argv[2]
-tune = '-tune' in sys.argv
+parser = args_parser()
+args = parser.parse_args()
 
-pool = SqlImagePool(database)
+pool = SqlImagePool(args.database)
 
-p = pm.Photomosaic(infile, pool, tuning=tune)
+p = pm.Photomosaic(args.infile, pool, tuning=args.tune)
 W,H = p.orig_img.size
 Hx = 0
 Wx = W
@@ -37,7 +34,7 @@ gui = MosaicGUI((W+Wx,H+Hx))
 gui.img(p.orig_img, (0,0))
 gui.draw()
 
-p.partition_tiles(10, depth=DEPTH)
+p.partition_tiles(args.dimensions, depth=args.recursion_level)
 
 for tile in sorted(p.tiles, key=analyze_sort):
     tx,ty = tile.get_position(tile.size)
