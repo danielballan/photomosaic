@@ -134,9 +134,12 @@ class Photomosaic:
             if tile.blank:
                 pbar.next()
                 continue
-            tile.match = self.pool.choose_match(tile.lab, tolerance,
-                usage_penalty if tile.depth < usage_impunity else 0)
+            self.match_one(self, tile, tolerance, usage_penalty, usage_impunity)
             pbar.next()
+    
+    def match_one(self, tile, tolerance=1, usage_penalty=1, usage_impunity=2):
+        tile.match = self.pool.choose_match(tile.lab, tolerance,
+                usage_penalty if tile.depth < usage_impunity else 0)
             
     def assemble(self, pad=False, scatter=False, margin=0, scaled_margin=False,
            background=(255, 255, 255)):
