@@ -17,14 +17,10 @@
 # along with this program; if not, see <http://www.gnu.org/licenses>.
 
 from __future__ import division
-import os
 import logging
-import time
 import random
 import numpy as np
-#from scipy import interpolate
 import Image
-import color_spaces as cs
 from progress_bar import progress_bar
 from sql_image_pool import SqlImagePool
 from tile import Tile

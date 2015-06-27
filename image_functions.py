@@ -2,7 +2,6 @@ from __future__ import division
 import scipy
 import scipy.misc
 from scipy.cluster import vq
-import color_spaces as cs
 import numpy as np
 import Image
 
