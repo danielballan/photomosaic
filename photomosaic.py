@@ -134,7 +134,7 @@ class Photomosaic:
             if tile.blank:
                 pbar.next()
                 continue
-            self.match_one(self, tile, tolerance, usage_penalty, usage_impunity)
+            self.match_one(tile, tolerance, usage_penalty, usage_impunity)
             pbar.next()
     
     def match_one(self, tile, tolerance=1, usage_penalty=1, usage_impunity=2):
