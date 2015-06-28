@@ -7,6 +7,8 @@ from gui_utils import MosaicGUI
 from cli import *
 
 def color_sort(tile):
+    if tile.blank:
+        return -1
     return tile.avg_color()
 
 def random_sort(tile):
@@ -28,24 +30,29 @@ args = parser.parse_args()
 
 pool = get_database(args)
 
-p = pm.Photomosaic(args.infile, pool, tuning=args.tune)
+p = pm.Photomosaic(args.infile, pool, tuning=args.tune, mask=args.mask)
 W,H = p.orig_img.size
 Hx = 0
 Wx = W
 gui = MosaicGUI((W+Wx,H+Hx))
-
+gui.rectangle((255,255,255), (0,0,W+Wx,H+Hx))
 gui.img(p.orig_img, (0,0))
 gui.draw()
 
 p.partition_tiles(args.dimensions, depth=args.recursion_level, analyze=False)
 
 for tile in sorted(p.tiles, key=no_sort):
+    if tile.blank:
+        continue
     tx,ty = tile.get_position(tile.size)
     w,h = tile.size
     gui.rectangle((0,0,255), (tx+Wx,ty+Hx,w,h), 1)
     gui.draw()
 
 for tile in sorted(p.tiles, key=size_sort):
+    if tile.blank:
+        continue
+
     tile.analyze()
     tx,ty = tile.get_position(tile.size)
     w,h = tile.size

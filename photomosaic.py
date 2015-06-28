@@ -180,12 +180,13 @@ class Photomosaic:
         logger.info('Saving mosaic to %s', output_file)
         mos.save(output_file)
         
-    def set_mask(self, mask):
-        self.mask = mask
-        if mask:
+    def set_mask(self, mask_fn):
+        if mask_fn:
+            self.mask = open(mask_fn)
             self.m = crop_to_fit(self.mask, self.orig_img.size)
-            self.target_palette = compute_palette(img_histogram(self.orig_img, m))
+            self.target_palette = compute_palette(img_histogram(self.orig_img, self.m))
         else:
+            self.mask = None
             self.m = None
             self.target_palette = compute_palette(img_histogram(self.orig_img))
         

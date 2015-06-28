@@ -19,6 +19,7 @@ def args_parser(output_file=False):
     parser.add_argument('-d', '--dimensions', default='10x10', type=dimension)
     parser.add_argument('-r', '--recursion_level', default=0, type=int)
     parser.add_argument('-f', '--folders', nargs='*', default=[])
+    parser.add_argument('-m', '--mask')
     return parser
     
 def get_database(args):
@@ -36,8 +37,8 @@ if __name__=='__main__':
 
     pool = get_database(args)
 
-    p = Photomosaic(args.infile, pool, tuning=args.tune)
-    p.partition_tiles(args.dimensions)
+    p = Photomosaic(args.infile, pool, tuning=args.tune, mask=args.mask)
+    p.partition_tiles(args.dimensions, depth=args.recursion_level)
     p.match()
     p.assemble()
     p.save(args.outfile)
