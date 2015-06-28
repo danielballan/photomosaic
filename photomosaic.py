@@ -58,7 +58,7 @@ class Photomosaic:
         self.mos = None
         
     def partition_tiles(self, dimensions=10, depth=0, hdr=80,
-              debris=False, min_debris_depth=1, base_width=None):
+              debris=False, min_debris_depth=1, base_width=None, analyze=True):
         "Partition the target image into a list of Tile objects."
         if isinstance(dimensions, int):
             dimensions = dimensions, dimensions
@@ -117,6 +117,8 @@ class Photomosaic:
                     len([1 for tile in tiles if tile.blank]))
         self.tiles = tiles
 
+        if not analyze:
+            return
         pbar = progress_bar(len(self.tiles), "Analyzing images")
         for tile in self.tiles:
             tile.analyze()

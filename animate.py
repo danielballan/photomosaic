@@ -14,6 +14,9 @@ def random_sort(tile):
 
 def no_sort(tile):
     return 1
+    
+def size_sort(tile):
+    return -tile.size[0]
 
 analyze_sort = no_sort
 match_sort = color_sort
@@ -34,16 +37,23 @@ gui = MosaicGUI((W+Wx,H+Hx))
 gui.img(p.orig_img, (0,0))
 gui.draw()
 
-p.partition_tiles(args.dimensions, depth=args.recursion_level)
+p.partition_tiles(args.dimensions, depth=args.recursion_level, analyze=False)
 
-for tile in sorted(p.tiles, key=analyze_sort):
+for tile in sorted(p.tiles, key=no_sort):
+    tx,ty = tile.get_position(tile.size)
+    w,h = tile.size
+    gui.rectangle((0,0,255), (tx+Wx,ty+Hx,w,h), 1)
+    gui.draw()
+
+for tile in sorted(p.tiles, key=size_sort):
+    tile.analyze()
     tx,ty = tile.get_position(tile.size)
     w,h = tile.size
     for (x,y), color in zip(locs, tile.rgb):
         rect = (Wx+tx + w*x/2,Hx+ty+h*y/2,w/2,h/2)
         gui.rectangle(color, rect)
-        gui.rectangle((0,0,0), rect, 1)
-        gui.draw()
+    gui.rectangle((0,0,0), (tx+Wx,ty+Hx,w,h), 1)
+    gui.draw()
 
 try:
     for tile in sorted(p.tiles, key=match_sort):
