@@ -20,7 +20,7 @@ from __future__ import division
 import logging
 import random
 import numpy as np
-import Image
+from PIL import Image
 from progress_bar import progress_bar
 from sql_image_pool import SqlImagePool
 from tile import Tile

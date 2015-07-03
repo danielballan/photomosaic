@@ -1,7 +1,7 @@
 from directory_walker import DirectoryWalker
 from progress_bar import progress_bar
 import color_spaces as cs
-import Image
+from PIL import Image
 from image_functions import *
 import logging
 

@@ -3,7 +3,7 @@ import scipy
 import scipy.misc
 from scipy.cluster import vq
 import numpy as np
-import Image
+from PIL import Image
 
 import logging
 

@@ -1,7 +1,7 @@
 
 from memo import memo
-import Image
-import ImageFilter
+from PIL import Image
+from PIL import ImageFilter
 import logging
 import color_spaces as cs
 from image_functions import *
