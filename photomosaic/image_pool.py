@@ -14,17 +14,17 @@ class ImagePool(dict):
     def __init__(self):
         None
 
-    def add_directory(self, image_dir):
+    def add_directory(self, image_dir, skip_errors=True):
         walker = DirectoryWalker(image_dir)
         file_count = len(list(walker)) # stupid but needed but progress bar
         pbar = progress_bar(file_count, "Analyzing images and building db")
 
         for filename in walker:
-            self.add_image(filename)
+            self.add_image(filename, skip_errors)
             pbar.next()
         logger.info('Collection %s built with %d images'%(self.db_name, len(self)))
         
-    def add_image(self, filename):
+    def add_image(self, filename, skip_errors=False):
         if filename in self:
             logger.warning("Image %s is already in the table. Skipping it."%filename)
             return
@@ -48,6 +48,7 @@ class ImagePool(dict):
         except Exception as e:
             logger.warning("Unknown problem analyzing %s. (%s) Skipping it.",
                            filename, str(e))
-            return
+            if not skip_errors:
+                raise
         self.insert(filename, w, h, rgb, lab)
         return
