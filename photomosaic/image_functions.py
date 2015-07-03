@@ -59,7 +59,7 @@ def dominant_color(img, clusters=5, size=50):
     img.thumbnail((size, size))
     imgarr = scipy.misc.fromimage(img)
     imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
-    colors, dist = vq.kmeans(imgarr, clusters)
+    colors, dist = vq.kmeans(imgarr.astype(float), clusters)
     vecs, dist = vq.vq(imgarr, colors)
     counts, bins = scipy.histogram(vecs, len(colors))
     dominant_color = colors[counts.argmax()]
