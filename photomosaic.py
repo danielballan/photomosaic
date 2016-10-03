@@ -1,3 +1,8 @@
+from tqdm import tqdm
+from collections import OrderedDict
+import glob
+import warnings
+import copy
 import os
 import logging
 import time
@@ -14,207 +19,182 @@ import color_spaces as cs
 from directory_walker import DirectoryWalker
 from memo import memo
 from progress_bar import progress_bar
+from skimage import draw, img_as_float
+from skimage.io import imread
+from skimage.transform import resize
+import colorspacious
 
 # Configure logger.
 FORMAT = "%(name)s.%(funcName)s:  %(message)s"
 logging.basicConfig(level=logging.INFO, format=FORMAT)
 logger = logging.getLogger(__name__)
 
-def simple(image_dir, target_filename, dimensions, output_file):
+def old_simple(image_dir, target_filename, dimensions, output_file):
     "A convenient wrapper for producing a traditional photomosaic."
     pool(image_dir, 'temp.db')
-    orig_img = open(target_filename)
-    img = tune(orig_img, 'temp.db', quiet=True)
-    tiles = partition(img, dimensions)
+    orig_image = open(target_filename)
+    image = tune(orig_image, 'temp.db', quiet=True)
+    tiles = partition(image, dimensions)
     analyze(tiles)
     matchmaker(tiles, 'temp.db')
     mos = mosaic(tiles)
-    mos = untune(mos, img, orig_img)
+    mos = untune(mos, image, orig_image)
     logger.info('Saving mosaic to %s', output_file)
     mos.save(output_file)
 
-def split_regions(img, split_dim):
-    """Split an image into subregions.
-    Use split_dim=2 or (2,2) or (2,3) etc.
-    Return a flat list of images."""
-    if isinstance(split_dim, int):
-        rows = columns = split_dim
-    else:
-        columns, rows = split_dim
-    r_size = img.size[0] // columns, img.size[1] // rows
-    # regions = [[None for c in range(columns)] for r in range(rows)]
-    regions = columns*rows*[None]
-    for y in range(rows):
-        for x in range(columns):
-            region = img.crop((x*r_size[0], 
-                             y*r_size[1],
-                             (x + 1)*r_size[0], 
-                             (y + 1)*r_size[1]))
-            # regions[y][x] = region ## for nested output
-            regions[y*columns + x] = region
-    return regions
-    
-def split_quadrants(img):
-    """Convenience function: calls split_regions(img, 2). Returns
-    a flat 4-element list: top-left, top-right, bottom-left, bottom-right."""
-    if img.size[0] & 1 or img.size[1] & 1:
-        logger.debug("I am quartering an image with odd dimensions.")
-    return split_regions(img, 2)
 
-def dominant_color(img, clusters=5, size=50):
-    """Group the colors in an image into like clusters, and return
-    the central value of the largest cluster -- the dominant color."""
-    assert img.mode == 'RGB', 'RGB images only!'
-    img.thumbnail((size, size))
-    imgarr = scipy.misc.fromimage(img)
-    imgarr = imgarr.reshape(scipy.product(imgarr.shape[:2]), imgarr.shape[2])
-    colors, dist = vq.kmeans(imgarr, clusters)
-    vecs, dist = vq.vq(imgarr, colors)
+def simple(image, pool):
+    """
+    Complete example
+
+    Parameters
+    ----------
+    image : array
+    pool : dict-like
+        output from :func:`make_pool`; or any mapping of
+        arguments for opening an image file to a vector characterizing it:
+        e.g., ``{(filename,): [1, 2, 3]}``
+
+    Returns
+    -------
+    mosaic : array
+    """
+    partition(image, grid_size=(10, 10), depth=1)
+    matcher = SimpleMatcher(pool)
+    tile_colors = [analyzer(image[tile]) for tile in tiles]
+    matches = []
+    for tile_color in tqdm(tile_colors, total=len(tile_colors)):
+        matches.append(matcher.match(tile_color))
+    canvas = np.ones_likes(image)  # white canvas same shape as input image
+    return draw_mosaic(canvas, tiles, matches)
+
+
+def draw_mosaic(image, tiles, matches):
+    """
+    Assemble the mosaic, the final result.
+
+    Parameters
+    ----------
+    image : array
+        the "canvas" on which to draw the tiles, modified in place
+    tiles : list
+        list of pairs of slice objects
+    tile_matches : list
+        for each tile in ``tiles``, a tuple of arguments for opening the
+        matching image file
+
+    Returns
+    -------
+    image : array
+    """
+    for tile, match_args in zip(tiles, tile_matches):
+        raw_match_image = imread(*match_args)
+        match_image = resize(raw_match_image, _tile_size(tile))
+        image[tile] = match_image
+    return image 
+
+
+class SimpleMatcher:
+    """
+    This simple matcher returns the closest match.
+
+    It maintains an internal tree representation of the pool for fast lookups.
+    """
+    def __init__(self, pool):
+        self._pool = OrderedDict(pool)
+        self._args = list(self._pool.keys())
+        data = np.array([vector for vector in self._pool.values()])
+        self._tree = cKDTree(data)
+
+    def match(self, vector):
+        distance, index = self._tree.query(vector, k=1)
+        return self._pool[index]
+
+
+
+def make_pool(glob_string, *, cache=None, skip_read_failures=True,
+              analyzer=dominant_color):
+    """
+    Analyze a collection of images.
+
+    For each file:
+    1. Read image.
+    2. Convert to perceptually-uniform color space "CIECAM02".
+    3. Characterize the colors in the image as a vector.
+
+    A progress bar is displayed and then hidden after completion.
+
+    Parameters
+    ----------
+    glob_string : string
+        a filepath with optional wildcards, like `'*.jpg'`
+    pool : dict-like, optional
+        dict-like data structure to hold results; if None, dict is used
+    skip_read_failures: bool, optional
+        If True (default), convert any exceptions that occur while reading a
+        file into warnings and continue.
+    analyzer : callable, optional
+        Function with signature: ``f(img) -> arr`` where ``arr`` is a vector.
+        The default analyzer is :func:`dominant_color`.
+
+    Returns
+    -------
+    cache : dict-like
+        mapping arguments for opening file to analyzer's result, e.g.:
+        ``{(filename,): [1, 2, 3]}``
+    """
+    if pool is None:
+        pool = {}
+    filenames = glob.glob(glob_string)
+    for filename in tqdm(filenames):
+        try:
+            raw_image = imread(filename)
+            image = img_as_float(raw_image)  # ensure float scaled 0-1
+        except Exception as err:
+            if skip_read_failures:
+                warnings.warn("Skipping {}; raised exception:\n    {}"
+                             "".format(filename, err))
+                continue
+            raise
+        # Assume last axis is color axis. If alpha channel exists, drop it.
+        if image.shape[-1] == 4:
+            image = image[:, :, :-1]
+        # Convert color to perceptually-uniform color space.
+        # "JCh" is a simplified "CIECAM02".
+        percep = colorspacious.cspace_convert(image, "sRGB1", "JCh")
+        vector = analyzer(percep)
+        pool[(filename,)] = vector
+    return pool 
+
+
+def dominant_color(image, n_clusters=5, sample_size=1000):
+    """
+    Sample pixels from an image, cluster colors, and identify dominant color.
+
+    Parameters
+    ----------
+    image: array
+        The last axis is expected to be the color axis.
+    n_clusters : int, optional
+        number of clusters; default 5
+    sample_size : int, optional
+        number of pixels to sample; default 1000
+
+    Returns
+    -------
+    dominant_color : array
+    """
+    image = copy.deepcopy(image)
+    # 'raveled_image' is a 2D array, a 1D list of 1D color vectors
+    raveled_image = image.reshape(scipy.product(image.shape[:-1]),
+                                  image.shape[-1])
+    np.random.shuffle(raveled_image)  # shuffles in place
+    sample = raveled_image[:min(len(raveled_image), sample_size)]
+    colors, dist = vq.kmeans(sample, n_clusters)
+    vecs, dist = vq.vq(sample, colors)
     counts, bins = scipy.histogram(vecs, len(colors))
-    dominant_color = colors[counts.argmax()]
-    return map(int, dominant_color) # Avoid returning np.uint8 type.
+    return colors[counts.argmax()]
 
-def connect(db_path):
-    "Connect to a sqlite database at db_path. If it does not exist, create it."
-    try:
-        db = sqlite3.connect(db_path)
-    except IOError:
-        logger.error("Cannot connect to SQLite database at %s",  db_path)
-        return
-    db.row_factory = sqlite3.Row # Rows are dictionaries.
-    return db
-
-def create_tables(db):
-    """Create Images for image meta info, Color for RGB values and LabColor
-    for LAB values. RGB and LAB are used for different steps, RGB for levels
-    adjustments are LAB for measure perceived color difference precisely.
-    Thus Color and LabColor are organized somewhat differently."""
-    c = db.cursor()
-    c.execute("""CREATE TABLE IF NOT EXISTS Images
-                 (image_id INTEGER PRIMARY KEY,
-                  usages INTEGER,
-                  w INTEGER,
-                  h INTEGER,
-                  filename TEXT UNIQUE)""")
-    c.execute("""CREATE TABLE IF NOT EXISTS Colors
-                 (color_id INTEGER PRIMARY KEY,
-                  image_id INTEGER,
-                  region INTEGER,
-                  red INTEGER,
-                  green INTEGER,
-                  blue INTEGER)""")
-    c.execute("""CREATE TABLE IF NOT EXISTS LabColors
-                 (labcolor_id INTEGER PRIMARY KEY,
-                  image_id INTEGER,
-                  region INTEGER,
-                  L1 REAL,
-                  a1 REAL,
-                  b1 REAL,
-                  L2 REAL,
-                  a2 REAL,
-                  b2 REAL,
-                  L3 REAL,
-                  a3 REAL,
-                  b3 REAL,
-                  L4 REAL,
-                  a4 REAL,
-                  b4 REAL)""")
-    c.close()
-    db.commit()
-
-def in_db(filename, db):
-    c = db.cursor()
-    try: 
-        c.execute("SELECT count(*) FROM Images WHERE filename=?", (filename,))
-        return c.fetchone()[0] > 0
-    finally:
-        c.close()
-    return False
-
-def get_size(db):
-    c = db.cursor()
-    try: 
-        c.execute("SELECT count(*) FROM Images")
-        return c.fetchone()[0] 
-    finally:
-        c.close()
-    return 0   
-
-def insert(filename, w, h, rgb, lab, db):
-    """Insert image info in the Images table and color information in the
-    Color and LabColor tables."""
-    c = db.cursor()
-    try:
-        c.execute("""INSERT INTO Images (usages, w, h, filename)
-                     VALUES (?, ?, ?, ?)""",
-                  (0, w, h, filename))
-        image_id = c.lastrowid
-        c.executemany("""INSERT INTO Colors (image_id, region, red, green, blue)
-                         VALUES (?, ?, ?, ?, ?)""",
-                         [tuple([image_id, region] + list(colors)) \
-                          for region, colors in enumerate(rgb)])
-        c.execute("""INSERT INTO LabColors (image_id,
-                     L1, a1, b1, L2, a2, b2, L3, a3, b3, L4, a4, b4)
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
-                     tuple([image_id] + [ch for reg in lab for ch in reg]))
-    except sqlite3.IntegrityError:
-        logger.warning("Image %s is already in the table. Skipping it.",
-                       filename)
-    except:
-        logger.warning("Unknown problem with image %s. Skipping it.",
-                       filename)
-    finally:
-        c.close()
-    
-def pool(image_dir, db_name):
-    """Analyze all the images in image_dir, and store the results in
-    a sqlite database at db_name."""
-    db = connect(db_name)
-    try:
-        create_tables(db)
-        walker = DirectoryWalker(image_dir)
-        file_count = len(list(walker)) # stupid but needed but progress bar
-        pbar = progress_bar(file_count, "Analyzing images and building db")
-        walker = DirectoryWalker(image_dir)
-        for filename in walker:
-            if in_db(filename, db):
-                logger.warning("Image %s is already in the table. Skipping it."%filename)
-                pbar.next()
-                continue
-            try:
-                img = Image.open(filename)
-            except IOError:
-                logger.warning("Cannot open %s as an image. Skipping it.",
-                               filename)
-                pbar.next()
-                continue
-            if img.mode != 'RGB':
-                logger.warning("RGB images only. Skipping %s.", filename)
-                pbar.next()
-                continue
-            w, h = img.size
-            try:
-                regions = split_quadrants(img)
-                rgb = map(dominant_color, regions) 
-                lab = map(cs.rgb2lab, rgb)
-            except:
-                logger.warning("Unknown problem analyzing %s. Skipping it.",
-                               filename)
-                continue
-            insert(filename, w, h, rgb, lab, db)
-            pbar.next()
-        db.commit()
-        logger.info('Collection %s built with %d images'%(db_name, get_size(db)))
-    finally:
-        db.close()
-
-def open(target_filename):
-    "Just a wrapper for Image.open from PIL"
-    try:
-        return Image.open(target_filename)
-    except IOError:
-        logger.warning("Cannot open %s as an image.", target_filename)
-        return
 
 def plot_histograms(hist, title=''):
     "Plot an RGB histogram given as a dictionary with channel keys."
@@ -232,9 +212,9 @@ def plot_histograms(hist, title=''):
     red.set_title(title)
     fig.show()
 
-def img_histogram(img, mask=None):
+def image_histogram(image, mask=None):
     keys = 'red', 'green', 'blue'
-    channels = dict(zip(keys, img.split()))
+    channels = dict(zip(keys, image.split()))
     hist= {}
     for ch in keys:
         if mask:
@@ -245,18 +225,18 @@ def img_histogram(img, mask=None):
         hist[ch] = normalized_h
     return hist
 
-def untune(mos, img, orig_img, mask=None, amount=1):
+def untune(mos, image, orig_image, mask=None, amount=1):
     if mask:
-        m = crop_to_fit(mask, img.size)
-        orig_palette = compute_palette(img_histogram(orig_img, m))
-        img_palette = compute_palette(img_histogram(img, m))
+        m = crop_to_fit(mask, image.size)
+        orig_palette = compute_palette(image_histogram(orig_image, m))
+        image_palette = compute_palette(image_histogram(image, m))
     else:
-        orig_palette = compute_palette(img_histogram(orig_img))
-        img_palette = compute_palette(img_histogram(img))
-    return Image.blend(mos, adjust_levels(mos, img_palette, orig_palette),
+        orig_palette = compute_palette(image_histogram(orig_image))
+        image_palette = compute_palette(image_histogram(image))
+    return Image.blend(mos, adjust_levels(mos, image_palette, orig_palette),
                           amount)
 
-def tune(target_img, db_name, mask=None, quiet=True):
+def tune(target_image, db_name, mask=None, quiet=True):
     """Adjust the levels of the image to match the colors available in the
     th pool. Return the adjusted image. Optionally plot some histograms."""
     db = connect(db_name)
@@ -266,21 +246,21 @@ def tune(target_img, db_name, mask=None, quiet=True):
         db.close()
     pool_palette = compute_palette(pool_hist)
     if mask:
-        m = crop_to_fit(mask, target_img.size)
-        target_palette = compute_palette(img_histogram(target_img, m))
+        m = crop_to_fit(mask, target_image.size)
+        target_palette = compute_palette(image_histogram(target_image, m))
     else:
-        target_palette = compute_palette(img_histogram(target_img))
-    adjusted_img = adjust_levels(target_img, target_palette, pool_palette)
+        target_palette = compute_palette(image_histogram(target_image))
+    adjusted_image = adjust_levels(target_image, target_palette, pool_palette)
     if not quiet:
         # Use the Image.histogram() method to examine the target image
         # before and after the alteration.
         keys = 'red', 'green', 'blue'
-        values = [channel.histogram() for channel in target_img.split()]
+        values = [channel.histogram() for channel in target_image.split()]
         totals = map(sum, values)
         norm = [map(lambda x: 256*x/totals[i], val) \
                 for i, val in enumerate(values)]
         orig_hist = dict(zip(keys, norm)) 
-        values = [channel.histogram() for channel in adjusted_img.split()]
+        values = [channel.histogram() for channel in adjusted_image.split()]
         totals = map(sum, values)
         norm = [map(lambda x: 256*x/totals[i], val) \
                 for i, val in enumerate(values)]
@@ -288,7 +268,7 @@ def tune(target_img, db_name, mask=None, quiet=True):
         plot_histograms(pool_hist, title='Images in the pool')
         plot_histograms(orig_hist, title='Unaltered target image')
         plot_histograms(adjusted_hist, title='Adjusted target image')
-    return adjusted_img
+    return adjusted_image
 
 def pool_histogram(db):
     """Generate a histogram of the images in the pool.
@@ -329,11 +309,11 @@ def compute_palette(hist):
         palette[ch] = p
     return palette
 
-def adjust_levels(target_img, from_palette, to_palette):
+def adjust_levels(target_image, from_palette, to_palette):
     """Transform the colors of an image to match the color palette of
     another image."""
     keys = 'red', 'green', 'blue'
-    channels = dict(zip(keys, target_img.split()))
+    channels = dict(zip(keys, target_image.split()))
     f, g = from_palette, to_palette # compact notation
     func = {} # function to transform color at each pixel
     for ch in keys:
@@ -357,17 +337,18 @@ def adjust_levels(target_img, from_palette, to_palette):
 def _subdivide(tile):
     "Create four tiles from the four quadrants of the input tile."
     tile_dims = [(s.stop - s.start) // 2 for s in tile]
-    tiles = []
-    for y in [0, 1]:
-        for x in [0, 1]:
-            tile = (slice(x * tile_dims[0], (1 + x) * tile_dims[0]),
-                    slice(y * tile_dims[1], (1 + y) * tile_dims[1]))
-            tiles.append(tile)
-    return tiles
+    subtiles = []
+    for y in (0, 1):
+        for x in (0, 1):
+            subtile = (slice(tile[0].start + y * tile_dims[0],
+                             tile[0].start + (1 + y) * tile_dims[0]),
+                       slice(tile[1].start + x * tile_dims[1],
+                             tile[1].start + (1 + x) * tile_dims[1]))
+            subtiles.append(subtile)
+    return subtiles
 
 
-def partition(img, grid_dims, mask=None, depth=0, hdr=80,
-              debris=False, min_debris_depth=1, base_width=None):
+def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     """
     Parition the target image into tiles.
 
@@ -389,50 +370,88 @@ def partition(img, grid_dims, mask=None, depth=0, hdr=80,
     Returns
     -------
     tiles : list
-        a flat list of slice objects
+        list of pairs of slice objects
     """
     # Validate inputs.
     if isinstance(grid_dims, int):
-        tile_dims, = img.ndims * (grid_dims,)
+        tile_dims, = image.ndims * (grid_dims,)
     for i in (0, 1):
-        img_dim = img.shape[i]
+        image_dim = image.shape[i]
         grid_dim = grid_dims[i]
-        if img_dim % grid_dim*2**depth != 0:
+        if image_dim % grid_dim*2**depth != 0:
             raise ValueError("Image dimensions must be evenly divisible by "
                              "dimensions of the (subdivided) grid. "
-                             "Dimension {img_dim} is not "
+                             "Dimension {image_dim} is not "
                              "evenly divisible by {grid_dim}*2**{depth} "
-                             "".format(img_dim=img_dim, grid_dim=grid_dim,
+                             "".format(image_dim=image_dim, grid_dim=grid_dim,
                                        depth=depth))
 
     # Partition into equal-sized tiles (Python slice objects).
-    tile_width = img.shape[0] // grid_dims[0] 
-    tile_height = img.shape[1] // grid_dims[1]
+    tile_height = image.shape[0] // grid_dims[0] 
+    tile_width = image.shape[1] // grid_dims[1]
     tiles = []
-    for y in range(grid_dims[1]):
-        for x in range(grid_dims[0]):
-            tile = (slice(x * tile_width, (1 + x) * tile_width),
-                    slice(y * tile_height, (1 + y) * tile_height))
+    for y in range(grid_dims[0]):
+        for x in range(grid_dims[1]):
+            tile = (slice(y * tile_height, (1 + y) * tile_height),
+                    slice(x * tile_width, (1 + x) * tile_width))
             tiles.append(tile)
 
-    # Discard any tiles that reside completely in a masked-out region.
+    # Discard any tiles that reside fully outside the mask.
     if mask is not None:
-        for tile in tiles:
-            if not np.any(mask[tile]):
-                tiles.remove(tile)
+        tiles = [tile for tile in tiles if np.any(mask[tile])]
 
     # If depth > 0, subdivide any tiles that straddle a mask edge or that
     # contain an image with high contrast.
     for _ in range(depth):
+        new_tiles = []
         for tile in tiles:
             if (mask is not None) and np.any(mask[tile]) and np.any(~mask[tile]):
                 # This tile straddles a mask edge.
-                tiles.append(_subdivide(tile))
-                tiles.remove(tile)
+                subtiles = _subdivide(tile)
+                # Discard subtiles that reside fully outside the mask.
+                subtiles = [tile for tile in subtiles if np.any(mask[tile])]
+                new_tiles.extend(subtiles)
             elif False:  # TODO hdr check
-                tiles.append(_subdivide(tile))
-                tiles.remove(tile)
+                new_tiles.extend(_subdivide(tile))
+            else:
+                new_tiles.append(tile)
+        tiles = new_tiles
     return tiles
+
+
+def _tile_center(tile):
+    "Compute (y, x) center of tile."
+    return tuple((s.stop + s.start) // 2 for s in tile)
+
+
+def draw_tiles(image, tiles, color=1):
+    """
+    Draw the tile edges on a copy of image. Make a dot at each tile center.
+
+    Parameters
+    ----------
+    image : array
+    tiles : list
+        list of pairs of slices, as generated by :func:`partition`
+    color : int or array
+        value to "draw" onto ``image`` at tile boundaries
+
+    Returns
+    -------
+    annotated_image : array
+    """
+    annotated_image = copy.deepcopy(image)
+    for y, x in tiles:
+        edges = ((y.start, x.start, y.stop - 1, x.start),
+                 (y.stop - 1, x.start, y.stop - 1, x.stop - 1),
+                 (y.stop - 1, x.stop - 1, y.start, x.stop - 1),
+                 (y.start, x.stop - 1, y.start, x.start))
+        for edge in edges:
+            rr, cc = draw.line(*edge)
+            annotated_image[rr, cc] = color  # tile edges
+            annotated_image[_tile_center((y, x))] = color  # dot at tile center
+    return annotated_image
+
 
 def analyze(tiles):
     """Determine dominant colors of target tiles, and save that information
@@ -515,30 +534,30 @@ def choose_match(lab, db, tolerance=1, usage_penalty=1):
     logger.debug("%s", match)
     return match
 
-def crop_to_fit(img, tile_size):
-    "Return a copy of img cropped to precisely fill the dimesions tile_size."
-    img_w, img_h = img.shape
+def crop_to_fit(image, tile_size):
+    "Return a copy of image cropped to precisely fill the dimesions tile_size."
+    image_w, image_h = image.shape
     tile_w, tile_h = tile_size
-    img_aspect = img_w/img_h
+    image_aspect = image_w/image_h
     tile_aspect = tile_w/tile_h
-    if img_aspect > tile_aspect:
+    if image_aspect > tile_aspect:
         # It's too wide.
-        crop_h = img_h
+        crop_h = image_h
         crop_w = int(round(crop_h*tile_aspect))
-        x_offset = int((img_w - crop_w)/2)
+        x_offset = int((image_w - crop_w)/2)
         y_offset = 0
     else:
         # It's too tall.
-        crop_w = img_w
+        crop_w = image_w
         crop_h = int(round(crop_w/tile_aspect))
         x_offset = 0
-        y_offset = int((img_h - crop_h)/2)
-    img = img.crop((x_offset,
+        y_offset = int((image_h - crop_h)/2)
+    image = image.crop((x_offset,
                     y_offset,
                     x_offset + crop_w,
                     y_offset + crop_h))
-    img = img.resize((tile_w, tile_h), Image.ANTIALIAS)
-    return img
+    image = image.resize((tile_w, tile_h), Image.ANTIALIAS)
+    return image
 
 def shrink_by_lightness(pad, tile_size, dL):
     """The greater the greater the lightness discrepancy dL
@@ -622,7 +641,7 @@ def mosaic(tiles, pad=False, scatter=False, margin=0, scaled_margin=False,
             pos = tile_position(tile, size, scatter, margin//(1 + tile.depth))
         else:
             pos = tile_position(tile, size, scatter, margin)
-        mos.paste(crop_to_fit(tile.match_img, size), pos)
+        mos.paste(crop_to_fit(tile.match_image, size), pos)
         pbar.next()
     return mos
 
@@ -642,21 +661,6 @@ def assemble_tiles(tiles, margin=1):
         pos = tile_position(tile, shrunk, False, 0)
         mos.paste(tile.resize(shrunk), pos)
     return mos
-
-def color_hex(rgb):
-    "Convert [r, g, b] to a HEX value with a leading # character."
-    return '#' + ''.join(chr(c) for c in rgb).encode('hex')
-
-def reset_usage(db):
-    try:
-        c = db.cursor()
-        c.execute("UPDATE Images SET usages=0")
-    finally:
-        c.close()
-    return
-
-def testing():
-    pm.simple('images/samples', 'images/samples/dan-allan.jpg', (10,10), 'output.jpg')
 
 
 class Pool:
