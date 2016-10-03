@@ -20,8 +20,11 @@ from directory_walker import DirectoryWalker
 from memo import memo
 from progress_bar import progress_bar
 from skimage import draw, img_as_float
-from skimage.io import imread
+from skimage.io import imread, imsave
 from skimage.transform import resize
+from skimage.color import gray2rgb
+from skimage.util import crop
+from scipy.spatial import cKDTree
 import colorspacious
 
 
@@ -41,17 +44,47 @@ def simple(image, pool):
     -------
     mosaic : array
     """
-    partition(image, grid_size=(10, 10), depth=1)
+    image = img_as_float(image)
+    tiles = partition(image, grid_dims=(10, 10), depth=1)
     matcher = SimpleMatcher(pool)
-    tile_colors = [analyzer(image[tile]) for tile in tiles]
+    tile_colors = [dominant_color(image[tile]) for tile in tiles]
     matches = []
     for tile_color in tqdm(tile_colors, total=len(tile_colors)):
         matches.append(matcher.match(tile_color))
-    canvas = np.ones_likes(image)  # white canvas same shape as input image
+    canvas = np.ones_like(image)  # white canvas same shape as input image
     return draw_mosaic(canvas, tiles, matches)
 
 
-def make_pool(glob_string, *, cache=None, skip_read_failures=True,
+def dominant_color(image, n_clusters=5, sample_size=1000):
+    """
+    Sample pixels from an image, cluster colors, and identify dominant color.
+
+    Parameters
+    ----------
+    image: array
+        The last axis is expected to be the color axis.
+    n_clusters : int, optional
+        number of clusters; default 5
+    sample_size : int, optional
+        number of pixels to sample; default 1000
+
+    Returns
+    -------
+    dominant_color : array
+    """
+    image = copy.deepcopy(image)
+    # 'raveled_image' is a 2D array, a 1D list of 1D color vectors
+    raveled_image = image.reshape(scipy.product(image.shape[:-1]),
+                                  image.shape[-1])
+    np.random.shuffle(raveled_image)  # shuffles in place
+    sample = raveled_image[:min(len(raveled_image), sample_size)]
+    colors, dist = vq.kmeans(sample, n_clusters)
+    vecs, dist = vq.vq(sample, colors)
+    counts, bins = scipy.histogram(vecs, len(colors))
+    return colors[counts.argmax()]
+
+
+def make_pool(glob_string, *, pool=None, skip_read_failures=True,
               analyzer=dominant_color):
     """
     Analyze a collection of images.
@@ -88,16 +121,13 @@ def make_pool(glob_string, *, cache=None, skip_read_failures=True,
     for filename in tqdm(filenames):
         try:
             raw_image = imread(filename)
-            image = img_as_float(raw_image)  # ensure float scaled 0-1
         except Exception as err:
             if skip_read_failures:
                 warnings.warn("Skipping {}; raised exception:\n    {}"
                              "".format(filename, err))
                 continue
             raise
-        # Assume last axis is color axis. If alpha channel exists, drop it.
-        if image.shape[-1] == 4:
-            image = image[:, :, :-1]
+        image = standardize_image(raw_image)
         # Convert color to perceptually-uniform color space.
         # "JCh" is a simplified "CIECAM02".
         percep = colorspacious.cspace_convert(image, "sRGB1", "JCh")
@@ -106,33 +136,26 @@ def make_pool(glob_string, *, cache=None, skip_read_failures=True,
     return pool 
 
 
-def dominant_color(image, n_clusters=5, sample_size=1000):
+def standardize_image(image):
     """
-    Sample pixels from an image, cluster colors, and identify dominant color.
+    Ensure that image is float 0-1 RGB with no alpha.
 
     Parameters
     ----------
-    image: array
-        The last axis is expected to be the color axis.
-    n_clusters : int, optional
-        number of clusters; default 5
-    sample_size : int, optional
-        number of pixels to sample; default 1000
+    image : array
 
     Returns
     -------
-    dominant_color : array
+    image : array
+        may or may not be a copy of the original
     """
-    image = copy.deepcopy(image)
-    # 'raveled_image' is a 2D array, a 1D list of 1D color vectors
-    raveled_image = image.reshape(scipy.product(image.shape[:-1]),
-                                  image.shape[-1])
-    np.random.shuffle(raveled_image)  # shuffles in place
-    sample = raveled_image[:min(len(raveled_image), sample_size)]
-    colors, dist = vq.kmeans(sample, n_clusters)
-    vecs, dist = vq.vq(sample, colors)
-    counts, bins = scipy.histogram(vecs, len(colors))
-    return colors[counts.argmax()]
+    image = img_as_float(image)  # ensure float scaled 0-1
+    # If there is no color axis, create one.
+    image = gray2rgb(image)
+    # Assume last axis is color axis. If alpha channel exists, drop it.
+    if image.shape[-1] == 4:
+        image = image[:, :, :-1]
+    return image
 
 
 class SimpleMatcher:
@@ -149,10 +172,10 @@ class SimpleMatcher:
 
     def match(self, vector):
         distance, index = self._tree.query(vector, k=1)
-        return self._pool[index]
+        return self._args[index]
 
 
-def draw_mosaic(image, tiles, matches):
+def draw_mosaic(image, tiles, matches, scale=1):
     """
     Assemble the mosaic, the final result.
 
@@ -162,18 +185,26 @@ def draw_mosaic(image, tiles, matches):
         the "canvas" on which to draw the tiles, modified in place
     tiles : list
         list of pairs of slice objects
-    tile_matches : list
+    matches : list
         for each tile in ``tiles``, a tuple of arguments for opening the
         matching image file
+    scale : int, optional
+        Scale up tiles for higher resolution image; default is 1.
+        Any not-integer input will be cast to int.
 
     Returns
     -------
     image : array
     """
-    for tile, match_args in zip(tiles, tile_matches):
+    scale = int(scale)
+    for tile, match_args in zip(tiles, matches):
+        if scale != 1:
+            tile = tuple(slice(scale * s.start, scale * s.stop)
+                         for s in tile)
         raw_match_image = imread(*match_args)
-        match_image = resize(raw_match_image, _tile_size(tile))
-        image[tile] = match_image
+        match_image = standardize_image(raw_match_image)
+        sized_match_image = crop_to_fit(match_image, _tile_size(tile))
+        image[tile] = sized_match_image
     return image 
 
 
@@ -303,30 +334,39 @@ def draw_tiles(image, tiles, color=1):
     return annotated_image
 
 
-def crop_to_fit(image, tile_size):
-    "Return a copy of image cropped to precisely fill the dimesions tile_size."
-    image_w, image_h = image.shape
-    tile_w, tile_h = tile_size
-    image_aspect = image_w/image_h
-    tile_aspect = tile_w/tile_h
-    if image_aspect > tile_aspect:
-        # It's too wide.
-        crop_h = image_h
-        crop_w = int(round(crop_h*tile_aspect))
-        x_offset = int((image_w - crop_w)/2)
-        y_offset = 0
-    else:
-        # It's too tall.
-        crop_w = image_w
-        crop_h = int(round(crop_w/tile_aspect))
-        x_offset = 0
-        y_offset = int((image_h - crop_h)/2)
-    image = image.crop((x_offset,
-                    y_offset,
-                    x_offset + crop_w,
-                    y_offset + crop_h))
-    image = image.resize((tile_w, tile_h), Image.ANTIALIAS)
-    return image
+def crop_to_fit(image, shape):
+    """
+    Return a copy of image resized and cropped to precisely fill a shape.
+
+    To resize a colored 2D image, pass in a shape with two entries. When
+    ``len(shape) < image.ndim``, higher dimensions are ignored.
+
+    Parameters
+    ----------
+    image : array
+    shape : tuple
+        e.g., ``(height, width)`` but any length <= ``image.ndim`` is allowed
+
+    Returns
+    -------
+    cropped_image : array
+    """
+    # Resize smallest dimension (width or height) to fit.
+    d = np.argmin(np.array(image.shape)[:2] / np.array(shape))
+    resized = resize(image, np.array(image.shape) * shape[d]/image.shape[d])
+    crop_width = []
+    # Crop any overhang in the other dimension.
+    for actual, target in zip(resized.shape, shape):
+        overflow = actual - target
+        # Center the image and crop, biasing left if overflow is odd.
+        left_margin = np.floor(overflow / 2)
+        right_margin = np.ceil(overflow / 2)
+        crop_width.append((left_margin, right_margin))
+    # Do not crop any additional dimensions beyond those given in shape.
+    for _ in range(resized.ndim - len(shape)):
+        crop_width.append((0, 0))
+    cropped = crop(image, crop_width)
+    return cropped
 
 
 class Pool:
@@ -399,3 +439,13 @@ class Pool:
     
     def get_image(self, *args):
         return self._load(*args)
+
+
+def generate_tile_pool(target_dir, shape=(10, 10)):
+    canvas = np.ones(shape + (3,))
+    for r in range(0, 256, 17):
+        for g in range(0, 256, 17):
+            for b in range(0, 256, 17):
+                img = (canvas * [r, g, b]).astype(np.uint8)
+                filename = '{:03d}-{:03d}-{:03d}.gif'.format(r, g, b)
+                imsave(os.path.join(target_dir, filename), img)
