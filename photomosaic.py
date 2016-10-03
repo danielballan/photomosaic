@@ -1,22 +1,3 @@
-# Copyright 2012 Daniel B. Allan
-# dallan@pha.jhu.edu, daniel.b.allan@gmail.com
-# http://pha.jhu.edu/~dallan
-# http://www.danallan.com
-#
-# This program is free software; you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation; either version 3 of the License, or (at
-# your option) any later version.
-#
-# This program is distributed in the hope that it will be useful, but
-# WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
-# General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, see <http://www.gnu.org/licenses>.
-
-from __future__ import division
 import os
 import logging
 import time
@@ -527,60 +508,84 @@ class Tile(object):
                 children.append(child)
         return children
 
-def partition(img, dimensions, mask=None, depth=0, hdr=80,
-              debris=False, min_debris_depth=1, base_width=None):
-    "Partition the target image into a list of Tile objects."
-    if isinstance(dimensions, int):
-        dimensions = dimensions, dimensions
-    if base_width is not None:
-        cwidth = img.size[0] / dimensions[0]
-        width = base_width * dimensions[0]
-        factor = base_width / cwidth
-        height = int(img.size[1] * factor)
-        print img.size, dimensions, width, height
-        img = crop_to_fit(img, (width, height))
-    # img.size must have dimensions*2**depth as a factor.
-    factor = dimensions[0]*2**depth, dimensions[1]*2**depth
-    new_size = tuple([int(factor[i]*np.ceil(img.size[i]/factor[i])) \
-                      for i in [0, 1]])
-    logger.info("Resizing image to %s, a round number for partitioning. "
-                "If necessary, I will crop to fit.",
-                new_size)
-    img = crop_to_fit(img, new_size)
-    if mask:
-        mask = crop_to_fit(mask, new_size)
-        if not debris:
-            mask = mask.convert("1") # no gray
-    width = img.size[0] // dimensions[0] 
-    height = img.size[1] // dimensions[1]
+def _subdivide(tile):
+    "Create four tiles from the four quadrants of the input tile."
+    tile_dims = [(s.stop - s.start) // 2 for s in tile]
     tiles = []
-    for y in range(dimensions[1]):
-        for x in range(dimensions[0]):
-            tile_img = img.crop((x*width, y*height,
-                                (x + 1)*width, (y + 1)*height))
-            if mask:
-                mask_img = mask.crop((x*width, y*height,
-                                     (x + 1)*width, (y + 1)*height))
-            else:
-                mask_img = None
-            tile = Tile(tile_img, x, y, mask=mask_img)
+    for y in [0, 1]:
+        for x in [0, 1]:
+            tile = (slice(x * tile_dims[0], (1 + x) * tile_dims[0]),
+                    slice(y * tile_dims[1], (1 + y) * tile_dims[1]))
             tiles.append(tile)
-    for g in xrange(depth):
-        old_tiles = tiles
-        tiles = []
-        for tile in old_tiles:
-            if tile.dynamic_range() > hdr or tile.straddles_mask_edge():
-                # Keep children; discard parent.
-                tiles += tile.procreate()
-            else:
-                # Keep tile -- no children.
-                tiles.append(tile)
-        logging.info("There are %d tiles in generation %d",
-                     len(tiles), g)
-    # Now that all tiles have been made and subdivided, decide which are blank.
-    [tile.determine_blankness(min_debris_depth) for tile in tiles]
-    logger.info("%d tiles are set to be blank",
-                len([1 for tile in tiles if tile.blank]))
+    return tiles
+
+
+def partition(img, grid_dims, mask=None, depth=0, hdr=80,
+              debris=False, min_debris_depth=1, base_width=None):
+    """
+    Parition the target image into tiles.
+
+    Optionally, subdivide tiles that contain high contrast, creating a grid
+    with tiles of varied size.
+
+    Parameters
+    ----------
+    grid_dims : int or tuple
+        number of (largest) tiles along each dimension
+    mask : array, optional
+        Tiles that straddle a mask edge will be subdivided, creating a smooth
+        edge.
+    depth : int, optional
+        Default is 0. Maximum times a tile can be subdivided.
+    hdr : float
+        "High Dynamic Range" --- level of contrast that trigger subdivision
+
+    Returns
+    -------
+    tiles : list
+        a flat list of slice objects
+    """
+    # Validate inputs.
+    if isinstance(grid_dims, int):
+        tile_dims, = img.ndims * (grid_dims,)
+    for i in (1, 2):
+        img_dim = img.shape[i]
+        grid_dim = grid_dims[i]
+        if img_dim % grid_dim*2**depth != 0:
+            raise ValueError("Image dimensions must be evenly divisible by "
+                             "dimensions of the (subdivided) grid. "
+                             "Dimension {img_dim} is not "
+                             "evenly divisible by {grid_dim}*2**{depth} "
+                             "".format(img_dim=img_dim, grid_dim=grid_dim,
+                                       depth=depth))
+
+    # Partition into equal-sized tiles (Python slice objects).
+    tile_width = img.size[0] // grid_dims[0] 
+    tile_height = img.size[1] // grid_dims[1]
+    tiles = []
+    for y in range(grid_dims[1]):
+        for x in range(grid_dims[0]):
+            tile = (slice(x * tile_width, (1 + x) * tile_width),
+                    slice(y * tile_height, (1 + y) * tile_height))
+            tiles.append(tile)
+
+    # Discard any tiles that reside completely in a masked-out region.
+    if mask is not None:
+        for tile in tiles:
+            if not np.any(mask[tile]):
+                tiles.remove(tile)
+
+    # If depth > 0, subdivide any tiles that straddle a mask edge or that
+    # contain an image with high contrast.
+    for _ in range(depth):
+        for tile in tiles:
+            if (mask is not None) and np.any(mask[tile]) and np.any(~mask[tile]):
+                # This tile straddles a mask edge.
+                tiles.append(_subdivide(tile))
+                tiles.remove(tile)
+            elif False:  # TODO hdr check
+                tiles.append(_subdivide(tile))
+                tiles.remove(tile)
     return tiles
 
 def analyze(tiles):
@@ -666,7 +671,7 @@ def choose_match(lab, db, tolerance=1, usage_penalty=1):
 
 def crop_to_fit(img, tile_size):
     "Return a copy of img cropped to precisely fill the dimesions tile_size."
-    img_w, img_h = img.size
+    img_w, img_h = img.shape
     tile_w, tile_h = tile_size
     img_aspect = img_w/img_h
     tile_aspect = tile_w/tile_h
@@ -806,3 +811,74 @@ def reset_usage(db):
 
 def testing():
     pm.simple('images/samples', 'images/samples/dan-allan.jpg', (10,10), 'output.jpg')
+
+
+class Pool:
+    def __init__(self, load_func, analyze_func, cache_path=None,
+                 kdtree_class=None):
+        self._load = load_func
+        self._analyze = analyze_func
+        if kdtree_class is None:
+            from scipy.spatial import cKDTree
+            kdtree_class = cKDTree
+        self._kdtree_class = kdtree_class
+
+        # self._cache maps args for loading image to vector describing it
+        if cache_path is None:
+            self._cache = {}
+        else:
+            from historydict import HistoryDict
+            self._cache = HistoryDict(cache_path)
+
+        self._keys_in_order = []
+        self._data = []
+        if self._cache:
+            for key, val in self._cache.items():
+                self._keys_in_order.append(key)
+                self._data.append(val)
+        self._build_tree()
+        self._stale = False  # stale means KD tree is out-of-date
+
+    def __setstate__(self, d):
+        self._load = d['load_func']
+        self._analyze = d['analyze_func']
+        self._kdtree_class = d['kdtree_class']
+        self._cache = d['cache']
+        self._keys_in_order = d['keys_in_order']
+        self._data = d['data']
+        self._stale = d['stale']
+        self._tree = d['tree']
+
+    def __getstate__(self):
+        d = {}
+        d['load_func'] = self._load
+        d['analyze_func'] = self._analyze
+        d['kdtree_class'] = self._kdtree_class
+        d['cache'] = self._cache
+        d['keys_in_order'] = self._keys_in_order
+        d['data'] = self._data
+        d['stale'] = self._stale
+        d['tree'] = self._tree
+        return d
+
+    def _build_tree(self):
+        if not self._data:
+            self._tree = self._kdtree_class(np.array([]).reshape(2, 0))
+        else:
+            self._tree = self._kdtree_class(self._data)
+
+    def add(self, *args):
+        arr = self._load_func(*args)
+        self._keys_in_order.append(args)
+        self._data.append(arr)
+        self._cache[args] = self._analyze_func(arr)
+        self._stale = True
+
+    def query(self, x, k):
+        if self._stale:
+            self._build_tree()
+            self._stale = False
+        return self._tree.query(x, k)
+    
+    def get_image(self, *args):
+        return self._load(*args)
