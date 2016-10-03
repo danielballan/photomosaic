@@ -30,7 +30,7 @@ import colorspacious
 
 def simple(image, pool):
     """
-    Complete example
+    Basic complete example
 
     Parameters
     ----------
@@ -44,10 +44,12 @@ def simple(image, pool):
     -------
     mosaic : array
     """
+    # TO DO crop to fit image to fit grid dimensions
     image = img_as_float(image)
+    percep = colorspacious.cspace_convert(image, "sRGB1", "JCh")
     tiles = partition(image, grid_dims=(10, 10), depth=1)
     matcher = SimpleMatcher(pool)
-    tile_colors = [dominant_color(image[tile]) for tile in tiles]
+    tile_colors = [dominant_color(percep[tile]) for tile in tiles]
     matches = []
     for tile_color in tqdm(tile_colors, total=len(tile_colors)):
         matches.append(matcher.match(tile_color))
@@ -151,7 +153,8 @@ def standardize_image(image):
     """
     image = img_as_float(image)  # ensure float scaled 0-1
     # If there is no color axis, create one.
-    image = gray2rgb(image)
+    if image.ndim == 2:
+        image = gray2rgb(image)
     # Assume last axis is color axis. If alpha channel exists, drop it.
     if image.shape[-1] == 4:
         image = image[:, :, :-1]
@@ -353,9 +356,13 @@ def crop_to_fit(image, shape):
     """
     # Resize smallest dimension (width or height) to fit.
     d = np.argmin(np.array(image.shape)[:2] / np.array(shape))
-    resized = resize(image, np.array(image.shape) * shape[d]/image.shape[d])
-    crop_width = []
+    enlarged_shape = (tuple(np.ceil(np.array(image.shape[:len(shape)])
+                                    * shape[d]/image.shape[d]))
+                      + image.shape[len(shape):])
+    resized = resize(image, enlarged_shape)
+    # Now the image is as large or larger than the shape along all dimensions.
     # Crop any overhang in the other dimension.
+    crop_width = []
     for actual, target in zip(resized.shape, shape):
         overflow = actual - target
         # Center the image and crop, biasing left if overflow is odd.
@@ -365,7 +372,7 @@ def crop_to_fit(image, shape):
     # Do not crop any additional dimensions beyond those given in shape.
     for _ in range(resized.ndim - len(shape)):
         crop_width.append((0, 0))
-    cropped = crop(image, crop_width)
+    cropped = crop(resized, crop_width)
     return cropped
 
 
