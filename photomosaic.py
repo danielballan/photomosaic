@@ -28,6 +28,16 @@ from scipy.spatial import cKDTree
 import colorspacious
 
 
+options = {'imread': {}}
+
+
+def set_options(imread=None):
+    global options
+    if imread is None:
+        imread = {}
+    options['imread'].update(imread)
+
+
 def simple(image, pool):
     """
     Basic complete example
@@ -122,7 +132,7 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
     filenames = glob.glob(glob_string)
     for filename in tqdm(filenames):
         try:
-            raw_image = imread(filename)
+            raw_image = imread(filename, **options['imread'])
         except Exception as err:
             if skip_read_failures:
                 warnings.warn("Skipping {}; raised exception:\n    {}"
@@ -204,7 +214,7 @@ def draw_mosaic(image, tiles, matches, scale=1):
         if scale != 1:
             tile = tuple(slice(scale * s.start, scale * s.stop)
                          for s in tile)
-        raw_match_image = imread(*match_args)
+        raw_match_image = imread(*match_args, **options['imread'])
         match_image = standardize_image(raw_match_image)
         sized_match_image = crop_to_fit(match_image, _tile_size(tile))
         image[tile] = sized_match_image
