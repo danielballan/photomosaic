@@ -45,7 +45,7 @@ def set_options(imread=None, colorspace=None):
         options['colorspace'] = colorspace
 
 
-def basic_mosaic(image, pool):
+def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
     """
     Make a mosaic in one step with some basic settings.
 
@@ -59,6 +59,13 @@ def basic_mosaic(image, pool):
         output from :func:`make_pool`; or any mapping of
         arguments for opening an image file to a vector characterizing it:
         e.g., ``{(filename,): [1, 2, 3]}``
+    grid_dims : tuple
+        Number of tiles along height, width.
+    mask : array or None
+        must have same shape as ``image``
+    depth : int, optional
+        Each tile can be subdividing this many times in regions of high
+        contrast or along mask edges (if applicable). Default is 0.
 
     Returns
     -------
@@ -76,14 +83,16 @@ def basic_mosaic(image, pool):
     >>> my_image = imread('my_image.jpg')
 
     Make the mosaic and save it.
-    >>> mosaic = basic_mosaic(my_image)
+    >>> mosaic = basic_mosaic(my_image, (15, 15))
     >>> imsave('my_mosaic.jpg', mosaic)
     """
-    # TO DO crop to fit image to fit grid dimensions
     image = img_as_float(image)
+    image = rescale_commensurate(image, grid_dims, depth)
+    if mask is not None:
+        mask = rescale_commensurate(mask)
     percep = colorspacious.cspace_convert(image, "sRGB1",
                                           options['colorspace'])
-    tiles = partition(image, grid_dims=(10, 10), depth=1)
+    tiles = partition(image, grid_dims=grid_dims, mask=mask, depth=depth)
     matcher = SimpleMatcher(pool)
     tile_colors = [dominant_color(percep[tile]) for tile in tiles]
     matches = []
@@ -91,6 +100,31 @@ def basic_mosaic(image, pool):
         matches.append(matcher.match(tile_color))
     canvas = np.ones_like(image)  # white canvas same shape as input image
     return draw_mosaic(canvas, tiles, matches)
+
+
+def rescale_commensurate(image, grid_dims, depth=0):
+    """
+    For given grid dimensions and grid subdivision depth, scale image.
+
+    The image is rescaled so that its shape can be evenly split into tiles.
+    If necessary, one dimension is cropped to fit.
+
+    Parameters
+    ----------
+    image : array
+    grid_dims : tuple
+        Number of tiles along height, width.
+    depth : int, optional
+        Each tile can be subdivided this many times. Default is 0.
+
+    Returns
+    -------
+    rescaled_image : array
+    """
+    factor = np.array(grid_dims) * 2**depth
+    new_shape = [int(factor[i] * np.ceil(image.shape[i] / factor[i]))
+                 for i in [0, 1]]
+    return crop_to_fit(image, new_shape)
 
 
 def dominant_color(image, n_clusters=5, sample_size=1000):
