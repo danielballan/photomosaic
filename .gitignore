@@ -7,3 +7,5 @@ progress/*
 *.db-journal
 *.backup
 artwork/*
+__pycache__/
+photomosaic.egg-info/
