@@ -1,5 +1,3 @@
-from tqdm import tqdm
-from collections import OrderedDict
 import glob
 import warnings
 import copy
@@ -7,17 +5,10 @@ import os
 import logging
 import time
 import random
+from collections import OrderedDict
+from tqdm import tqdm
+import colorspacious
 import numpy as np
-import scipy
-import scipy.misc
-from scipy.cluster import vq
-from scipy import interpolate
-from PIL import Image
-from PIL import ImageFilter
-import sqlite3
-import color_spaces as cs
-from directory_walker import DirectoryWalker
-from memo import memo
 from progress_bar import progress_bar
 from skimage import draw, img_as_float
 from skimage.io import imread, imsave
@@ -25,22 +16,41 @@ from skimage.transform import resize
 from skimage.color import gray2rgb
 from skimage.util import crop
 from scipy.spatial import cKDTree
-import colorspacious
+from scipy.cluster import vq
 
 
-options = {'imread': {}}
+options = {'imread': {},
+           'colorspace': {"name": "J'a'b'",
+                          "ciecam02_space": colorspacious.CIECAM02Space.sRGB,
+                          "luoetal2006_space": colorspacious.CAM02UCS}}
 
 
-def set_options(imread=None):
-    global options
-    if imread is None:
-        imread = {}
-    options['imread'].update(imread)
-
-
-def simple(image, pool):
+def set_options(imread=None, colorspace=None):
     """
-    Basic complete example
+    Set global options
+
+    Parameters
+    ----------
+    imread : dict
+        keyword arguments passed through to every call to ``imread``
+        e.g., ``{'plugin': 'matplotlib'}``
+    colorspace : string or dict
+        colorspace used for color comparisions; see colorspacious documentation
+        for details
+    """
+    global options
+    if imread is not None:
+        options['imread'].update(imread)
+    if colorspace is not None:
+        options['colorspace'] = colorspace
+
+
+def basic_mosaic(image, pool):
+    """
+    Make a mosaic in one step with some basic settings.
+
+    See documentation (or the source code of this function) for more
+    powerful features and customization.
 
     Parameters
     ----------
@@ -53,10 +63,26 @@ def simple(image, pool):
     Returns
     -------
     mosaic : array
+
+    Example
+    -------
+    Before making the mosaic, you need a collection of images to use as tiles.
+    A collection of analyzed images is a "pool". Analyzing the images takes
+    much more time that making the mosaic, so it is a separate step.
+    >>> pool = make_pool('directory_of_images/*.jpg')
+
+    Load an image to turn into mosaic.
+    >>> from skimage.io import imread, imsave
+    >>> my_image = imread('my_image.jpg')
+
+    Make the mosaic and save it.
+    >>> mosaic = basic_mosaic(my_image)
+    >>> imsave('my_mosaic.jpg', mosaic)
     """
     # TO DO crop to fit image to fit grid dimensions
     image = img_as_float(image)
-    percep = colorspacious.cspace_convert(image, "sRGB1", "JCh")
+    percep = colorspacious.cspace_convert(image, "sRGB1",
+                                          options['colorspace'])
     tiles = partition(image, grid_dims=(10, 10), depth=1)
     matcher = SimpleMatcher(pool)
     tile_colors = [dominant_color(percep[tile]) for tile in tiles]
@@ -86,13 +112,13 @@ def dominant_color(image, n_clusters=5, sample_size=1000):
     """
     image = copy.deepcopy(image)
     # 'raveled_image' is a 2D array, a 1D list of 1D color vectors
-    raveled_image = image.reshape(scipy.product(image.shape[:-1]),
+    raveled_image = image.reshape(np.product(image.shape[:-1]),
                                   image.shape[-1])
     np.random.shuffle(raveled_image)  # shuffles in place
     sample = raveled_image[:min(len(raveled_image), sample_size)]
     colors, dist = vq.kmeans(sample, n_clusters)
     vecs, dist = vq.vq(sample, colors)
-    counts, bins = scipy.histogram(vecs, len(colors))
+    counts, bins = np.histogram(vecs, len(colors))
     return colors[counts.argmax()]
 
 
@@ -103,7 +129,7 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
 
     For each file:
     1. Read image.
-    2. Convert to perceptually-uniform color space "CIECAM02".
+    2. Convert to perceptually-uniform color space.
     3. Characterize the colors in the image as a vector.
 
     A progress bar is displayed and then hidden after completion.
@@ -141,8 +167,8 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
             raise
         image = standardize_image(raw_image)
         # Convert color to perceptually-uniform color space.
-        # "JCh" is a simplified "CIECAM02".
-        percep = colorspacious.cspace_convert(image, "sRGB1", "JCh")
+        percep = colorspacious.cspace_convert(image, "sRGB1",
+                                              options['colorspace'])
         vector = analyzer(percep)
         pool[(filename,)] = vector
     return pool 
@@ -316,11 +342,12 @@ def _tile_size(tile):
     return tuple((s.stop - s.start) for s in tile)
 
 
-def draw_tiles(image, tiles, color=1):
+def draw_tile_layout(image, tiles, color=1):
     """
     Draw the tile edges on a copy of image. Make a dot at each tile center.
 
-    This is a utility for inspecting a tile layout.
+    This is a utility for inspecting a tile layout, not a necessary step in
+    the mosaic-building process.
 
     Parameters
     ----------
@@ -386,83 +413,20 @@ def crop_to_fit(image, shape):
     return cropped
 
 
-class Pool:
-    "This is probably the wrong approach."
-    def __init__(self, load_func, analyze_func, cache_path=None,
-                 kdtree_class=None):
-        self._load = load_func
-        self._analyze = analyze_func
-        if kdtree_class is None:
-            from scipy.spatial import cKDTree
-            kdtree_class = cKDTree
-        self._kdtree_class = kdtree_class
-
-        # self._cache maps args for loading image to vector describing it
-        if cache_path is None:
-            self._cache = {}
-        else:
-            from historydict import HistoryDict
-            self._cache = HistoryDict(cache_path)
-
-        self._keys_in_order = []
-        self._data = []
-        if self._cache:
-            for key, val in self._cache.items():
-                self._keys_in_order.append(key)
-                self._data.append(val)
-        self._build_tree()
-        self._stale = False  # stale means KD tree is out-of-date
-
-    def __setstate__(self, d):
-        self._load = d['load_func']
-        self._analyze = d['analyze_func']
-        self._kdtree_class = d['kdtree_class']
-        self._cache = d['cache']
-        self._keys_in_order = d['keys_in_order']
-        self._data = d['data']
-        self._stale = d['stale']
-        self._tree = d['tree']
-
-    def __getstate__(self):
-        d = {}
-        d['load_func'] = self._load
-        d['analyze_func'] = self._analyze
-        d['kdtree_class'] = self._kdtree_class
-        d['cache'] = self._cache
-        d['keys_in_order'] = self._keys_in_order
-        d['data'] = self._data
-        d['stale'] = self._stale
-        d['tree'] = self._tree
-        return d
-
-    def _build_tree(self):
-        if not self._data:
-            self._tree = self._kdtree_class(np.array([]).reshape(2, 0))
-        else:
-            self._tree = self._kdtree_class(self._data)
-
-    def add(self, *args):
-        arr = self._load_func(*args)
-        self._keys_in_order.append(args)
-        self._data.append(arr)
-        self._cache[args] = self._analyze_func(arr)
-        self._stale = True
-
-    def query(self, x, k):
-        if self._stale:
-            self._build_tree()
-            self._stale = False
-        return self._tree.query(x, k)
-    
-    def get_image(self, *args):
-        return self._load(*args)
-
-
 def generate_tile_pool(target_dir, shape=(10, 10)):
+    """
+    Generate 5832 small solid-color tiles for experimentation and testing.
+
+    Parameters
+    ----------
+    target_dir : string
+    shape : tuple, optional
+        default is (10, 10)
+    """
     canvas = np.ones(shape + (3,))
-    for r in range(0, 256, 17):
-        for g in range(0, 256, 17):
-            for b in range(0, 256, 17):
+    for r in range(0, 256, 15):
+        for g in range(0, 256, 15):
+            for b in range(0, 256, 15):
                 img = (canvas * [r, g, b]).astype(np.uint8)
                 filename = '{:03d}-{:03d}-{:03d}.gif'.format(r, g, b)
                 imsave(os.path.join(target_dir, filename), img)
