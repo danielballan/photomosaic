@@ -9,7 +9,6 @@ from collections import OrderedDict
 from tqdm import tqdm
 import colorspacious
 import numpy as np
-from progress_bar import progress_bar
 from skimage import draw, img_as_float
 from skimage.io import imread, imsave
 from skimage.transform import resize
