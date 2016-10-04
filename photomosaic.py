@@ -417,6 +417,8 @@ def generate_tile_pool(target_dir, shape=(10, 10)):
     """
     Generate 5832 small solid-color tiles for experimentation and testing.
 
+    This function takes about 30 seconds to run. It includes a progress bar.
+
     Parameters
     ----------
     target_dir : string
