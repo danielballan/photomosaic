@@ -463,5 +463,5 @@ def generate_tile_pool(target_dir, shape=(10, 10)):
         for g in range(0, 256, 15):
             for b in range(0, 256, 15):
                 img = (canvas * [r, g, b]).astype(np.uint8)
-                filename = '{:03d}-{:03d}-{:03d}.gif'.format(r, g, b)
+                filename = '{:03d}-{:03d}-{:03d}.png'.format(r, g, b)
                 imsave(os.path.join(target_dir, filename), img)
