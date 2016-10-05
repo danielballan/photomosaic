@@ -10,14 +10,9 @@ Example
 ```python
 import photomosaic as pm
 
-pm.set_options(colorspace='sRGB1')  # effectively turning off fancy colorspace
-stuff for now
-pm.set_options(imread={'plugin': 'matplotlib'})  # the default reader fails on
-GIFs for some reason
-
 # Load a sample image
 from skimage import data
-img = data.chelsea()
+img = data.chelsea()  # cat picture!
 
 # Generate dummy images covering the color gamut to use as a pool.
 pm.generate_tile_pool('pool')
@@ -25,11 +20,16 @@ pm.generate_tile_pool('pool')
 # Build the pool (analyze the dummy images).
 pool = pm.make_pool('pool/*.gif')
 
-# Create the mosiac.
+# Create a mosiac with 15x15 tiles.
 mos = pm.basic_mosaic(img, pool, (15, 15))
 
+# (Optional) Plot the mosaic using matplotlib.
 import matplotlib.pyplot as plt
 plt.imshow(mos)
+
+# Save it.
+from skimage import imsave
+imsave(mos, 'mosaic.png')
 ```
 
 Related Project
