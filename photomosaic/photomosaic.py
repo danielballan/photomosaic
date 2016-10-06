@@ -93,9 +93,10 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
                                           options['colorspace'])
     tiles = partition(image, grid_dims=grid_dims, mask=mask, depth=depth)
     matcher = SimpleMatcher(pool)
-    tile_colors = [dominant_color(percep[tile]) for tile in tiles]
+    tile_colors = [dominant_color(percep[tile])
+                   for tile in tqdm(tiles, desc='analyzing tiles')]
     matches = []
-    for tile_color in tqdm(tile_colors, total=len(tile_colors)):
+    for tile_color in tqdm(tile_colors, desc='matching'):
         matches.append(matcher.match(tile_color))
     canvas = np.ones_like(image)  # white canvas same shape as input image
     return draw_mosaic(canvas, tiles, matches)
@@ -189,7 +190,7 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
     if pool is None:
         pool = {}
     filenames = glob.glob(glob_string)
-    for filename in tqdm(filenames):
+    for filename in tqdm(filenames, desc='analyzing pool'):
         try:
             raw_image = imread(filename, **options['imread'])
         except Exception as err:
@@ -269,7 +270,14 @@ def draw_mosaic(image, tiles, matches, scale=1):
     image : array
     """
     scale = int(scale)
-    for tile, match_args in zip(tiles, matches):
+    # Get total number of tiles for progress bar, if it's available.
+    try:
+        total = len(tiles)
+    except TypeError:
+        # tiles is lazy, does not have __len__
+        total = None
+    for tile, match_args in tqdm(zip(tiles, matches), total=total,
+                                 desc='drawing mosaic'):
         if scale != 1:
             tile = tuple(slice(scale * s.start, scale * s.stop)
                          for s in tile)
@@ -336,11 +344,13 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     tile_height = image.shape[0] // grid_dims[0] 
     tile_width = image.shape[1] // grid_dims[1]
     tiles = []
-    for y in range(grid_dims[0]):
-        for x in range(grid_dims[1]):
-            tile = (slice(y * tile_height, (1 + y) * tile_height),
-                    slice(x * tile_width, (1 + x) * tile_width))
-            tiles.append(tile)
+    with tqdm(total=np.product(grid_dims), desc='partitioning depth 0') as pbar:
+        for y in range(grid_dims[0]):
+            for x in range(grid_dims[1]):
+                tile = (slice(y * tile_height, (1 + y) * tile_height),
+                        slice(x * tile_width, (1 + x) * tile_width))
+                tiles.append(tile)
+                pbar.update()
 
     # Discard any tiles that reside fully outside the mask.
     if mask is not None:
@@ -348,9 +358,9 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
 
     # If depth > 0, subdivide any tiles that straddle a mask edge or that
     # contain an image with high contrast.
-    for _ in range(depth):
+    for d in range(depth):
         new_tiles = []
-        for tile in tiles:
+        for tile in tqdm(tiles, desc='partitioning depth %d' % d):
             if (mask is not None) and np.any(mask[tile]) and np.any(~mask[tile]):
                 # This tile straddles a mask edge.
                 subtiles = _subdivide(tile)
@@ -395,15 +405,15 @@ def draw_tile_layout(image, tiles, color=1):
     annotated_image : array
     """
     annotated_image = copy.deepcopy(image)
-    for y, x in tiles:
+    for y, x in tqdm(tiles):
         edges = ((y.start, x.start, y.stop - 1, x.start),
-                 (y.stop - 1, x.start, y.stop - 1, x.stop - 1),
-                 (y.stop - 1, x.stop - 1, y.start, x.stop - 1),
-                 (y.start, x.stop - 1, y.start, x.start))
+                (y.stop - 1, x.start, y.stop - 1, x.stop - 1),
+                (y.stop - 1, x.stop - 1, y.start, x.stop - 1),
+                (y.start, x.stop - 1, y.start, x.start))
         for edge in edges:
             rr, cc = draw.line(*edge)
             annotated_image[rr, cc] = color  # tile edges
-            annotated_image[_tile_center((y, x))] = color  # dot at tile center
+            annotated_image[_tile_center((y, x))] = color  # dot at center
     return annotated_image
 
 
@@ -446,22 +456,25 @@ def crop_to_fit(image, shape):
     return cropped
 
 
-def generate_tile_pool(target_dir, shape=(10, 10)):
+def generate_tile_pool(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
     """
     Generate 5832 small solid-color tiles for experimentation and testing.
-
-    This function takes about 30 seconds to run. It includes a progress bar.
 
     Parameters
     ----------
     target_dir : string
     shape : tuple, optional
         default is (10, 10)
+    range_params : tuple, optional
+        Passed to ``range()`` to stride through each color channel.
+        Default is ``(0, 256, 15)``.
     """
-    canvas = np.ones(shape + (3,))
-    for r in range(0, 256, 15):
-        for g in range(0, 256, 15):
-            for b in range(0, 256, 15):
-                img = (canvas * [r, g, b]).astype(np.uint8)
-                filename = '{:03d}-{:03d}-{:03d}.png'.format(r, g, b)
-                imsave(os.path.join(target_dir, filename), img)
+    with tqdm(total=3 * len(range(*range_params))) as pbar:
+        canvas = np.ones(shape + (3,))
+        for r in range(*range_params):
+            for g in range(*range_params):
+                for b in range(*range_params):
+                    img = (canvas * [r, g, b]).astype(np.uint8)
+                    filename = '{:03d}-{:03d}-{:03d}.png'.format(r, g, b)
+                    imsave(os.path.join(target_dir, filename), img)
+                    pbar.update()
