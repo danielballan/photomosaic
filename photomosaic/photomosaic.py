@@ -89,11 +89,12 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
     image = rescale_commensurate(image, grid_dims, depth)
     if mask is not None:
         mask = rescale_commensurate(mask)
-    percep = colorspacious.cspace_convert(image, "sRGB1",
-                                          options['colorspace'])
     tiles = partition(image, grid_dims=grid_dims, mask=mask, depth=depth)
     matcher = SimpleMatcher(pool)
-    tile_colors = [dominant_color(percep[tile])
+    sample = sample_pixels(image[tile], 1000)
+    converted_sample = colorspacious.cspace_convert(sample, "sRGB1",
+                                                    options['colorspace'])
+    tile_colors = [dominant_color(converted_sample)
                    for tile in tqdm(tiles, desc='analyzing tiles')]
     matches = []
     for tile_color in tqdm(tile_colors, desc='matching'):
@@ -127,31 +128,45 @@ def rescale_commensurate(image, grid_dims, depth=0):
     return crop_to_fit(image, new_shape)
 
 
-def dominant_color(image, n_clusters=5, sample_size=1000):
+def sample_pixels(image, size, replace=True):
     """
-    Sample pixels from an image, cluster colors, and identify dominant color.
+    Randomly sample pixels from an image.
+
+    This is a wrapper around ``np.random.choice`` (which only works directly
+    on 1-dimensional arrays).
 
     Parameters
     ----------
-    image: array
-        The last axis is expected to be the color axis.
+    image : array
+    size : int
+        number of pixels to sample
+    replace : boolean, optional
+        whether to sample with or without replacement; default True
+    """
+    num_pixels = np.product(image.shape[:-1])
+    # 'raveled_image' is a 2D array, a 1D list of 1D color vectors
+    raveled_image = image.reshape(num_pixels, image.shape[-1])
+    random_indexes = np.random.choice(num_pixels, size=size, replace=replace)
+    return raveled_image[random_indexes]
+
+
+def dominant_color(pixels, n_clusters=5):
+    """
+    Cluster colors and identify the "central" color of the largest cluster.
+
+    Parameters
+    ----------
+    pixels : array
+        List of pixels. The second axis is expected to be the color axis.
     n_clusters : int, optional
         number of clusters; default 5
-    sample_size : int, optional
-        number of pixels to sample; default 1000
 
     Returns
     -------
     dominant_color : array
     """
-    image = copy.deepcopy(image)
-    # 'raveled_image' is a 2D array, a 1D list of 1D color vectors
-    raveled_image = image.reshape(np.product(image.shape[:-1]),
-                                  image.shape[-1])
-    np.random.shuffle(raveled_image)  # shuffles in place
-    sample = raveled_image[:min(len(raveled_image), sample_size)]
-    colors, dist = vq.kmeans(sample, n_clusters)
-    vecs, dist = vq.vq(sample, colors)
+    colors, dist = vq.kmeans(pixels, n_clusters)
+    vecs, dist = vq.vq(pixels, colors)
     counts, bins = np.histogram(vecs, len(colors))
     return colors[counts.argmax()]
 
@@ -201,9 +216,10 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
             raise
         image = standardize_image(raw_image)
         # Convert color to perceptually-uniform color space.
-        percep = colorspacious.cspace_convert(image, "sRGB1",
-                                              options['colorspace'])
-        vector = analyzer(percep)
+        sample = sample_pixels(image, 1000)
+        converted_sample = colorspacious.cspace_convert(sample, "sRGB1",
+                                                        options['colorspace'])
+        vector = analyzer(converted_sample)
         pool[(filename,)] = vector
     return pool 
 
