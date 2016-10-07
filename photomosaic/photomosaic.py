@@ -89,10 +89,9 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
         mask = rescale_commensurate(mask)
     tiles = partition(image, grid_dims=grid_dims, mask=mask, depth=depth)
     matcher = SimpleMatcher(pool)
-    sample = sample_pixels(image[tile], 1000)
-    converted_sample = colorspacious.cspace_convert(sample, "sRGB1",
-                                                    options['colorspace'])
-    tile_colors = [dominant_color(converted_sample)
+    converted = colorspacious.cspace_convert(image, "sRGB1",
+                                             options['colorspace'])
+    tile_colors = [dominant_color(sample_pixels(converted[tile], 1000))
                    for tile in tqdm(tiles, desc='analyzing tiles')]
     matches = []
     for tile_color in tqdm(tile_colors, desc='matching'):
@@ -219,7 +218,7 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
                                                         options['colorspace'])
         vector = analyzer(converted_sample)
         pool[(filename,)] = vector
-    return pool 
+    return pool
 
 
 def standardize_image(image):
