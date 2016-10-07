@@ -1,10 +1,8 @@
 import glob
+import json
 import warnings
 import copy
 import os
-import logging
-import time
-import random
 from collections import OrderedDict
 from tqdm import tqdm
 import colorspacious
@@ -301,7 +299,7 @@ def draw_mosaic(image, tiles, matches, scale=1):
         match_image = standardize_image(raw_match_image)
         sized_match_image = crop_to_fit(match_image, _tile_size(tile))
         image[tile] = sized_match_image
-    return image 
+    return image
 
 
 def _subdivide(tile):
@@ -357,7 +355,7 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
                                        depth=depth))
 
     # Partition into equal-sized tiles (Python slice objects).
-    tile_height = image.shape[0] // grid_dims[0] 
+    tile_height = image.shape[0] // grid_dims[0]
     tile_width = image.shape[1] // grid_dims[1]
     tiles = []
     with tqdm(total=np.product(grid_dims), desc='partitioning depth 0') as pbar:
@@ -423,9 +421,9 @@ def draw_tile_layout(image, tiles, color=1):
     annotated_image = copy.deepcopy(image)
     for y, x in tqdm(tiles):
         edges = ((y.start, x.start, y.stop - 1, x.start),
-                (y.stop - 1, x.start, y.stop - 1, x.stop - 1),
-                (y.stop - 1, x.stop - 1, y.start, x.stop - 1),
-                (y.start, x.stop - 1, y.start, x.start))
+                 (y.stop - 1, x.start, y.stop - 1, x.stop - 1),
+                 (y.stop - 1, x.stop - 1, y.start, x.stop - 1),
+                 (y.start, x.stop - 1, y.start, x.start))
         for edge in edges:
             rr, cc = draw.line(*edge)
             annotated_image[rr, cc] = color  # tile edges
@@ -494,3 +492,35 @@ def generate_tile_pool(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
                     filename = '{:03d}-{:03d}-{:03d}.png'.format(r, g, b)
                     imsave(os.path.join(target_dir, filename), img)
                     pbar.update()
+
+
+def export_pool(pool, filepath):
+    """
+    Export pool to json. This is a thin convenience wrapper around json.dump.
+
+    The pool is just a dict, but it contains numpy arrays, which must be
+    converted to plain lists before being exported to json.
+
+    Parameters
+    ----------
+    pool : dict
+    filepath : string
+    """
+    with open(filepath, 'w') as f:
+        json.dump({k: list(v) for k, v in pool.items()}, f)
+
+
+def import_pool(filepath):
+    """
+    Import pool from json. This is a thin convenience wrapper around json.load.
+
+    Parameters
+    ----------
+    filepath : string
+
+    Returns
+    -------
+    pool : dict
+    """
+    with open(filepath, 'r') as f:
+        return {k: np.array(v) for k, v in json.load(f).items()}
