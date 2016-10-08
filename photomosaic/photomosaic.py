@@ -208,7 +208,7 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
         except Exception as err:
             if skip_read_failures:
                 warnings.warn("Skipping {}; raised exception:\n    {}"
-                             "".format(filename, err))
+                              "".format(filename, err))
                 continue
             raise
         image = standardize_image(raw_image)
@@ -357,7 +357,8 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     tile_height = image.shape[0] // grid_dims[0]
     tile_width = image.shape[1] // grid_dims[1]
     tiles = []
-    with tqdm(total=np.product(grid_dims), desc='partitioning depth 0') as pbar:
+    total = np.product(grid_dims)
+    with tqdm(total=total, desc='partitioning depth 0') as pbar:
         for y in range(grid_dims[0]):
             for x in range(grid_dims[1]):
                 tile = (slice(y * tile_height, (1 + y) * tile_height),
@@ -374,7 +375,8 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     for d in range(depth):
         new_tiles = []
         for tile in tqdm(tiles, desc='partitioning depth %d' % d):
-            if (mask is not None) and np.any(mask[tile]) and np.any(~mask[tile]):
+            if ((mask is not None) and
+                    np.any(mask[tile]) and np.any(~mask[tile])):
                 # This tile straddles a mask edge.
                 subtiles = _subdivide(tile)
                 # Discard subtiles that reside fully outside the mask.
@@ -449,9 +451,9 @@ def crop_to_fit(image, shape):
     """
     # Resize smallest dimension (width or height) to fit.
     d = np.argmin(np.array(image.shape)[:2] / np.array(shape))
-    enlarged_shape = (tuple(np.ceil(np.array(image.shape[:len(shape)])
-                                    * shape[d]/image.shape[d]))
-                      + image.shape[len(shape):])
+    enlarged_shape = (tuple(np.ceil(np.array(image.shape[:len(shape)]) *
+                                    shape[d]/image.shape[d])) +
+                      image.shape[len(shape):])
     resized = resize(image, enlarged_shape)
     # Now the image is as large or larger than the shape along all dimensions.
     # Crop any overhang in the other dimension.
