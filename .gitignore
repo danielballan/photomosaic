@@ -9,3 +9,7 @@ progress/*
 artwork/*
 __pycache__/
 photomosaic.egg-info/
+.cache
+.coverage
+build/
+dist/
