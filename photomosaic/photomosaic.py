@@ -261,7 +261,7 @@ class SimpleMatcher:
         return self._args[index]
 
 
-def draw_mosaic(image, tiles, matches, scale=1):
+def draw_mosaic(image, tiles, matches, scale=1, resized_copy_cache=None):
     """
     Assemble the mosaic, the final result.
 
@@ -277,26 +277,46 @@ def draw_mosaic(image, tiles, matches, scale=1):
     scale : int, optional
         Scale up tiles for higher resolution image; default is 1.
         Any not-integer input will be cast to int.
+    resized_copy_cache : dict or None, optional
+        cache of images from the pool, sized to fit tiles
+        entries look like: ``(pool_key, (height, width))``
 
     Returns
     -------
     image : array
+
+    Example
+    -------
+    Basic usage:
+    >>> draw_mosaic(image, tiles, matches)
+
+    Cache the resized pool images to speed up repeated drawings:
+    >>> cache = {}  # any mutable mapping
+    >>> draw_mosiac(image, tiles, matches, resized_copy_cache=cache)
+
+    The above populated ``cache`` with every resized pool image used in a tile.
+    Now, ``draw_mosaic``will check the cache before loading the pool image and
+    resizing it, which is the most expensive step.
+    >>> draw_mosiac(image, tiles, matches, resized_copy_cache=cache)
+
     """
     scale = int(scale)
-    # Get total number of tiles for progress bar, if it's available.
-    try:
-        total = len(tiles)
-    except TypeError:
-        # tiles is lazy, does not have __len__
-        total = None
-    for tile, match_args in tqdm(zip(tiles, matches), total=total,
-                                 desc='drawing mosaic'):
+    if resized_copy_cache is None:
+        resized_copy_cache = {}
+    for tile, match_args in zip(tqdm(tiles, desc='drawing mosaic'), matches):
         if scale != 1:
             tile = tuple(slice(scale * s.start, scale * s.stop)
                          for s in tile)
-        raw_match_image = imread(*match_args, **options['imread'])
-        match_image = standardize_image(raw_match_image)
-        sized_match_image = crop_to_fit(match_image, _tile_size(tile))
+        target_shape = _tile_shape(tile)
+        cache_key = (match_args, target_shape)
+        try:
+            sized_match_image = resized_copy_cache[cache_key]
+        except KeyError:
+            target_shape = _tile_shape(tile)
+            raw_match_image = imread(*match_args, **options['imread'])
+            match_image = standardize_image(raw_match_image)
+            sized_match_image = crop_to_fit(match_image, target_shape)
+            resized_copy_cache[cache_key] = sized_match_image
         image[tile] = sized_match_image
     return image
 
@@ -395,7 +415,7 @@ def _tile_center(tile):
     return tuple((s.stop + s.start) // 2 for s in tile)
 
 
-def _tile_size(tile):
+def _tile_shape(tile):
     "Compute the (y, x) dimensions of tile."
     return tuple((s.stop - s.start) for s in tile)
 
@@ -508,9 +528,15 @@ def export_pool(pool, filepath):
     ----------
     pool : dict
     filepath : string
+
+    Note
+    ----
+    Unlike the rest of this package, the export and import functions assume
+    that the pool is keyed on a tuple with a string (e.g., a filepath) as its
+    only element.
     """
     with open(filepath, 'w') as f:
-        json.dump({k: list(v) for k, v in pool.items()}, f)
+        json.dump({k[0]: list(v) for k, v in pool.items()}, f)
 
 
 def import_pool(filepath):
@@ -524,6 +550,12 @@ def import_pool(filepath):
     Returns
     -------
     pool : dict
+
+    Note
+    ----
+    Unlike the rest of this package, the export and import functions assume
+    that the pool is keyed on a tuple with a string (e.g., a filepath) as its
+    only element.
     """
     with open(filepath, 'r') as f:
-        return {k: np.array(v) for k, v in json.load(f).items()}
+        return {tuple([k]): np.array(v) for k, v in json.load(f).items()}
