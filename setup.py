@@ -12,6 +12,11 @@ short_description = (
     """Assemble thumbnail-sized images from a large collection into a tiling
     which, viewed at a distance, gives the impression of one large photo.""")
 
+extras_require = {
+      'parallel': ['dask'],
+}
+extras_require['complete'] = sorted(set(sum(extras_require.values(), [])))
+
 setup(
     name='photomosaic',
     version=versioneer.get_version(),
@@ -40,4 +45,5 @@ setup(
     packages=['photomosaic'],
     install_requires=['numpy', 'scikit-image', 'scipy', 'colorspacious',
                       'tqdm'],
+    extras_require=extras_require
 )
