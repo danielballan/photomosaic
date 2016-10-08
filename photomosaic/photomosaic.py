@@ -489,7 +489,9 @@ def generate_tile_pool(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
                 for b in range(*range_params):
                     img = (canvas * [r, g, b]).astype(np.uint8)
                     filename = '{:03d}-{:03d}-{:03d}.png'.format(r, g, b)
-                    imsave(os.path.join(target_dir, filename), img)
+                    with warnings.catch_warnings():
+                        warnings.simplefilter("ignore", ".*low contrast.*")
+                        imsave(os.path.join(target_dir, filename), img)
                     pbar.update()
 
 
