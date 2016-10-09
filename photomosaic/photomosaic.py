@@ -427,21 +427,29 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     return tiles
 
 
-def color_hist(image, bins=256):
+def color_hist(image, bins=256, **kwargs):
     """
     Compute the distribution of each color channel.
+
+    This wraps ``numpy.histogram``, merely adding data munging relevant to
+    image array with color channels. See numpy documentation for details on the
+    meaning of the parameters.
 
     Parameters
     ----------
     image : array
         The last axis is expected to be the color axis.
-    bins : int, optional
-        default is 256
+    bins : int or list
+        default 256; passed through to ``numpy.historgram``
+    density : bool
+        True by default; passed through to ``numpy.histrogram``.
+    kwargs :
+        passed through to ``numpy.histogram``
 
     Returns
     -------
-    counts : array
-        dimensions ``(num_chanels, bins)``
+    counts, bins : array, array
+        Each array has dimensions ``(num_chanels, bins)``.
 
     Note
     ----
@@ -451,10 +459,9 @@ def color_hist(image, bins=256):
     image = np.asarray(image)
     num_pixels = np.product(image.shape[:-1])
     pixels = image.reshape(num_pixels, image.shape[-1])
-    func = partial(np.histogram, bins=bins, range=(0, 1), density=True)
-    counts, bin_edges = np.apply_along_axis(func, 0, pixels)
-    # no need to return bin_edges because np.histogram options are locked down
-    return np.asarray([channel for channel in counts])
+    func = partial(np.histogram, bins=bins, density=True, **kwargs)
+    counts, bins = np.apply_along_axis(func, 0, pixels)
+    return np.asarray(list(counts)), np.asarray(list(bins))
 
 
 def palette_map(from_palette, to_palette):
@@ -463,21 +470,23 @@ def palette_map(from_palette, to_palette):
 
     Parameters
     ----------
+    from_palette : tuple
+        histogram arrays ``(count, bins)``
     from_palette : array
-        histogram of colors on [0, 1]
-    from_palette : array
-        histogram of colors on [0, 1]
+        histogram arrays ``(count, bins)``
 
     Returns
     -------
     f : function
     """
-    old_N = from_palette.shape[-1]
-    new_N = to_palette.shape[-1]
+    old_counts, old_bins = from_palette
+    new_counts, new_bins = to_palette
+    # take bins from just one color
+    old_bins = old_bins[0]
+    new_bins = new_bins[0]
     # cumulative distribution functions
-    old_cdf = np.cumsum(from_palette) / old_N
-    new_cdf = np.cumsum(to_palette) / new_N
-    bins = np.linspace(0, 1, old_N)
+    old_cdf = np.cumsum(np.asarray(list(old_counts)))
+    new_cdf = np.cumsum(np.asarray(list(new_counts)))
 
     def f(image):
         """
@@ -488,7 +497,8 @@ def palette_map(from_palette, to_palette):
         pixels = image.reshape(num_pixels, image.shape[-1])
 
         # Identify a color bin for each pixels.
-        old_x = np.apply_along_axis(partial(np.searchsorted, bins), 0, pixels)
+        old_x = np.apply_along_axis(
+            partial(np.searchsorted, old_bins), 0, pixels)
 
         # Where in the original gamut did this color fall?
         old_y = old_cdf[old_x]
@@ -496,7 +506,7 @@ def palette_map(from_palette, to_palette):
         # Find that same position in the new gamut. What is the color?
         new_x = np.apply_along_axis(
             partial(np.searchsorted, new_cdf), 0, old_y)
-        return new_x.reshape(image.shape) / new_N
+        return new_bins[new_x].reshape(image.shape)
 
     return f
 
