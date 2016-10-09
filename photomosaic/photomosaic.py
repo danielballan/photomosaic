@@ -249,6 +249,10 @@ class SimpleMatcher:
     This simple matcher returns the closest match.
 
     It maintains an internal tree representation of the pool for fast lookups.
+
+    Parameters
+    ----------
+    pool : dict
     """
     def __init__(self, pool):
         self._pool = OrderedDict(pool)
@@ -257,6 +261,19 @@ class SimpleMatcher:
         self._tree = cKDTree(data)
 
     def match(self, vector):
+        """
+        Return the key of the pool image that is "nearest" (in color space).
+
+        Parameters
+        ----------
+        vector : array
+            characterizing the color to be matched
+
+        Returns
+        -------
+        args : tuple
+            arguments that specify how to open the image
+        """
         distance, index = self._tree.query(vector, k=1)
         return self._args[index]
 
