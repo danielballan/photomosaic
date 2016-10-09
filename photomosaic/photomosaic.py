@@ -427,7 +427,7 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     return tiles
 
 
-def color_hist(image, bins=256, **kwargs):
+def color_hist(image, bins=256, density=True, **kwargs):
     """
     Compute the distribution of each color channel.
 
@@ -459,54 +459,89 @@ def color_hist(image, bins=256, **kwargs):
     image = np.asarray(image)
     num_pixels = np.product(image.shape[:-1])
     pixels = image.reshape(num_pixels, image.shape[-1])
-    func = partial(np.histogram, bins=bins, density=True, **kwargs)
+    func = partial(np.histogram, bins=bins, density=density, **kwargs)
     counts, bins = np.apply_along_axis(func, 0, pixels)
-    return np.asarray(list(counts)), np.asarray(list(bins))
+    return counts, bins
 
 
-def palette_map(from_palette, to_palette):
+def palette_map(old_palette, new_palette):
     """
-    Build a function that maps from one color palette into another.
+    Build a function that maps from one color palette onto another.
 
     Parameters
     ----------
-    from_palette : tuple
+    old_palette: tuple
+        list of histogram arrays ``(count, bins)`` for each color channel
+    new_palette : tuple
+        list of histogram arrays ``(count, bins)`` for each color channel
+
+    Returns
+    -------
+    f : function
+    """
+    # Make a mapping function for each channel.
+    functions = []
+    old_counts, old_bins = old_palette
+    new_counts, new_bins = new_palette
+    for old_c, old_b, new_c, new_b in zip(old_counts, old_bins, new_counts,
+                                          new_bins):
+        f = adaptive_map((old_c, old_b), (new_c, new_b))
+        functions.append(f)
+
+    # Make a function that applies each mapping function to its channel.
+    def f(image):
+        "Adapt colors in image from old palette to new."
+        image = np.asarray(image)
+        num_channels = image.shape[-1]
+        if num_channels != len(functions):
+            raise ValueError("expected image with {} color channels"
+                             "".format(num_channels))
+        num_pixels = np.product(image.shape[:-1])
+        pixels = image.reshape(num_pixels, num_channels)
+
+        result = np.empty_like(pixels)
+        for i, f in enumerate(functions):
+            result[:, i] = f(pixels[:, i])
+
+        return result.reshape(image.shape)
+
+    return f
+
+
+def adaptive_map(old_hist, new_hist):
+    """
+    Build a function that maps from one distribution onto another.
+
+    Parameters
+    ----------
+    old_hist : tuple
         histogram arrays ``(count, bins)``
-    from_palette : array
+    new_hist : tuple
         histogram arrays ``(count, bins)``
 
     Returns
     -------
     f : function
     """
-    old_counts, old_bins = from_palette
-    new_counts, new_bins = to_palette
-    # take bins from just one color
-    old_bins = old_bins[0]
-    new_bins = new_bins[0]
+    old_counts, old_bins = old_hist
+    new_counts, new_bins = new_hist
     # cumulative distribution functions
-    old_cdf = np.cumsum(np.asarray(list(old_counts)))
-    new_cdf = np.cumsum(np.asarray(list(new_counts)))
+    old_cdf = np.cumsum(old_counts, 0)
+    new_cdf = np.cumsum(new_counts, 0)
 
-    def f(image):
+    def f(arr):
         """
-        Rescale colors in image from the old color palette to the new one.
+        Rescale values in ``arr`` from old distribution to new.
         """
-        image = np.asarray(image)
-        num_pixels = np.product(image.shape[:-1])
-        pixels = image.reshape(num_pixels, image.shape[-1])
-
-        # Identify a color bin for each pixels.
-        old_x = np.apply_along_axis(
-            partial(np.searchsorted, old_bins), 0, pixels)
+        # Identify a color bin for each pixel.
+        old_x = np.searchsorted(old_bins[:-2], arr)
 
         # Where in the original gamut did this color fall?
         old_y = old_cdf[old_x]
 
         # Find that same position in the new gamut. What is the color?
-        new_x = np.apply_along_axis(
-            partial(np.searchsorted, new_cdf), 0, old_y)
-        return new_bins[new_x].reshape(image.shape)
+        new_x = np.searchsorted(new_cdf, old_y)
+        return new_bins[new_x]
 
     return f
 
