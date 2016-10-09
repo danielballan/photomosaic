@@ -4,6 +4,7 @@ import warnings
 import copy
 import os
 from collections import OrderedDict
+from functools import partial
 from tqdm import tqdm
 import colorspacious
 import numpy as np
@@ -407,6 +408,80 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
                 new_tiles.append(tile)
         tiles = new_tiles
     return tiles
+
+
+def color_hist(image, bins=256):
+    """
+    Compute the distribution of each color channel.
+
+    Parameters
+    ----------
+    image : array
+        The last axis is expected to be the color axis.
+    bins : int, optional
+        default is 256
+
+    Returns
+    -------
+    counts : array
+        dimensions ``(num_chanels, bins)``
+
+    Note
+    ----
+    The image is expected to be float with domain [0, 1]. Histrogram bins
+    span full domain, divided equally into the number of bins specified.
+    """
+    image = np.asarray(image)
+    num_pixels = np.product(image.shape[:-1])
+    pixels = image.reshape(num_pixels, image.shape[-1])
+    func = partial(np.histogram, bins=bins, range=(0, 1), density=True)
+    counts, bin_edges = np.apply_along_axis(func, 0, pixels)
+    # no need to return bin_edges because np.histogram options are locked down
+    return np.asarray([channel for channel in counts])
+
+
+def palette_map(from_palette, to_palette):
+    """
+    Build a function that maps from one color palette into another.
+
+    Parameters
+    ----------
+    from_palette : array
+        histogram of colors on [0, 1]
+    from_palette : array
+        histogram of colors on [0, 1]
+
+    Returns
+    -------
+    f : function
+    """
+    old_N = from_palette.shape[-1]
+    new_N = to_palette.shape[-1]
+    # cumulative distribution functions
+    old_cdf = np.cumsum(from_palette) / old_N
+    new_cdf = np.cumsum(to_palette) / new_N
+    bins = np.linspace(0, 1, old_N)
+
+    def f(image):
+        """
+        Rescale colors in image from the old color palette to the new one.
+        """
+        image = np.asarray(image)
+        num_pixels = np.product(image.shape[:-1])
+        pixels = image.reshape(num_pixels, image.shape[-1])
+
+        # Identify a color bin for each pixels.
+        old_x = np.apply_along_axis(partial(np.searchsorted, bins), 0, pixels)
+
+        # Where in the original gamut did this color fall?
+        old_y = old_cdf[old_x]
+
+        # Find that same position in the new gamut. What is the color?
+        new_x = np.apply_along_axis(
+            partial(np.searchsorted, new_cdf), 0, old_y)
+        return new_x.reshape(image.shape) / new_N
+
+    return f
 
 
 def _tile_center(tile):
