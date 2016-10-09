@@ -24,15 +24,9 @@ setup(
     description=short_description,
     long_description=long_description,
     url='https://github.com/danielballan/photomosaic',
-
-    # Author details
     author='Photomosiac Contributors',
     author_email='daniel.b.allan@gmail.com',
-
-    # Choose your license
     license='BSD 3-Clause',
-
-    # See https://pypi.python.org/pypi?%3Aaction=list_classifiers
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Developers',
