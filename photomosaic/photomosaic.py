@@ -141,10 +141,9 @@ def sample_pixels(image, size, replace=True):
         whether to sample with or without replacement; default True
     """
     num_pixels = np.product(image.shape[:-1])
-    # 'raveled_image' is a 2D array, a 1D list of 1D color vectors
-    raveled_image = image.reshape(num_pixels, image.shape[-1])
+    pixels = image.reshape(num_pixels, image.shape[-1])
     random_indexes = np.random.choice(num_pixels, size=size, replace=replace)
-    return raveled_image[random_indexes]
+    return pixels[random_indexes]
 
 
 def dominant_color(pixels, n_clusters=5):
