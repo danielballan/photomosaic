@@ -1,0 +1,5 @@
+colorspacious
+numpy
+scikit-image
+scipy
+tqdm
