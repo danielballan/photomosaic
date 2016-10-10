@@ -43,8 +43,8 @@ def test_palette_map():
     # img1 and img2 use completely different colors
     img1 = [[c] for c in np.linspace(0, 0.5, 1000)]
     img2 = [[c] for c in np.linspace(0.5, 1, 1000)]
-    pal1 = pm.color_hist(img1)
-    pal2 = pm.color_hist(img2)
+    pal1 = pm.color_palette(img1)
+    pal2 = pm.color_palette(img2)
     f = pm.palette_map(pal1, pal2)
     # the color 0.25 in pal1 maps onto the color 0.75 in pal2
     assert np.allclose(f([0.25]), 0.75)

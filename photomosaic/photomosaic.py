@@ -4,7 +4,6 @@ import warnings
 import copy
 import os
 from collections import OrderedDict
-from functools import partial
 from tqdm import tqdm
 import colorspacious
 import numpy as np
@@ -161,7 +160,8 @@ def adjust_to_palette(image, pool):
     For meaningful results, ``image`` and ``pool`` must be in the same
     colorspace.
 
-    This is a convenience function wrapping ``color_hist`` and ``palette_map``.
+    This is a convenience function wrapping ``color_palette`` and
+    ``palette_map``.
 
     Paramters
     ---------
@@ -178,8 +178,8 @@ def adjust_to_palette(image, pool):
     visualizing, convert back.
     >>> rgb(adjust_to_palette(perceptual(image), pool)
     """
-    image_palette = color_hist(image)
-    pool_palette = color_hist(list(pool.values()))
+    image_palette = color_palette(image)
+    pool_palette = color_palette(list(pool.values()))
     return palette_map(image_palette, pool_palette)(image)
 
 
@@ -508,7 +508,7 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     return tiles
 
 
-def color_hist(image, bins=256, density=True, **kwargs):
+def color_palette(image, bins=256, density=True, **kwargs):
     """
     Compute the distribution of each color channel.
 
@@ -529,20 +529,19 @@ def color_hist(image, bins=256, density=True, **kwargs):
 
     Returns
     -------
-    counts, bins : array, array
-        Each array has dimensions ``(num_chanels, bins)``.
-
-    Note
-    ----
-    The image is expected to be float with domain [0, 1]. Histrogram bins
-    span full domain, divided equally into the number of bins specified.
+    tuple :
+        ``((counts, bins), (counts, bins), ...)`` -- one pair for color channel
     """
     image = np.asarray(image)
+    num_channels = image.shape[-1]
     num_pixels = np.product(image.shape[:-1])
-    pixels = image.reshape(num_pixels, image.shape[-1])
-    func = partial(np.histogram, bins=bins, density=density, **kwargs)
-    counts, bins = np.apply_along_axis(func, 0, pixels)
-    return counts, bins
+    pixels = image.reshape(num_pixels, num_channels)
+    results = []
+    for i in range(num_channels):
+        counts, bins = np.histogram(pixels[:, i], bins=bins, density=density,
+                                    **kwargs)
+        results.append((counts, bins))
+    return tuple(results)
 
 
 def palette_map(old_palette, new_palette):
@@ -562,11 +561,8 @@ def palette_map(old_palette, new_palette):
     """
     # Make a mapping function for each channel.
     functions = []
-    old_counts, old_bins = old_palette
-    new_counts, new_bins = new_palette
-    for old_c, old_b, new_c, new_b in zip(old_counts, old_bins, new_counts,
-                                          new_bins):
-        f = adaptive_map((old_c, old_b), (new_c, new_b))
+    for old, new in zip(old_palette, new_palette):
+        f = adaptive_map(old, new)
         functions.append(f)
 
     # Make a function that applies each mapping function to its channel.
