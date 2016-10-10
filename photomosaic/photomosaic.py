@@ -18,12 +18,13 @@ from scipy.cluster import vq
 
 
 options = {'imread': {},
-           'colorspace': {"name": "J'a'b'",
+           'perceptual': {"name": "J'a'b'",
                           "ciecam02_space": colorspacious.CIECAM02Space.sRGB,
-                          "luoetal2006_space": colorspacious.CAM02UCS}}
+                          "luoetal2006_space": colorspacious.CAM02UCS},
+           'rgb': 'sRGB1'}
 
 
-def set_options(imread=None, colorspace=None):
+def set_options(imread=None, perceptual=None, rgb=None):
     """
     Set global options
 
@@ -32,15 +33,19 @@ def set_options(imread=None, colorspace=None):
     imread : dict
         keyword arguments passed through to every call to ``imread``
         e.g., ``{'plugin': 'matplotlib'}``
-    colorspace : string or dict
-        colorspace used for color comparisions; see colorspacious documentation
-        for details
+    perceptual : string or dict
+        perceptually-uniform colorspace used for color comparisions; see
+        colorspacious documentation for details
+    rgb : string or dict
+        specific RGB colorspace used for color conversion
     """
     global options
     if imread is not None:
         options['imread'].update(imread)
-    if colorspace is not None:
-        options['colorspace'] = colorspace
+    if perceptual is not None:
+        options['perceptual'] = perceptual
+    if rgb is not None:
+        options['rgb'] = rgb
 
 
 def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
@@ -90,13 +95,11 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
     if mask is not None:
         mask = rescale_commensurate(mask)
 
-    converted_img = colorspacious.cspace_convert(image, "sRGB1",
-                                                 options['colorspace'])
+    # Use perceptually uniform colorspace for all analysis.
+    converted_img = perceptual(image)
 
     # Adapt the color palette of the image to resemble the palette of the pool.
-    image_palette = color_hist(converted_img)
-    pool_palette = color_hist(list(pool.values()))
-    adapted_img = palette_map(image_palette, pool_palette)(converted_img)
+    adapted_img = adjust_to_palette(converted_img, pool)
 
     # Partition the image into tiles and characterize each one's color.
     tiles = partition(adapted_img, grid_dims=grid_dims, mask=mask, depth=depth)
@@ -112,6 +115,72 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
     # Draw the mosaic.
     canvas = np.ones_like(image)  # white canvas same shape as input image
     return draw_mosaic(canvas, tiles, matches)
+
+
+def perceptual(image):
+    """
+    Convert color from RGB (sRGB1) to a perceptually uniform colorspace.
+
+    This is a convenience function wrapping ``colorspacious.csapce_convert``.
+    To configure the specific perceptual colorspace used, change
+    ``photomosaic.options['colorspace']``.
+
+    Parameters
+    ----------
+    image : array
+    """
+    return colorspacious.cspace_convert(image, options['rgb'],
+                                        options['perceptual'])
+
+
+def rgb(image, clip=True):
+    """
+    Convert color from a perceptually uniform colorspace to RGB.
+
+    This is a convenience function wrapping ``colorspacious.csapce_convert``.
+    To configure the specific perceptual colorspace used, change
+    ``photomosaic.options['perceptual']`` and ``photomosaic.options['rgb']``.
+
+    Parameters
+    ----------
+    image : array
+    clip : bool, option
+        Clip values out of the gamut [0, 1]. True by default.
+    """
+    result = colorspacious.cspace_convert(image, options['perceptual'],
+                                          options['rgb'])
+    if clip:
+        result = np.clip(result, 0, 1)
+    return result
+
+
+def adjust_to_palette(image, pool):
+    """
+    Adjust the color timing of an image to use colors available in the pool.
+
+    For meaningful results, ``image`` and ``pool`` must be in the same
+    colorspace.
+
+    This is a convenience function wrapping ``color_hist`` and ``palette_map``.
+
+    Paramters
+    ---------
+    image : array
+    pool : dict
+
+    Returns
+    -------
+    adapted_image : array
+
+    Example
+    -------
+    If the image is RGB, first convert to perceptual space. Finally, before
+    visualizing, convert back.
+    >>> rgb(adjust_to_palette(perceptual(image), pool)
+    """
+    image_palette = color_hist(image)
+    pool_palette = color_hist(list(pool.values()))
+    return palette_map(image_palette, pool_palette)(image)
 
 
 def rescale_commensurate(image, grid_dims, depth=0):
@@ -227,8 +296,7 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
         image = standardize_image(raw_image)
         # Convert color to perceptually-uniform color space.
         sample = sample_pixels(image, 1000)
-        converted_sample = colorspacious.cspace_convert(sample, "sRGB1",
-                                                        options['colorspace'])
+        converted_sample = perceptual(sample)
         vector = analyzer(converted_sample)
         pool[(filename,)] = vector
     return pool

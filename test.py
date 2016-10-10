@@ -48,3 +48,10 @@ def test_palette_map():
     f = pm.palette_map(pal1, pal2)
     # the color 0.25 in pal1 maps onto the color 0.75 in pal2
     assert np.allclose(f([0.25]), 0.75)
+
+
+def test_conversion(image):
+    "just a smoke test of the convenience functions"
+    p = pm.perceptual(image)
+    pm.rgb(p)  # clip=True by default
+    pm.rgb(p, clip=False)
