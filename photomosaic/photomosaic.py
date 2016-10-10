@@ -773,3 +773,27 @@ def import_pool(filepath):
     """
     with open(filepath, 'r') as f:
         return {tuple([k]): np.array(v) for k, v in json.load(f).items()}
+
+
+def plot_palette(palette, **kwargs):
+    """
+    Plot color palette (histograms of each channel).
+
+    Parameters
+    ----------
+    palette : tuple
+        color palette, such as created by :func:`color_palette`
+    ** kwargs
+        passed through to ``matplotlib.Axes.plot``
+
+    Returns
+    -------
+    lines :
+        line artists created by matplotlib
+    """
+    import matplotlib.pyplot as plt
+    fig, axes = plt.subplots(len(palette))
+    lines = []
+    for ax, (counts, bins) in zip(axes, palette):
+        lines.append(ax.plot(bins[:-1], counts, **kwargs))
+    return lines
