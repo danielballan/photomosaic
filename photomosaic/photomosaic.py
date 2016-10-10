@@ -84,19 +84,32 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
     >>> mosaic = basic_mosaic(my_image, (15, 15))
     >>> imsave('my_mosaic.jpg', mosaic)
     """
+    # Size the image to be evenly divisible by the tiles.
     image = img_as_float(image)
     image = rescale_commensurate(image, grid_dims, depth)
     if mask is not None:
         mask = rescale_commensurate(mask)
-    tiles = partition(image, grid_dims=grid_dims, mask=mask, depth=depth)
-    matcher = SimpleMatcher(pool)
-    converted = colorspacious.cspace_convert(image, "sRGB1",
-                                             options['colorspace'])
-    tile_colors = [dominant_color(sample_pixels(converted[tile], 1000))
+
+    converted_img = colorspacious.cspace_convert(image, "sRGB1",
+                                                 options['colorspace'])
+
+    # Adapt the color palette of the image to resemble the palette of the pool.
+    image_palette = color_hist(converted_img)
+    pool_palette = color_hist(list(pool.values()))
+    adapted_img = palette_map(image_palette, pool_palette)(converted_img)
+
+    # Partition the image into tiles and characterize each one's color.
+    tiles = partition(adapted_img, grid_dims=grid_dims, mask=mask, depth=depth)
+    tile_colors = [dominant_color(sample_pixels(adapted_img[tile], 1000))
                    for tile in tqdm(tiles, desc='analyzing tiles')]
+
+    # Match a pool image to each tile.
+    matcher = SimpleMatcher(pool)
     matches = []
     for tile_color in tqdm(tile_colors, desc='matching'):
         matches.append(matcher.match(tile_color))
+
+    # Draw the mosaic.
     canvas = np.ones_like(image)  # white canvas same shape as input image
     return draw_mosaic(canvas, tiles, matches)
 
