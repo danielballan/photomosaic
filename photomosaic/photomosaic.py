@@ -106,10 +106,10 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
                    for tile in tqdm(tiles, desc='analyzing tiles')]
 
     # Match a pool image to each tile.
-    matcher = SimpleMatcher(pool)
+    match = simple_matcher(pool)
     matches = []
     for tile_color in tqdm(tile_colors, desc='matching'):
-        matches.append(matcher.match(tile_color))
+        matches.append(match(tile_color))
 
     # Draw the mosaic.
     canvas = np.ones_like(image)  # white canvas same shape as input image
@@ -325,23 +325,27 @@ def standardize_image(image):
     return image
 
 
-class SimpleMatcher:
+def simple_matcher(pool):
     """
-    This simple matcher returns the closest match.
+    Build a matching function that simply matches to the closest color.
 
     It maintains an internal tree representation of the pool for fast lookups.
 
     Parameters
     ----------
     pool : dict
-    """
-    def __init__(self, pool):
-        self._pool = OrderedDict(pool)
-        self._args = list(self._pool.keys())
-        data = np.array([vector for vector in self._pool.values()])
-        self._tree = cKDTree(data)
 
-    def match(self, vector):
+    Returns
+    -------
+    match_func : function
+        function that accepts a color vector and returns a match
+    """
+    pool = OrderedDict(pool)  # same iteration order over keys and vals below
+    args = list(pool.keys())
+    data = np.array([vector for vector in pool.values()])
+    tree = cKDTree(data)
+
+    def match(vector):
         """
         Return the key of the pool image that is "nearest" (in color space).
 
@@ -355,8 +359,10 @@ class SimpleMatcher:
         args : tuple
             arguments that specify how to open the image
         """
-        distance, index = self._tree.query(vector, k=1)
-        return self._args[index]
+        distance, index = tree.query(vector, k=1)
+        return args[index]
+
+    return match
 
 
 def draw_mosaic(image, tiles, matches, scale=1, resized_copy_cache=None):
