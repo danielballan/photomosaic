@@ -430,9 +430,9 @@ def _subdivide(tile):
     for y in (0, 1):
         for x in (0, 1):
             subtile = (slice(tile[0].start + y * tile_dims[0],
-                             tile[0].start + 1 + (1 + y) * tile_dims[0]),
+                             tile[0].start + (1 + y) * tile_dims[0]),
                        slice(tile[1].start + x * tile_dims[1],
-                             tile[1].start + 1 + (1 + x) * tile_dims[1]))
+                             tile[1].start + (1 + x) * tile_dims[1]))
             subtiles.append(subtile)
     return subtiles
 
