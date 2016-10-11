@@ -437,12 +437,12 @@ def _subdivide(tile):
     return subtiles
 
 
-def partition(image, grid_dims, mask=None, depth=0, hdr=80):
+def partition(image, grid_dims, mask=None, depth=0, split_thresh=0.1):
     """
     Parition the target image into tiles.
 
-    Optionally, subdivide tiles that contain high contrast, creating a grid
-    with tiles of varied size.
+    Optionally, subdivide tiles that straddle a mask edge or contain high
+    contrast, creating a grid with tiles of varied size.
 
     Parameters
     ----------
@@ -453,8 +453,9 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
         edge.
     depth : int, optional
         Default is 0. Maximum times a tile can be subdivided.
-    hdr : float
-        "High Dynamic Range" --- level of contrast that trigger subdivision
+    split_thresh : float or None
+        Threshold of standard deviation in color above which tile should be
+        subdivided; default is 0.1. This only applies if depth > 0.
 
     Returns
     -------
@@ -475,12 +476,12 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
                              "".format(image_dim=image_dim, grid_dim=grid_dim,
                                        depth=depth))
 
-    # Partition into equal-sized tiles (Python slice objects).
+    # Partition into equal-sized tiles. Each tile is a pair of slice objects.
     tile_height = image.shape[0] // grid_dims[0]
     tile_width = image.shape[1] // grid_dims[1]
     tiles = []
     total = np.product(grid_dims)
-    with tqdm(total=total, desc='partitioning depth 0') as pbar:
+    with tqdm(total=total, desc='partitioning: depth 0') as pbar:
         for y in range(grid_dims[0]):
             for x in range(grid_dims[1]):
                 tile = (slice(y * tile_height, (1 + y) * tile_height),
@@ -494,9 +495,10 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
 
     # If depth > 0, subdivide any tiles that straddle a mask edge or that
     # contain an image with high contrast.
+    num_channels = image.shape[-1]
     for d in range(depth):
         new_tiles = []
-        for tile in tqdm(tiles, desc='partitioning depth %d' % d):
+        for tile in tqdm(tiles, desc='partitioning: depth %d' % d):
             if ((mask is not None) and
                     np.any(mask[tile]) and np.any(~mask[tile])):
                 # This tile straddles a mask edge.
@@ -504,10 +506,15 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
                 # Discard subtiles that reside fully outside the mask.
                 subtiles = [tile for tile in subtiles if np.any(mask[tile])]
                 new_tiles.extend(subtiles)
-            elif False:  # TODO hdr check
-                new_tiles.extend(_subdivide(tile))
-            else:
-                new_tiles.append(tile)
+                continue
+            if split_thresh is not None:
+                num_pixels = np.product(image[tile].shape[:-1])
+                pixels = image[tile].reshape(num_pixels, num_channels)
+                if np.mean(np.std(pixels, 0)) > split_thresh:
+                    # This tile has high color variation.
+                    new_tiles.extend(_subdivide(tile))
+                    continue
+            new_tiles.append(tile)
         tiles = new_tiles
     return tiles
 
