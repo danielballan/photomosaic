@@ -463,8 +463,9 @@ def partition(image, grid_dims, mask=None, depth=0, split_thresh=0.1):
         list of pairs of slice objects
     """
     # Validate inputs.
+    image = np.atleast_3d(np.asarray(image))
     if isinstance(grid_dims, int):
-        tile_dims, = image.ndims * (grid_dims,)
+        tile_dims, = 2 * (grid_dims,)
     for i in (0, 1):
         image_dim = image.shape[i]
         grid_dim = grid_dims[i]
