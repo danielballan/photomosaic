@@ -641,8 +641,8 @@ def adaptive_map(old_hist, new_hist):
     old_counts, old_bins = old_hist
     new_counts, new_bins = new_hist
     # cumulative distribution functions
-    old_cdf = np.cumsum(old_counts, 0)
-    new_cdf = np.cumsum(new_counts, 0)
+    old_cdf = np.cumsum(old_counts) / old_counts.sum()
+    new_cdf = np.cumsum(new_counts) / new_counts.sum()
 
     def f(arr):
         """
