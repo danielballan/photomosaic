@@ -14,6 +14,7 @@ from skimage.color import gray2rgb
 from skimage.util import crop
 from scipy.spatial import cKDTree
 from scipy.cluster import vq
+import matplotlib.pyplot as plt
 
 
 options = {'imread': {},
@@ -882,7 +883,6 @@ def plot_palette(palette, **kwargs):
     lines :
         line artists created by matplotlib
     """
-    import matplotlib.pyplot as plt
     fig, axes = plt.subplots(len(palette))
     lines = []
     for ax, (counts, bins) in zip(axes, palette):
