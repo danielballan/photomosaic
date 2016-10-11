@@ -544,11 +544,54 @@ def scatter(tiles, margin):
         # random  shift + constant shift to ensure positive result
         dy = np.random.randint(-y_margin, 1 + y_margin) + y_margin
         dx = np.random.randint(-x_margin, 1 + x_margin) + x_margin
-        y, x = tile
-        new_tile = (slice(y.start + dy, y.stop + dy),
-                    slice(x.start + dx, x.stop + dx))
-        new_tiles.append(new_tile)
+        new_tiles.append(translate(tile, (dy, dx)))
     return new_tiles
+
+
+def translate(tile, offset):
+    """
+    Move a tile. This returns a moved copy; the original is unchaged.
+
+    Parameters
+    ----------
+    tile : tuple
+        containing y and x slice objects
+    offset : tuple
+        translation, given as ``(y, x)``
+
+    Returns
+    -------
+    tile : tuple
+        a copy; the input is unchaged
+    """
+    dy, dx = offset
+    y, x = tile
+    new_tile = (slice(y.start + dy, y.stop + dy),
+                slice(x.start + dx, x.stop + dx))
+    return new_tile
+
+
+def pad(tile, padding):
+    """
+    Shrink a tile in place, leaving a padding. This returns a copy.
+
+    Parameters
+    ----------
+    tile : tuple
+        containing y and x slice objects
+    padding : tuple
+        number of pixels to leave along each side, given as ``(y, x)``
+
+    Returns
+    -------
+    tile : tuple
+        a copy; the input is unchaged
+    """
+    dy, dx = padding
+    y, x = tile
+    new_tile = (slice(y.start + dy, y.stop - dy),
+                slice(x.start + dx, x.stop - dx))
+    return new_tile
 
 
 def color_palette(image, bins=256, density=True, **kwargs):
