@@ -1,6 +1,8 @@
 photomosaic
 ===========
 
+[![Build Status](https://travis-ci.org/danielballan/photomosaic.svg)](https://travis-ci.org/danielballan/photomosaic)
+
 Assemble thumbnail-sized images from a large collection into a mosaic which,
 viewed at a distance, gives the impression of one large photo.
 
