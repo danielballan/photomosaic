@@ -107,9 +107,7 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
 
     # Match a pool image to each tile.
     match = simple_matcher(pool)
-    matches = []
-    for tile_color in tqdm(tile_colors, desc='matching'):
-        matches.append(match(tile_color))
+    matches = [match(tc) for tc in tqdm(tile_colors, desc='matching')]
 
     # Draw the mosaic.
     canvas = np.ones_like(image)  # white canvas same shape as input image
