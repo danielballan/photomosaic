@@ -20,7 +20,7 @@ img = data.chelsea()  # cat picture!
 pm.generate_tile_pool('pool')
 
 # Build the pool (analyze the dummy images).
-pool = pm.make_pool('pool/*.gif')
+pool = pm.make_pool('pool/*.png')
 
 # Create a mosiac with 15x15 tiles.
 mos = pm.basic_mosaic(img, pool, (15, 15))
