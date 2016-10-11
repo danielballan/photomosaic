@@ -819,10 +819,11 @@ def generate_tile_pool(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
 
 def export_pool(pool, filepath):
     """
-    Export pool to json. This is a thin convenience wrapper around json.dump.
+    Export pool to json.
 
-    The pool is just a dict, but it contains numpy arrays, which must be
-    converted to plain lists before being exported to json.
+    This is a thin convenience wrapper around ``json.dump``. The pool is just a
+    dict, but it contains numpy arrays, which must be converted to plain lists
+    before being exported to JSON.
 
     Parameters
     ----------
@@ -841,7 +842,10 @@ def export_pool(pool, filepath):
 
 def import_pool(filepath):
     """
-    Import pool from json. This is a thin convenience wrapper around json.load.
+    Import pool from json.
+
+    This is a thin convenience wrapper around ``json.load``. It puts the data
+    into the expected data structures, which don't directly translate to JSON.
 
     Parameters
     ----------
