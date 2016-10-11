@@ -514,6 +514,38 @@ def partition(image, grid_dims, mask=None, depth=0, hdr=80):
     return tiles
 
 
+def scatter(tiles, margin):
+    """
+    Randomly nudge the tiles off center within a given margin.
+
+    Also, shift all tiles in the positive direction by ``margin`` so that no
+    slices are randomly placed < 0.
+
+    Parameters
+    ----------
+    tiles : list
+        list of tuples of slices
+    margin : tuple
+        maximum distance off tile center, given as ``(y, x)``
+
+    Returns
+    -------
+    tiles : list
+        a copy; the input is unchaged
+    """
+    y_margin, x_margin = margin
+    new_tiles = []
+    for tile in tiles:
+        # random  shift + constant shift to ensure positive result
+        dy = np.random.randint(-y_margin, 1 + y_margin) + y_margin
+        dx = np.random.randint(-x_margin, 1 + x_margin) + x_margin
+        y, x = tile
+        new_tile = (slice(y.start + dy, y.stop + dy),
+                    slice(x.start + dx, x.stop + dx))
+        new_tiles.append(new_tile)
+    return new_tiles
+
+
 def color_palette(image, bins=256, density=True, **kwargs):
     """
     Compute the distribution of each color channel.
