@@ -4,6 +4,9 @@ from os import path
 
 here = path.abspath(path.dirname(__file__))
 
+# Read the requirements from requirements.txt
+requires = open('requirements.txt').read().strip().split('\n')
+
 # Get the long description from the README file
 with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
@@ -37,7 +40,6 @@ setup(
     ],
     keywords='art image color mosaic',
     packages=['photomosaic'],
-    install_requires=['numpy', 'scikit-image', 'scipy', 'colorspacious',
-                      'tqdm'],
+    install_requires=requires,
     extras_require=extras_require
 )
