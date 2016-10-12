@@ -10,6 +10,10 @@ matrix:
   include:
     - python: 3.5
 
+env:
+  global:
+    - secure: "f6PzI9At5FKvozluhLQnOvNB2wwVdvoVA7hur4PN5E5PbHWeICeNbj15VkIxChUUUwTXEI/mSMMRvYpDHFr205RxaNuv+/lyLo4H1VqiVlZvZi6jJLB2paYwu0AqsAeTjO5XrgKgByuwWDlQIwP02hnxgGD3LbD83h/Trh0Yln4="
+
 before_install:
   - "export DISPLAY=:99.0"
   - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
@@ -37,3 +41,8 @@ script:
 
 after_success:
   - coverage report -m
+  - pip install doctr sphinx
+  - cd doc
+  - make html
+  - cd ..
+  - doctr deploy
