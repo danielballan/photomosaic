@@ -6,7 +6,7 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
     
-    <title>Tutorial &#8212; photomosaic 0.2.2+54.gde0ac21 documentation</title>
+    <title>Tutorial &#8212; photomosaic 0.2.2+57.ga047197 documentation</title>
     
     <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
     <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
@@ -14,7 +14,7 @@
     <script type="text/javascript">
       var DOCUMENTATION_OPTIONS = {
         URL_ROOT:    './',
-        VERSION:     '0.2.2+54.gde0ac21',
+        VERSION:     '0.2.2+57.ga047197',
         COLLAPSE_INDEX: false,
         FILE_SUFFIX: '.html',
         HAS_SOURCE:  true
@@ -26,7 +26,7 @@
     <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="top" title="photomosaic 0.2.2+54.gde0ac21 documentation" href="index.html" />
+    <link rel="top" title="photomosaic 0.2.2+57.ga047197 documentation" href="index.html" />
     <link rel="prev" title="photomosaic" href="index.html" />
    
   <link rel="stylesheet" href="_static/custom.css" type="text/css" />
@@ -66,10 +66,10 @@ collection of solid-color squares. Real photos are more interesting, but
 solid-color squares are nice for experimentation.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
 
-<span class="c1"># Generate dummy images covering the color gamut to use as a pool.</span>
-<span class="n">pm</span><span class="o">.</span><span class="n">generate_tile_pool</span><span class="p">(</span><span class="s1">&#39;pool&#39;</span><span class="p">)</span>
+<span class="c1"># Generate a collection of solid-color square images.</span>
+<span class="n">pm</span><span class="o">.</span><span class="n">generate_tile_pool</span><span class="p">(</span><span class="s1">&#39;pool/&#39;</span><span class="p">)</span>
 
-<span class="c1"># Build the pool (analyze the images).</span>
+<span class="c1"># Analyze the collection (the &quot;pool&quot;) of images.</span>
 <span class="n">pool</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">make_pool</span><span class="p">(</span><span class="s1">&#39;pool/*.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
