@@ -807,6 +807,7 @@ def generate_tile_pool(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
         Passed to ``range()`` to stride through each color channel.
         Default is ``(0, 256, 15)``.
     """
+    os.makedirs(target_dir, exist_ok=True)
     with tqdm(total=3 * len(range(*range_params))) as pbar:
         canvas = np.ones(shape + (3,))
         for r in range(*range_params):
