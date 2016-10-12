@@ -661,8 +661,8 @@ def palette_map(old_palette, new_palette):
         image = np.asarray(image)
         num_channels = image.shape[-1]
         if num_channels != len(functions):
-            raise ValueError("expected image with {} color channels"
-                             "".format(num_channels))
+            raise ValueError("expected image with {} color channels; this has "
+                             "{}".format(len(functions), num_channels))
         num_pixels = np.product(image.shape[:-1])
         pixels = image.reshape(num_pixels, num_channels)
 
