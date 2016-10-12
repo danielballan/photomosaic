@@ -30,10 +30,10 @@ solid-color squares are nice for experimentation.
 
     import photomosaic as pm
 
-    # Generate dummy images covering the color gamut to use as a pool.
-    pm.generate_tile_pool('pool')
+    # Generate a collection of solid-color square images.
+    pm.generate_tile_pool('pool/')
 
-    # Build the pool (analyze the images).
+    # Analyze the collection (the "pool") of images.
     pool = pm.make_pool('pool/*.png')
 
 Now we have everything we need to make a mosaic. Specify the target image
