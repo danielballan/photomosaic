@@ -283,6 +283,8 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
     if pool is None:
         pool = {}
     filenames = glob.glob(glob_string)
+    if not filenames:
+        raise ValueError("No matches found for {}".format(glob_string))
     for filename in tqdm(filenames, desc='analyzing pool'):
         try:
             raw_image = imread(filename, **options['imread'])
