@@ -48,7 +48,7 @@ def set_options(imread=None, perceptual=None, rgb=None):
         options['rgb'] = rgb
 
 
-def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=1):
+def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=0):
     """
     Make a mosaic in one step with some basic settings.
 
