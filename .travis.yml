@@ -41,7 +41,7 @@ script:
 
 after_success:
   - coverage report -m
-  - pip install doctr sphinx
+  - pip install doctr sphinx numpydoc ipython  # docs dependencies
   - cd doc
   - make html
   - cd ..
