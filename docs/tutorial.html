@@ -1,0 +1,181 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Tutorial &#8212; photomosaic 0.2.2+53.gd4880c1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.2.2+53.gd4880c1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="photomosaic 0.2.2+53.gd4880c1 documentation" href="index.html" />
+    <link rel="prev" title="photomosaic" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="tutorial">
+<h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="basic-example">
+<h2>Basic Example<a class="headerlink" href="#basic-example" title="Permalink to this headline">¶</a></h2>
+<p>To begin, you need an image that you want to mosaic-ify. You can load it like
+so:</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="s1">&#39;filepath&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Alternatively, you can use one of the built-in example images provided by
+scikit-image library. We&#8217;ll go with cat picture.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Load a sample image</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">data</span>
+<span class="n">img</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">chelsea</span><span class="p">()</span>  <span class="c1"># cat picture!</span>
+</pre></div>
+</div>
+<p>Next, you need large collection of images to fill in the tiles in the mosaic.
+If you don&#8217;t have a large collection of images handy, you can generate a
+collection of solid-color squares. Real photos are more interesting, but
+solid-color squares are nice for experimentation.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
+
+<span class="c1"># Generate dummy images covering the color gamut to use as a pool.</span>
+<span class="n">pm</span><span class="o">.</span><span class="n">generate_tile_pool</span><span class="p">(</span><span class="s1">&#39;pool&#39;</span><span class="p">)</span>
+
+<span class="c1"># Build the pool (analyze the images).</span>
+<span class="n">pool</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">make_pool</span><span class="p">(</span><span class="s1">&#39;pool/*.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now we have everything we need to make a mosaic. Specify the target image
+(<code class="docutils literal"><span class="pre">img</span></code>), the pool of available tile images (<code class="docutils literal"><span class="pre">pool</span></code>), and the number of
+tiles to divide the image into.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Create a mosiac with 15x15 tiles.</span>
+<span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+</pre></div>
+</div>
+<p>Now <code class="docutils literal"><span class="pre">mos</span></code> is our mosaic. We can save it</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">imsave</span>
+<span class="n">imsave</span><span class="p">(</span><span class="n">mos</span><span class="p">,</span> <span class="s1">&#39;mosaic.png&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or plot it using matplotlib.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">mos</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>(splitting tiles)</p>
+</div>
+<div class="section" id="detailed-example">
+<h2>Detailed Example<a class="headerlink" href="#detailed-example" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="paritioning-tiles">
+<h3>Paritioning Tiles<a class="headerlink" href="#paritioning-tiles" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="adaptive-color-palette">
+<h3>Adaptive Color Palette<a class="headerlink" href="#adaptive-color-palette" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="matching">
+<h3>Matching<a class="headerlink" href="#matching" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="drawing">
+<h3>Drawing<a class="headerlink" href="#drawing" title="Permalink to this headline">¶</a></h3>
+</div>
+<div class="section" id="misplacing-tiles">
+<h3>Misplacing Tiles<a class="headerlink" href="#misplacing-tiles" title="Permalink to this headline">¶</a></h3>
+</div>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Tutorial</a><ul>
+<li><a class="reference internal" href="#basic-example">Basic Example</a></li>
+<li><a class="reference internal" href="#detailed-example">Detailed Example</a><ul>
+<li><a class="reference internal" href="#paritioning-tiles">Paritioning Tiles</a></li>
+<li><a class="reference internal" href="#adaptive-color-palette">Adaptive Color Palette</a></li>
+<li><a class="reference internal" href="#matching">Matching</a></li>
+<li><a class="reference internal" href="#drawing">Drawing</a></li>
+<li><a class="reference internal" href="#misplacing-tiles">Misplacing Tiles</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">photomosaic</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/tutorial.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Photomosaic Contributors.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/tutorial.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
