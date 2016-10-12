@@ -42,8 +42,8 @@ tiles to divide the image into.
 
 .. code-block:: python
 
-    # Create a mosiac with 15x15 tiles.
-    mos = pm.basic_mosaic(img, pool, (15, 15))
+    # Create a mosiac with 30x30 tiles.
+    mos = pm.basic_mosaic(img, pool, (30, 30))
 
 Now ``mos`` is our mosaic. We can save it
 
