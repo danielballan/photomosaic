@@ -49,8 +49,8 @@ Now ``mos`` is our mosaic. We can save it
 
 .. code-block:: python
 
-    from skimage import imsave
-    imsave(mos, 'mosaic.png')
+    from skimage.io import imsave
+    imsave('mosaic.png', mos)
 
 or plot it using matplotlib.
 
