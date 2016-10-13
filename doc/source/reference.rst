@@ -34,7 +34,7 @@ Color Characterization
 Color Palettes
 --------------
 
-.. autofunction:: adjust_to_palette
+.. autofunction:: adapt_to_pool
 .. autofunction:: color_palette
 .. autofunction:: palette_map
 .. autofunction:: hist_map

@@ -119,14 +119,14 @@ the images in the pool before analyzing their colors.)
 Optional: Optimize the Color Palette
 ++++++++++++++++++++++++++++++++++++
 
-For best results, use :func:`adjust_to_palette` to "stretch" the color palette
+For best results, use :func:`adapt_to_pool` to "stretch" the color palette
 of the image to match the colors available in the pool of candidate images.
 This greatly improves the contrast in the final result.
 
 .. code-block:: python
 
     # Adapt the color palette of the image to resemble the palette of the pool.
-    adapted_img = pm.adjust_to_palette(converted_img, pool)
+    adapted_img = pm.adapt_to_pool(converted_img, pool)
 
 .. plot:: 
 
@@ -138,7 +138,7 @@ This greatly improves the contrast in the final result.
     from skimage import img_as_float
     image = img_as_float(chelsea())
     converted_img = pm.perceptual(image)
-    adapted_img = pm.adjust_to_palette(converted_img, pool)
+    adapted_img = pm.adapt_to_pool(converted_img, pool)
     fig, (ax1, ax2) = plt.subplots(2, figsize=(12, 10))
     ax1.imshow(pm.rgb(converted_img))
     ax1.set_title("Before ('converted_img')")
@@ -198,7 +198,7 @@ to RGB for visualization.)
     from skimage import img_as_float
     image = img_as_float(chelsea())
     converted_img = pm.perceptual(image)
-    adapted_img = pm.adjust_to_palette(converted_img, pool)
+    adapted_img = pm.adapt_to_pool(converted_img, pool)
     scaled_img = pm.rescale_commensurate(adapted_img, grid_dims=(30, 30), depth=1)
     tiles = pm.partition(scaled_img, grid_dims=(30, 30), depth=1)
     annotated_img = pm.draw_tile_layout(pm.rgb(scaled_img), tiles)

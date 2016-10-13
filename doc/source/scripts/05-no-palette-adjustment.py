@@ -26,6 +26,6 @@ mos = pm.draw_mosaic(canvas, tiles, matches)
 imsave(os.path.join(here, '..', '_static', 'generated_images',
                     'no-palette-adjustment.png'), mos)
 
-adapted_img = pm.adjust_to_palette(converted_img, pool)
+adapted_img = pm.adapt_to_pool(converted_img, pool)
 imsave(os.path.join(here, '..', '_static', 'generated_images',
                     'adapted-chelsea.png'), pm.rgb(adapted_img))

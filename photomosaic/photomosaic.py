@@ -102,7 +102,7 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=0):
     converted_img = perceptual(image)
 
     # Adapt the color palette of the image to resemble the palette of the pool.
-    adapted_img = adjust_to_palette(converted_img, pool)
+    adapted_img = adapt_to_pool(converted_img, pool)
 
     # Partition the image into tiles and characterize each one's color.
     tiles = partition(adapted_img, grid_dims=grid_dims, mask=mask, depth=depth)
@@ -155,7 +155,7 @@ def rgb(image, clip=True):
     return result
 
 
-def adjust_to_palette(image, pool):
+def adapt_to_pool(image, pool):
     """
     Adjust the color timing of an image to use colors available in the pool.
 
@@ -179,7 +179,7 @@ def adjust_to_palette(image, pool):
     If the image is RGB, first convert to perceptual space. Finally, before
     visualizing, convert back.
 
-        >>> rgb(adjust_to_palette(perceptual(image), pool)
+        >>> rgb(adapt_to_pool(perceptual(image), pool)
     """
     image_palette = color_palette(image)
     pool_palette = color_palette(list(pool.values()))

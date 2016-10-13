@@ -58,13 +58,13 @@ contrast.
     pool = pm.import_pool(POOL_PATH)
     pm.plot_palette(pm.color_palette(list(pool.values())))
 
-The function :func:`adjust_to_palette` distorts the colors of the original
+The function :func:`adapt_to_pool` distorts the colors of the original
 image so that it has a color palette similar to the pool. Notice that the
 envelopes of the histograms below roughly match those above.
 
 .. code-block:: python
 
-    adjusted_img = pm.adjust_to_palette(converted_img, pool)
+    adjusted_img = pm.adapt_to_pool(converted_img, pool)
     pm.plot_palette(pm.color_palette(adjusted_img))
 
 .. plot::
@@ -76,7 +76,7 @@ envelopes of the histograms below roughly match those above.
     converted_img = pm.perceptual(image)
     POOL_PATH = '/tmp/photomosaic-docs-pool/pool.json'
     pool = pm.import_pool(POOL_PATH)
-    adjusted_img = pm.adjust_to_palette(converted_img, pool)
+    adjusted_img = pm.adapt_to_pool(converted_img, pool)
     pm.plot_palette(pm.color_palette(adjusted_img))
 
 The adjusted image looks like this.
