@@ -13,4 +13,4 @@ photomosaic.egg-info/
 .coverage
 build/
 dist/
-source/_static/generated_images
+doc/source/_static/generated_images/*.png
