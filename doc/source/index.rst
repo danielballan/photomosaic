@@ -9,3 +9,4 @@ viewed at a distance, gives the impression of one large photo.
 
    tutorial
    reference
+   palette

@@ -254,8 +254,8 @@ for generating a "white" or "black" canvas of the right shape,
 .. code-block:: python
 
     import numpy as np
-    canvas = np.ones_like(rescaled_img)  # white canvas
-    canvas = np.zeros_like(rescaled_img)  # black canvas
+    canvas = np.ones_like(scaled_img)  # white canvas
+    canvas = np.zeros_like(scaled_img)  # black canvas
 
 or load a background image and scale/crop it the right shape.
 
@@ -269,7 +269,7 @@ Finally, draw the mosiac.
 .. code-block:: python
 
     # Draw the mosaic.
-    mos = draw_mosaic(canvas, tiles, matches)
+    mos = pm.draw_mosaic(canvas, tiles, matches)
 
 .. figure:: _static/generated_images/basic-depth1.png
 
