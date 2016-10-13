@@ -440,7 +440,7 @@ def _subdivide(tile):
     return subtiles
 
 
-def partition(image, grid_dims, mask=None, depth=0, split_thresh=0.1):
+def partition(image, grid_dims, mask=None, depth=0, split_thresh=10):
     """
     Parition the target image into tiles.
 
