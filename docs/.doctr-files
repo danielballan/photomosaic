@@ -1,7 +1,11 @@
 docs/_images/basic-depth1.png
 docs/_images/basic.png
 docs/_images/chelsea.png
+docs/_images/tutorial-1.png
+docs/_images/tutorial-2.png
+docs/_modules/index.html
 docs/_sources/index.txt
+docs/_sources/reference.txt
 docs/_sources/tutorial.txt
 docs/_static/ajax-loader.gif
 docs/_static/basic.css
@@ -45,6 +49,15 @@ docs/_static/websupport.js
 docs/genindex.html
 docs/index.html
 docs/objects.inv
+docs/reference.html
 docs/search.html
 docs/searchindex.js
+docs/tutorial-1.hires.png
+docs/tutorial-1.pdf
+docs/tutorial-1.png
+docs/tutorial-1.py
+docs/tutorial-2.hires.png
+docs/tutorial-2.pdf
+docs/tutorial-2.png
+docs/tutorial-2.py
 docs/tutorial.html

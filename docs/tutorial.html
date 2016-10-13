@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Tutorial &mdash; photomosaic 0+untagged.68.g26cdab2 documentation</title>
+  <title>Tutorial &mdash; photomosaic 0+untagged.68.g1cf9d68 documentation</title>
   
 
   
@@ -33,7 +33,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.68.g26cdab2 documentation" href="index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.68.g1cf9d68 documentation" href="index.html"/>
+        <link rel="next" title="Reference" href="reference.html"/>
         <link rel="prev" title="photomosaic" href="index.html"/> 
 
   
@@ -62,7 +63,7 @@
             
             
               <div class="version">
-                0+untagged.68.g26cdab2
+                0+untagged.68.g1cf9d68
               </div>
             
           
@@ -85,17 +86,20 @@
             
                 <ul class="current">
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#set-up">Set Up</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#basic-example">Basic Example</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#detailed-example">Detailed Example</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#paritioning-tiles">Paritioning Tiles</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#adaptive-color-palette">Adaptive Color Palette</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#matching">Matching</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#drawing">Drawing</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#misplacing-tiles">Misplacing Tiles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#prepare-the-image">Prepare the Image</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optional-optimize-the-color-palette">Optional: Optimize the Color Palette</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#partition-tiles">Partition Tiles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#match-tiles-to-pool-images">Match Tiles to Pool Images</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#draw-mosaic">Draw Mosaic</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#optional-rearrange-tiles">Optional: Rearrange Tiles</a></li>
 </ul>
 </li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
             
@@ -142,22 +146,21 @@
             
   <div class="section" id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="basic-example">
-<h2>Basic Example<a class="headerlink" href="#basic-example" title="Permalink to this headline">¶</a></h2>
+<div class="section" id="set-up">
+<span id="setup"></span><h2>Set Up<a class="headerlink" href="#set-up" title="Permalink to this headline">¶</a></h2>
 <p>To begin, you need an image that you want to mosaic-ify. You can load it like
 so:</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span>
-<span class="n">img</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="s1">&#39;filepath&#39;</span><span class="p">)</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="s1">&#39;filepath&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Alternatively, you can use one of the built-in example images provided by
 scikit-image library. We&#8217;ll go with the cat picture, <code class="docutils literal"><span class="pre">chelsea</span></code>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Load a sample image</span>
 <span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">data</span>
-<span class="n">img</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">chelsea</span><span class="p">()</span>  <span class="c1"># cat picture!</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">chelsea</span><span class="p">()</span>  <span class="c1"># cat picture!</span>
 </pre></div>
 </div>
-<p>For the record, this is Chelsea.</p>
 <div class="figure">
 <img alt="_images/chelsea.png" src="_images/chelsea.png" />
 </div>
@@ -168,17 +171,20 @@ solid-color squares are nice for experimentation.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
 
 <span class="c1"># Generate a collection of solid-color square images.</span>
-<span class="n">pm</span><span class="o">.</span><span class="n">generate_tile_pool</span><span class="p">(</span><span class="s1">&#39;pool/&#39;</span><span class="p">)</span>
+<span class="n">pm</span><span class="o">.</span><span class="n">rainbow_of_squares</span><span class="p">(</span><span class="s1">&#39;pool/&#39;</span><span class="p">)</span>
 
 <span class="c1"># Analyze the collection (the &quot;pool&quot;) of images.</span>
 <span class="n">pool</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">make_pool</span><span class="p">(</span><span class="s1">&#39;pool/*.png&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
+</div>
+<div class="section" id="basic-example">
+<h2>Basic Example<a class="headerlink" href="#basic-example" title="Permalink to this headline">¶</a></h2>
 <p>Now we have everything we need to make a mosaic. Specify the target image
-(<code class="docutils literal"><span class="pre">img</span></code>), the pool of available tile images (<code class="docutils literal"><span class="pre">pool</span></code>), and the number of
+(<code class="docutils literal"><span class="pre">image</span></code>), the pool of available tile images (<code class="docutils literal"><span class="pre">pool</span></code>), and the number of
 tiles to divide the image into.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Create a mosiac with 30x30 tiles.</span>
-<span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
+<span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>Now <code class="docutils literal"><span class="pre">mos</span></code> is our mosaic. We can save it</p>
@@ -197,7 +203,7 @@ tiles to divide the image into.</p>
 <p>To make a more detailed mosaic, subdivide tiles in important regions. The
 optional <code class="docutils literal"><span class="pre">depth</span></code> parameter selectively splits tiles into quadrants if they
 contain a certain amount of contrast.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="figure">
@@ -207,20 +213,152 @@ contain a certain amount of contrast.</p>
 </div>
 <div class="section" id="detailed-example">
 <h2>Detailed Example<a class="headerlink" href="#detailed-example" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="paritioning-tiles">
-<h3>Paritioning Tiles<a class="headerlink" href="#paritioning-tiles" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="prepare-the-image">
+<h3>Prepare the Image<a class="headerlink" href="#prepare-the-image" title="Permalink to this headline">¶</a></h3>
+<p>As in the basic example above, we start with a target image, <code class="docutils literal"><span class="pre">image</span></code>, and a
+collection of candidates for the mosaic, <code class="docutils literal"><span class="pre">pool</span></code>.</p>
+<p>The image (represented in Python as a numpy array) should be specified as
+floating-point values in the domain 0-1. The utility function <code class="docutils literal"><span class="pre">img_as_float</span></code>
+ensures that that is the case.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Size the image to be evenly divisible by the tiles.</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">img_as_float</span>
+<span class="n">image</span> <span class="o">=</span> <span class="n">img_as_float</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="adaptive-color-palette">
-<h3>Adaptive Color Palette<a class="headerlink" href="#adaptive-color-palette" title="Permalink to this headline">¶</a></h3>
+<p>Several of the next steps rely on judging the relative similarity of colors.
+To that end, we convert the colors in <code class="docutils literal"><span class="pre">image</span></code> from an RGB (&#8220;red green blue&#8221;)
+representation to a perceptually-uniform color space. In this representation,
+the mathematical difference between two colors is a more accurate estimate of
+their perceived &#8220;difference&#8221; to the human vision system.</p>
+<p>(In the <a class="reference internal" href="#setup"><span class="std std-ref">Set Up</span></a> above, <a class="reference internal" href="reference.html#photomosaic.make_pool" title="photomosaic.make_pool"><code class="xref py py-func docutils literal"><span class="pre">make_pool()</span></code></a> automatically did this for all of
+the images in the pool before analyzing their colors.)</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Use perceptually uniform colorspace for all analysis.</span>
+<span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
+<span class="n">converted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="matching">
-<h3>Matching<a class="headerlink" href="#matching" title="Permalink to this headline">¶</a></h3>
 </div>
-<div class="section" id="drawing">
-<h3>Drawing<a class="headerlink" href="#drawing" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="optional-optimize-the-color-palette">
+<h3>Optional: Optimize the Color Palette<a class="headerlink" href="#optional-optimize-the-color-palette" title="Permalink to this headline">¶</a></h3>
+<p>For best results, use <a class="reference internal" href="reference.html#photomosaic.adjust_to_palette" title="photomosaic.adjust_to_palette"><code class="xref py py-func docutils literal"><span class="pre">adjust_to_palette()</span></code></a> to &#8220;stretch&#8221; the color palette
+of the image to match the colors available in the pool of candidate images.
+This greatly improves the contrast in the final result.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Adapt the color palette of the image to resemble the palette of the pool.</span>
+<span class="n">adapted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">adjust_to_palette</span><span class="p">(</span><span class="n">converted_img</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+</pre></div>
 </div>
-<div class="section" id="misplacing-tiles">
-<h3>Misplacing Tiles<a class="headerlink" href="#misplacing-tiles" title="Permalink to this headline">¶</a></h3>
+<div class="figure">
+<img alt="_images/tutorial-1.png" src="_images/tutorial-1.png" />
+</div>
+</div>
+<div class="section" id="partition-tiles">
+<h3>Partition Tiles<a class="headerlink" href="#partition-tiles" title="Permalink to this headline">¶</a></h3>
+<p>We will partition the image into tiles. But first, we rescale it (and crop it
+if necessary) so that it is evenly divisive. As in the basic example above, the
+<code class="docutils literal"><span class="pre">grid_dims</span></code> gives the number of tiles along each dimension and <code class="docutils literal"><span class="pre">depth</span></code>
+(default 0)` gives the number of times a tile may be subdivided.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">scaled_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">rescale_commensurate</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">,</span> <span class="n">grid_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Now, partition the image into tiles.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">tiles</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">,</span> <span class="n">grid_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The result is a list of (y, x) slices into the image.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="p">[(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">144</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
+ <span class="o">...&lt;</span><span class="n">snip</span><span class="o">&gt;...</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">336</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">432</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">432</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+<p>Optionally, visualize the tile layout. (Recall that <code class="docutils literal"><span class="pre">scaled_img</span></code> is
+represented in the perceptually-uniform color space; we have to convert it back
+to RGB for visualization.)</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">annotated_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">draw_tile_layout</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">rgb</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">),</span> <span class="n">tiles</span><span class="p">)</span>
+
+<span class="c1"># Save the result with imsave, or plot with matplotlib:</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">annotated_img</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure">
+<img alt="_images/tutorial-2.png" src="_images/tutorial-2.png" />
+</div>
+</div>
+<div class="section" id="match-tiles-to-pool-images">
+<h3>Match Tiles to Pool Images<a class="headerlink" href="#match-tiles-to-pool-images" title="Permalink to this headline">¶</a></h3>
+<p>First, analyze the dominant color of each tile in the target image. We judge
+the dominant color by:</p>
+<ul class="simple">
+<li>sampling up to 1000 pixels from the tile (for speed)</li>
+<li>clustering the pixels by color</li>
+<li>computing the &#8220;central&#8221; color of the largest cluster</li>
+</ul>
+<p>It would be interesting to explore alternative ways to characterize the
+dominant color.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">tile_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">pm</span><span class="o">.</span><span class="n">dominant_color</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">sample_pixels</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">[</span><span class="n">tile</span><span class="p">],</span> <span class="mi">1000</span><span class="p">))</span>
+               <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">]</span>
+</pre></div>
+</div>
+<p>For large number of tiles, this process takes awhile. Optionally, use the tqdm
+package to add a nice progress bar.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
+<span class="n">tile_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">pm</span><span class="o">.</span><span class="n">dominant_color</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">sample_pixels</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">[</span><span class="n">tile</span><span class="p">],</span> <span class="mi">1000</span><span class="p">))</span>
+               <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;analyzing tiles&#39;</span><span class="p">)]</span>
+</pre></div>
+</div>
+<p>The result is a list of color &#8220;vectors&#8221; characterizing the color of each tile
+in <code class="docutils literal"><span class="pre">tiles</span></code>. These vectors can be compared to the values in <code class="docutils literal"><span class="pre">pool</span></code>, which
+were generated using the same algorithm.</p>
+<p>The function <code class="docutils literal"><span class="pre">simple_matcher</span></code> takes the analyzed colors in <code class="docutils literal"><span class="pre">pool</span></code> and loads
+into a data structure for fast nearest-color lookups (a KD tree). It returns a
+function, <code class="docutils literal"><span class="pre">match</span></code>, which we map onto each tile color.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Match a pool image to each tile.</span>
+<span class="n">match</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">simple_matcher</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+<span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">match</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">tile_colors</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="draw-mosaic">
+<h3>Draw Mosaic<a class="headerlink" href="#draw-mosaic" title="Permalink to this headline">¶</a></h3>
+<p>First, create a &#8220;canvas&#8221; image on which to draw the mosiac. Use numpy functions
+for generating a &#8220;white&#8221; or &#8220;black&#8221; canvas of the right shape,</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">rescaled_img</span><span class="p">)</span>  <span class="c1"># white canvas</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rescaled_img</span><span class="p">)</span>  <span class="c1"># black canvas</span>
+</pre></div>
+</div>
+<p>or load a background image and scale/crop it the right shape.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">crop_to_fit</span><span class="p">(</span><span class="n">imread</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">),</span> <span class="n">rescaled_img</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Finally, draw the mosiac.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Draw the mosaic.</span>
+<span class="n">mos</span> <span class="o">=</span> <span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure">
+<img alt="_images/basic-depth1.png" src="_images/basic-depth1.png" />
+</div>
+<p>Drawing is typically the slowest step. Most of the time is spent resizing
+images from the pool to fit their assigned tile in the mosaic.  To speed up
+repeated draws, reuse the cache of resized pool images.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
+<span class="n">mos1</span> <span class="o">=</span> <span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas1</span><span class="p">,</span> <span class="n">tiles1</span><span class="p">,</span> <span class="n">matches1</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
+<span class="c1"># Now cache is filled with resized copies of any images used in ``mos1``.</span>
+
+<span class="c1"># This will be faster:</span>
+<span class="n">mos2</span> <span class="o">=</span> <span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas2</span><span class="p">,</span> <span class="n">tiles2</span><span class="p">,</span> <span class="n">matches2</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="optional-rearrange-tiles">
+<h3>Optional: Rearrange Tiles<a class="headerlink" href="#optional-rearrange-tiles" title="Permalink to this headline">¶</a></h3>
 </div>
 </div>
 </div>
@@ -231,6 +369,8 @@ contain a certain amount of contrast.</p>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral" title="photomosaic" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -264,7 +404,7 @@ contain a certain amount of contrast.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.68.g26cdab2',
+            VERSION:'0+untagged.68.g1cf9d68',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
