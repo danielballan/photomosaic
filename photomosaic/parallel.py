@@ -45,12 +45,13 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
         mapping arguments for opening file to analyzer's result, e.g.:
         ``{(filename,): [1, 2, 3]}``
     """
+    if analyzer is None:
+        analyzer = partial(np.mean, axis=0)
     filenames = glob.glob(glob_string)
     if not filenames:
         raise ValueError("No matches found for {}".format(glob_string))
 
     def analyze(filename):
-        # closure over pbar
         try:
             raw_image = imread(filename, **options['imread'])
         except Exception as err:
@@ -70,8 +71,6 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
                                                         options['rgb'],
                                                         options['perceptual'])
 
-        if analyzer is None:
-            analyzer = partial(np.mean, axis=0)
         vector = analyzer(converted_sample)
         return vector
 
@@ -81,5 +80,5 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
     if pool is None:
         pool = {}
     for filename, vector in zip(filenames, vectors):
-        pool[filename] = vector
+        pool[(filename,)] = vector
     return pool

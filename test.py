@@ -66,4 +66,8 @@ def test_pool_parallel(pool):
         break
     pool_dir = os.path.dirname(path)
     parallel_pool = pa.make_pool(os.path.join(pool_dir, '*.png'))
-    assert pool == parallel_pool
+    assert pool.keys() == parallel_pool.keys()
+    for k in pool:
+        v1 = parallel_pool[k]
+        v2 = pool[k]
+        assert np.all(v1 == v2)
