@@ -50,7 +50,7 @@ clean:
 
 .PHONY: images
 images:
-	find source/scripts/*.py | sort | xargs python
+	find source/scripts/*.py | sort | xargs -t -n 1 python
 
 .PHONY: html
 html:
