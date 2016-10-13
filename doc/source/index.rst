@@ -8,3 +8,4 @@ viewed at a distance, gives the impression of one large photo.
    :maxdepth: 2
 
    tutorial
+   reference

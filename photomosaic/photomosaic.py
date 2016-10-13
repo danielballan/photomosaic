@@ -74,20 +74,23 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=0):
     -------
     mosaic : array
 
-    Example
-    -------
+    Examples
+    --------
     Before making the mosaic, you need a collection of images to use as tiles.
     A collection of analyzed images is a "pool". Analyzing the images takes
     much more time that making the mosaic, so it is a separate step.
-    >>> pool = make_pool('directory_of_images/*.jpg')
+
+        >>> pool = make_pool('directory_of_images/*.jpg')
 
     Load an image to turn into mosaic.
-    >>> from skimage.io import imread, imsave
-    >>> my_image = imread('my_image.jpg')
+
+        >>> from skimage.io import imread, imsave
+        >>> my_image = imread('my_image.jpg')
 
     Make the mosaic and save it.
-    >>> mosaic = basic_mosaic(my_image, (15, 15))
-    >>> imsave('my_mosaic.jpg', mosaic)
+
+        >>> mosaic = basic_mosaic(my_image, (15, 15))
+        >>> imsave('my_mosaic.jpg', mosaic)
     """
     # Size the image to be evenly divisible by the tiles.
     image = img_as_float(image)
@@ -162,8 +165,8 @@ def adjust_to_palette(image, pool):
     This is a convenience function wrapping ``color_palette`` and
     ``palette_map``.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     image : array
     pool : dict
 
@@ -171,11 +174,12 @@ def adjust_to_palette(image, pool):
     -------
     adapted_image : array
 
-    Example
-    -------
+    Examples
+    --------
     If the image is RGB, first convert to perceptual space. Finally, before
     visualizing, convert back.
-    >>> rgb(adjust_to_palette(perceptual(image), pool)
+
+        >>> rgb(adjust_to_palette(perceptual(image), pool)
     """
     image_palette = color_palette(image)
     pool_palette = color_palette(list(pool.values()))
@@ -390,20 +394,22 @@ def draw_mosaic(image, tiles, matches, scale=1, resized_copy_cache=None):
     -------
     image : array
 
-    Example
-    -------
+    Examples
+    --------
     Basic usage:
-    >>> draw_mosaic(image, tiles, matches)
+
+        >>> draw_mosaic(image, tiles, matches)
 
     Cache the resized pool images to speed up repeated drawings:
-    >>> cache = {}  # any mutable mapping
-    >>> draw_mosiac(image, tiles, matches, resized_copy_cache=cache)
+
+        >>> cache = {}  # any mutable mapping
+        >>> draw_mosiac(image, tiles, matches, resized_copy_cache=cache)
 
     The above populated ``cache`` with every resized pool image used in a tile.
-    Now, ``draw_mosaic``will check the cache before loading the pool image and
+    Now, ``draw_mosaic`` will check the cache before loading the pool image and
     resizing it, which is the most expensive step.
-    >>> draw_mosiac(image, tiles, matches, resized_copy_cache=cache)
 
+        >>> draw_mosiac(image, tiles, matches, resized_copy_cache=cache)
     """
     scale = int(scale)
     if resized_copy_cache is None:
@@ -652,7 +658,7 @@ def palette_map(old_palette, new_palette):
     # Make a mapping function for each channel.
     functions = []
     for old, new in zip(old_palette, new_palette):
-        f = adaptive_map(old, new)
+        f = hist_map(old, new)
         functions.append(f)
 
     # Make a function that applies each mapping function to its channel.
@@ -675,7 +681,7 @@ def palette_map(old_palette, new_palette):
     return f
 
 
-def adaptive_map(old_hist, new_hist):
+def hist_map(old_hist, new_hist):
     """
     Build a function that maps from one distribution onto another.
 
@@ -794,7 +800,7 @@ def crop_to_fit(image, shape):
     return cropped
 
 
-def generate_tile_pool(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
+def rainbow_of_squares(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
     """
     Generate 5832 small solid-color tiles for experimentation and testing.
 
@@ -830,16 +836,14 @@ def export_pool(pool, filepath):
     dict, but it contains numpy arrays, which must be converted to plain lists
     before being exported to JSON.
 
+    Unlike the rest of this package, the export and import functions assume
+    that the pool is keyed on a tuple with a string (e.g., a filepath) as its
+    only element.
+
     Parameters
     ----------
     pool : dict
     filepath : string
-
-    Note
-    ----
-    Unlike the rest of this package, the export and import functions assume
-    that the pool is keyed on a tuple with a string (e.g., a filepath) as its
-    only element.
     """
     with open(filepath, 'w') as f:
         json.dump({k[0]: list(v) for k, v in pool.items()}, f)
@@ -852,6 +856,10 @@ def import_pool(filepath):
     This is a thin convenience wrapper around ``json.load``. It puts the data
     into the expected data structures, which don't directly translate to JSON.
 
+    Unlike the rest of this package, the export and import functions assume
+    that the pool is keyed on a tuple with a string (e.g., a filepath) as its
+    only element.
+
     Parameters
     ----------
     filepath : string
@@ -859,12 +867,6 @@ def import_pool(filepath):
     Returns
     -------
     pool : dict
-
-    Note
-    ----
-    Unlike the rest of this package, the export and import functions assume
-    that the pool is keyed on a tuple with a string (e.g., a filepath) as its
-    only element.
     """
     with open(filepath, 'r') as f:
         return {tuple([k]): np.array(v) for k, v in json.load(f).items()}
@@ -878,13 +880,12 @@ def plot_palette(palette, **kwargs):
     ----------
     palette : tuple
         color palette, such as created by :func:`color_palette`
-    ** kwargs
+    **kwargs
         passed through to ``matplotlib.Axes.plot``
 
     Returns
     -------
-    lines :
-        line artists created by matplotlib
+    lines : line artists created by matplotlib
     """
     fig, axes = plt.subplots(len(palette))
     lines = []

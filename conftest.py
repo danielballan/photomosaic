@@ -9,7 +9,7 @@ from skimage.data import chelsea
 @pytest.fixture(scope='module')
 def pool():
     tempdirname = tempfile.mkdtemp()
-    pm.generate_tile_pool(tempdirname, range_params=(0, 256, 30))
+    pm.rainbow_of_squares(tempdirname, range_params=(0, 256, 30))
     pool = pm.make_pool(os.path.join(tempdirname, '*.png'))
 
     def delete_dm():
