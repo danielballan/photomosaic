@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Tutorial &mdash; photomosaic 0+untagged.68.g1cf9d68 documentation</title>
+  <title>Tutorial &mdash; photomosaic 0+untagged.68.g88a8162 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.68.g1cf9d68 documentation" href="index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.68.g88a8162 documentation" href="index.html"/>
         <link rel="next" title="Reference" href="reference.html"/>
         <link rel="prev" title="photomosaic" href="index.html"/> 
 
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0+untagged.68.g1cf9d68
+                0+untagged.68.g88a8162
               </div>
             
           
@@ -100,6 +100,7 @@
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+<li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
 </ul>
 
             
@@ -240,11 +241,11 @@ the images in the pool before analyzing their colors.)</p>
 </div>
 <div class="section" id="optional-optimize-the-color-palette">
 <h3>Optional: Optimize the Color Palette<a class="headerlink" href="#optional-optimize-the-color-palette" title="Permalink to this headline">¶</a></h3>
-<p>For best results, use <a class="reference internal" href="reference.html#photomosaic.adjust_to_palette" title="photomosaic.adjust_to_palette"><code class="xref py py-func docutils literal"><span class="pre">adjust_to_palette()</span></code></a> to &#8220;stretch&#8221; the color palette
+<p>For best results, use <a class="reference internal" href="reference.html#photomosaic.adapt_to_pool" title="photomosaic.adapt_to_pool"><code class="xref py py-func docutils literal"><span class="pre">adapt_to_pool()</span></code></a> to &#8220;stretch&#8221; the color palette
 of the image to match the colors available in the pool of candidate images.
 This greatly improves the contrast in the final result.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Adapt the color palette of the image to resemble the palette of the pool.</span>
-<span class="n">adapted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">adjust_to_palette</span><span class="p">(</span><span class="n">converted_img</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+<span class="n">adapted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">converted_img</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="figure">
@@ -328,8 +329,8 @@ function, <code class="docutils literal"><span class="pre">match</span></code>, 
 <p>First, create a &#8220;canvas&#8221; image on which to draw the mosiac. Use numpy functions
 for generating a &#8220;white&#8221; or &#8220;black&#8221; canvas of the right shape,</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">rescaled_img</span><span class="p">)</span>  <span class="c1"># white canvas</span>
-<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">rescaled_img</span><span class="p">)</span>  <span class="c1"># black canvas</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">)</span>  <span class="c1"># white canvas</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">)</span>  <span class="c1"># black canvas</span>
 </pre></div>
 </div>
 <p>or load a background image and scale/crop it the right shape.</p>
@@ -339,7 +340,7 @@ for generating a &#8220;white&#8221; or &#8220;black&#8221; canvas of the right 
 </div>
 <p>Finally, draw the mosiac.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Draw the mosaic.</span>
-<span class="n">mos</span> <span class="o">=</span> <span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span>
+<span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span>
 </pre></div>
 </div>
 <div class="figure">
@@ -404,7 +405,7 @@ repeated draws, reuse the cache of resized pool images.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.68.g1cf9d68',
+            VERSION:'0+untagged.68.g88a8162',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; photomosaic 0+untagged.68.g1cf9d68 documentation</title>
+  <title>Reference &mdash; photomosaic 0+untagged.68.g88a8162 documentation</title>
   
 
   
@@ -33,7 +33,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.68.g1cf9d68 documentation" href="index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.68.g88a8162 documentation" href="index.html"/>
+        <link rel="next" title="Palette Adjustment" href="palette.html"/>
         <link rel="prev" title="Tutorial" href="tutorial.html"/> 
 
   
@@ -62,7 +63,7 @@
             
             
               <div class="version">
-                0+untagged.68.g1cf9d68
+                0+untagged.68.g88a8162
               </div>
             
           
@@ -96,6 +97,7 @@
 <li class="toctree-l2"><a class="reference internal" href="#drawing">Drawing</a></li>
 </ul>
 </li>
+<li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
 </ul>
 
             
@@ -458,8 +460,8 @@ on 1-dimensional arrays).</p>
 <div class="section" id="color-palettes">
 <h2>Color Palettes<a class="headerlink" href="#color-palettes" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
-<dt id="photomosaic.adjust_to_palette">
-<code class="descclassname">photomosaic.</code><code class="descname">adjust_to_palette</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.adjust_to_palette" title="Permalink to this definition">¶</a></dt>
+<dt id="photomosaic.adapt_to_pool">
+<code class="descclassname">photomosaic.</code><code class="descname">adapt_to_pool</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.adapt_to_pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adjust the color timing of an image to use colors available in the pool.</p>
 <p>For meaningful results, <code class="docutils literal"><span class="pre">image</span></code> and <code class="docutils literal"><span class="pre">pool</span></code> must be in the same
 colorspace.</p>
@@ -481,7 +483,7 @@ colorspace.</p>
 <p class="rubric">Examples</p>
 <p>If the image is RGB, first convert to perceptual space. Finally, before
 visualizing, convert back.</p>
-<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rgb</span><span class="p">(</span><span class="n">adjust_to_palette</span><span class="p">(</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">),</span> <span class="n">pool</span><span class="p">)</span>
+<div class="highlight-default"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rgb</span><span class="p">(</span><span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">),</span> <span class="n">pool</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -907,6 +909,8 @@ the mosaic-building process.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="palette.html" class="btn btn-neutral float-right" title="Palette Adjustment" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
       
         <a href="tutorial.html" class="btn btn-neutral" title="Tutorial" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
@@ -939,7 +943,7 @@ the mosaic-building process.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.68.g1cf9d68',
+            VERSION:'0+untagged.68.g88a8162',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -6,7 +6,7 @@ from skimage.data import chelsea
 from skimage import img_as_float
 image = img_as_float(chelsea())
 converted_img = pm.perceptual(image)
-adapted_img = pm.adjust_to_palette(converted_img, pool)
+adapted_img = pm.adapt_to_pool(converted_img, pool)
 fig, (ax1, ax2) = plt.subplots(2, figsize=(12, 10))
 ax1.imshow(pm.rgb(converted_img))
 ax1.set_title("Before ('converted_img')")
