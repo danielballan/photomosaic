@@ -1,47 +1,144 @@
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
-  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
 
 
-<html xmlns="http://www.w3.org/1999/xhtml">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-    
-    <title>Tutorial &#8212; photomosaic 0.2.2+57.ga047197 documentation</title>
-    
-    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
-    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
-    
-    <script type="text/javascript">
-      var DOCUMENTATION_OPTIONS = {
-        URL_ROOT:    './',
-        VERSION:     '0.2.2+57.ga047197',
-        COLLAPSE_INDEX: false,
-        FILE_SUFFIX: '.html',
-        HAS_SOURCE:  true
-      };
-    </script>
-    <script type="text/javascript" src="_static/jquery.js"></script>
-    <script type="text/javascript" src="_static/underscore.js"></script>
-    <script type="text/javascript" src="_static/doctools.js"></script>
-    <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="top" title="photomosaic 0.2.2+57.ga047197 documentation" href="index.html" />
-    <link rel="prev" title="photomosaic" href="index.html" />
-   
-  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
   
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
-
-  </head>
-  <body role="document">
+  <title>Tutorial &mdash; photomosaic 0+untagged.68.g26cdab2 documentation</title>
   
 
-    <div class="document">
-      <div class="documentwrapper">
-        <div class="bodywrapper">
-          <div class="body" role="main">
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="photomosaic 0+untagged.68.g26cdab2 documentation" href="index.html"/>
+        <link rel="prev" title="photomosaic" href="index.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> photomosaic
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0+untagged.68.g26cdab2
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Tutorial</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#basic-example">Basic Example</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#detailed-example">Detailed Example</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#paritioning-tiles">Paritioning Tiles</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#adaptive-color-palette">Adaptive Color Palette</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#matching">Matching</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#drawing">Drawing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#misplacing-tiles">Misplacing Tiles</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">photomosaic</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Tutorial</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/tutorial.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
             
   <div class="section" id="tutorial">
 <h1>Tutorial<a class="headerlink" href="#tutorial" title="Permalink to this headline">¶</a></h1>
@@ -54,11 +151,15 @@ so:</p>
 </pre></div>
 </div>
 <p>Alternatively, you can use one of the built-in example images provided by
-scikit-image library. We&#8217;ll go with cat picture.</p>
+scikit-image library. We&#8217;ll go with the cat picture, <code class="docutils literal"><span class="pre">chelsea</span></code>.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Load a sample image</span>
 <span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">data</span>
 <span class="n">img</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">chelsea</span><span class="p">()</span>  <span class="c1"># cat picture!</span>
 </pre></div>
+</div>
+<p>For the record, this is Chelsea.</p>
+<div class="figure">
+<img alt="_images/chelsea.png" src="_images/chelsea.png" />
 </div>
 <p>Next, you need large collection of images to fill in the tiles in the mosaic.
 If you don&#8217;t have a large collection of images handy, you can generate a
@@ -76,13 +177,13 @@ solid-color squares are nice for experimentation.</p>
 <p>Now we have everything we need to make a mosaic. Specify the target image
 (<code class="docutils literal"><span class="pre">img</span></code>), the pool of available tile images (<code class="docutils literal"><span class="pre">pool</span></code>), and the number of
 tiles to divide the image into.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Create a mosiac with 15x15 tiles.</span>
-<span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Create a mosiac with 30x30 tiles.</span>
+<span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">))</span>
 </pre></div>
 </div>
 <p>Now <code class="docutils literal"><span class="pre">mos</span></code> is our mosaic. We can save it</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">imsave</span>
-<span class="n">imsave</span><span class="p">(</span><span class="n">mos</span><span class="p">,</span> <span class="s1">&#39;mosaic.png&#39;</span><span class="p">)</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imsave</span>
+<span class="n">imsave</span><span class="p">(</span><span class="s1">&#39;mosaic.png&#39;</span><span class="p">,</span> <span class="n">mos</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>or plot it using matplotlib.</p>
@@ -90,7 +191,19 @@ tiles to divide the image into.</p>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">mos</span><span class="p">)</span>
 </pre></div>
 </div>
-<p>(splitting tiles)</p>
+<div class="figure">
+<img alt="_images/basic.png" src="_images/basic.png" />
+</div>
+<p>To make a more detailed mosaic, subdivide tiles in important regions. The
+optional <code class="docutils literal"><span class="pre">depth</span></code> parameter selectively splits tiles into quadrants if they
+contain a certain amount of contrast.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">mos</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">basic_mosaic</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">30</span><span class="p">),</span> <span class="n">depth</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+<div class="figure">
+<img alt="_images/basic-depth1.png" src="_images/basic-depth1.png" />
+</div>
+<p>More fine-grained control over tile partitioning is shown in the next section.</p>
 </div>
 <div class="section" id="detailed-example">
 <h2>Detailed Example<a class="headerlink" href="#detailed-example" title="Permalink to this headline">¶</a></h2>
@@ -113,69 +226,70 @@ tiles to divide the image into.</p>
 </div>
 
 
+           </div>
           </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+      
+        <a href="index.html" class="btn btn-neutral" title="photomosaic" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Photomosaic Contributors.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
         </div>
       </div>
-      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
-        <div class="sphinxsidebarwrapper">
-  <h3><a href="index.html">Table Of Contents</a></h3>
-  <ul>
-<li><a class="reference internal" href="#">Tutorial</a><ul>
-<li><a class="reference internal" href="#basic-example">Basic Example</a></li>
-<li><a class="reference internal" href="#detailed-example">Detailed Example</a><ul>
-<li><a class="reference internal" href="#paritioning-tiles">Paritioning Tiles</a></li>
-<li><a class="reference internal" href="#adaptive-color-palette">Adaptive Color Palette</a></li>
-<li><a class="reference internal" href="#matching">Matching</a></li>
-<li><a class="reference internal" href="#drawing">Drawing</a></li>
-<li><a class="reference internal" href="#misplacing-tiles">Misplacing Tiles</a></li>
-</ul>
-</li>
-</ul>
-</li>
-</ul>
-<div class="relations">
-<h3>Related Topics</h3>
-<ul>
-  <li><a href="index.html">Documentation overview</a><ul>
-      <li>Previous: <a href="index.html" title="previous chapter">photomosaic</a></li>
-  </ul></li>
-</ul>
-</div>
-  <div role="note" aria-label="source link">
-    <h3>This Page</h3>
-    <ul class="this-page-menu">
-      <li><a href="_sources/tutorial.txt"
-            rel="nofollow">Show Source</a></li>
-    </ul>
-   </div>
-<div id="searchbox" style="display: none" role="search">
-  <h3>Quick search</h3>
-    <form class="search" action="search.html" method="get">
-      <div><input type="text" name="q" /></div>
-      <div><input type="submit" value="Go" /></div>
-      <input type="hidden" name="check_keywords" value="yes" />
-      <input type="hidden" name="area" value="default" />
-    </form>
-</div>
-<script type="text/javascript">$('#searchbox').show(0);</script>
-        </div>
-      </div>
-      <div class="clearer"></div>
-    </div>
-    <div class="footer">
-      &copy;2016, Photomosaic Contributors.
-      
-      |
-      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.8</a>
-      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
-      
-      |
-      <a href="_sources/tutorial.txt"
-          rel="nofollow">Page source</a>
-    </div>
 
-    
+    </section>
 
-    
-  </body>
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0+untagged.68.g26cdab2',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
 </html>
