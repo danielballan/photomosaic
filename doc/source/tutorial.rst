@@ -128,22 +128,7 @@ This greatly improves the contrast in the final result.
     # Adapt the color palette of the image to resemble the palette of the pool.
     adapted_img = pm.adapt_to_pool(converted_img, pool)
 
-.. plot:: 
-
-    import matplotlib.pyplot as plt
-    import photomosaic as pm
-    POOL_PATH = '/tmp/photomosaic-docs-pool/pool.json'
-    pool = pm.import_pool(POOL_PATH)
-    from skimage.data import chelsea
-    from skimage import img_as_float
-    image = img_as_float(chelsea())
-    converted_img = pm.perceptual(image)
-    adapted_img = pm.adapt_to_pool(converted_img, pool)
-    fig, (ax1, ax2) = plt.subplots(2, figsize=(12, 10))
-    ax1.imshow(pm.rgb(converted_img))
-    ax1.set_title("Before ('converted_img')")
-    ax2.imshow(pm.rgb(adapted_img))
-    ax2.set_title("After ('adapted_img')")
+Details and illustrations are given in the section, :doc:`palette`.
 
 Partition Tiles
 +++++++++++++++
@@ -207,43 +192,39 @@ to RGB for visualization.)
 Match Tiles to Pool Images
 ++++++++++++++++++++++++++
 
-First, analyze the dominant color of each tile in the target image. We judge
-the dominant color by:
-
-* sampling up to 1000 pixels from the tile (for speed)
-* clustering the pixels by color
-* computing the "central" color of the largest cluster
-
-It would be interesting to explore alternative ways to characterize the
-dominant color.
+First, analyze the average color of each tile in the target image.
 
 .. code-block:: python
 
-    tile_colors = [pm.dominant_color(pm.sample_pixels(adapted_img[tile], 1000))
+    import numpy
+
+    # Reshape the 3D array (height, width, color_channels) into
+    # a 2D array (num_pixels, color_channels) and average over the pixels.
+    tile_colors = [numpy.mean(adapted_img[tile].reshape(-1, 3), 0)
                    for tile in tiles]
 
-For large number of tiles, this process takes awhile. Optionally, use the tqdm
-package to add a nice progress bar.
-
-.. code-block:: python
-
-    from tqdm import tqdm
-    tile_colors = [pm.dominant_color(pm.sample_pixels(adapted_img[tile], 1000))
-                   for tile in tqdm(tiles, desc='analyzing tiles')]
-
-The result is a list of color "vectors" characterizing the color of each tile
-in ``tiles``. These vectors can be compared to the values in ``pool``, which
-were generated using the same algorithm.
+The result is a list of colors, one for each tile in ``tiles``. The values in
+``pool`` were generated using the same algorithm.
 
 The function ``simple_matcher`` takes the analyzed colors in ``pool`` and loads
-into a data structure for fast nearest-color lookups (a KD tree). It returns a
-function, ``match``, which we map onto each tile color.
+them into a data structure for fast nearest-color lookups (a KD tree). It
+returns a function, ``match``. We map ``match`` map onto each tile color to
+find the corresponding tile's best match in the pool.
 
 .. code-block:: python
 
     # Match a pool image to each tile.
     match = pm.simple_matcher(pool)
     matches = [match(tc) for tc in tile_colors]
+
+.. note::
+
+    A different strategy for characterizing the tiles and the pool could be
+    used. The ``simpler_matcher`` expects that each tile and each
+    element in the pool is summarized by some vector. Additionally, a more
+    complex matching algorithm --- say, one that avoids using any element in
+    the pool more than once --- could also be used in place of
+    ``simple_matcher``.
 
 Draw Mosaic
 +++++++++++
@@ -253,9 +234,9 @@ for generating a "white" or "black" canvas of the right shape,
 
 .. code-block:: python
 
-    import numpy as np
-    canvas = np.ones_like(scaled_img)  # white canvas
-    canvas = np.zeros_like(scaled_img)  # black canvas
+    import numpy
+    canvas = numpy.ones_like(scaled_img)  # white canvas
+    canvas = numpy.zeros_like(scaled_img)  # black canvas
 
 or load a background image and scale/crop it the right shape.
 
@@ -285,6 +266,3 @@ repeated draws, reuse the cache of resized pool images.
 
     # This will be faster:
     mos2 = draw_mosaic(canvas2, tiles2, matches2, resized_copy_cache=cache)
-
-Optional: Rearrange Tiles
-+++++++++++++++++++++++++

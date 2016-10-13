@@ -1,15 +1,16 @@
 import warnings
 import glob
+from functools import partial
+import numpy as np
 from skimage.io import imread
 import colorspacious
 import dask.bag
 from dask.diagnostics import ProgressBar
-from .photomosaic import (options, standardize_image, sample_pixels,
-                          dominant_color)
+from .photomosaic import (options, standardize_image, sample_pixels)
 
 
 def make_pool(glob_string, *, pool=None, skip_read_failures=True,
-              analyzer=dominant_color):
+              analyzer=None, sample_size=1000):
     """
     Analyze a collection of images.
 
@@ -31,7 +32,12 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
         file into warnings and continue.
     analyzer : callable, optional
         Function with signature: ``f(img) -> arr`` where ``arr`` is a vector.
-        The default analyzer is :func:`dominant_color`.
+        The default analyzer is :func:`numpy.mean` along the 0th axis.
+    sample_size : int or None, optional
+        Number of pixels to randomly sample before converting to perceptual
+        colorspace and passing to ``analyzer``; if None, do not subsample.
+        Default is 1000.
+
 
     Returns
     -------
@@ -40,6 +46,8 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
         ``{(filename,): [1, 2, 3]}``
     """
     filenames = glob.glob(glob_string)
+    if not filenames:
+        raise ValueError("No matches found for {}".format(glob_string))
 
     def analyze(filename):
         # closure over pbar
@@ -52,10 +60,18 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
                 return
             raise
         image = standardize_image(raw_image)
+        # Subsample before doing expensive color space conversion.
+        if sample_size is not None:
+            sample = sample_pixels(image, sample_size)
+        else:
+            sample = image.reshape(-1, 3)  # list of pixels
         # Convert color to perceptually-uniform color space.
-        sample = sample_pixels(image, 1000)
-        converted_sample = colorspacious.cspace_convert(sample, "sRGB1",
-                                                        options['colorspace'])
+        converted_sample = colorspacious.cspace_convert(sample,
+                                                        options['rgb'],
+                                                        options['perceptual'])
+
+        if analyzer is None:
+            analyzer = partial(np.mean, axis=0)
         vector = analyzer(converted_sample)
         return vector
 

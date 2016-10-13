@@ -4,6 +4,7 @@ import warnings
 import copy
 import os
 from collections import OrderedDict
+from functools import partial
 from tqdm import tqdm
 import colorspacious
 import numpy as np
@@ -106,7 +107,7 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=0):
 
     # Partition the image into tiles and characterize each one's color.
     tiles = partition(adapted_img, grid_dims=grid_dims, mask=mask, depth=depth)
-    tile_colors = [dominant_color(sample_pixels(adapted_img[tile], 1000))
+    tile_colors = [np.mean(adapted_img[tile].reshape(-1, 3), 0)
                    for tile in tqdm(tiles, desc='analyzing tiles')]
 
     # Match a pool image to each tile.
@@ -254,14 +255,14 @@ def dominant_color(pixels, n_clusters=5):
 
 
 def make_pool(glob_string, *, pool=None, skip_read_failures=True,
-              analyzer=dominant_color):
+              analyzer=None, sample_size=1000):
     """
     Analyze a collection of images.
 
     For each file:
-    1. Read image.
-    2. Convert to perceptually-uniform color space.
-    3. Characterize the colors in the image as a vector.
+    (1) Read image.
+    (2) Convert to perceptually-uniform color space.
+    (3) Characterize the colors in the image as a vector.
 
     A progress bar is displayed and then hidden after completion.
 
@@ -276,16 +277,22 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
         file into warnings and continue.
     analyzer : callable, optional
         Function with signature: ``f(img) -> arr`` where ``arr`` is a vector.
-        The default analyzer is :func:`dominant_color`.
+        The default analyzer is :func:`numpy.mean` along the 0th axis.
+    sample_size : int or None, optional
+        Number of pixels to randomly sample before converting to perceptual
+        colorspace and passing to ``analyzer``; if None, do not subsample.
+        Default is 1000.
 
     Returns
     -------
-    cache : dict-like
+    pool : dict-like
         mapping arguments for opening file to analyzer's result, e.g.:
         ``{(filename,): [1, 2, 3]}``
     """
     if pool is None:
         pool = {}
+    if analyzer is None:
+        analyzer = partial(np.mean, axis=0)
     filenames = glob.glob(glob_string)
     if not filenames:
         raise ValueError("No matches found for {}".format(glob_string))
@@ -299,8 +306,12 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
                 continue
             raise
         image = standardize_image(raw_image)
+        # Subsample before doing expensive color space conversion.
+        if sample_size is not None:
+            sample = sample_pixels(image, sample_size)
+        else:
+            sample = image.reshape(-1, 3)  # list of pixels
         # Convert color to perceptually-uniform color space.
-        sample = sample_pixels(image, 1000)
         converted_sample = perceptual(sample)
         vector = analyzer(converted_sample)
         pool[(filename,)] = vector

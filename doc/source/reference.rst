@@ -24,12 +24,7 @@ Utilities
 .. autofunction:: standardize_image
 .. autofunction:: rescale_commensurate
 .. autofunction:: crop_to_fit
-
-Color Characterization
-----------------------
-
 .. autofunction:: sample_pixels
-.. autofunction:: dominant_color
 
 Color Palettes
 --------------
@@ -59,3 +54,10 @@ Drawing
 .. autofunction:: basic_mosaic
 .. autofunction:: draw_mosaic
 .. autofunction:: draw_tile_layout
+
+Color Characterization
+----------------------
+
+This seems to perform worse than simply using :func:`numpy.mean`.
+
+.. autofunction:: dominant_color
