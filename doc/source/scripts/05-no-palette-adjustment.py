@@ -16,8 +16,8 @@ converted_img = pm.perceptual(image)
 scaled_img = pm.rescale_commensurate(converted_img, grid_dims=(30, 30),
                                      depth=0)
 tiles = pm.partition(scaled_img, grid_dims=(30, 30), depth=0)
-tile_colors = [pm.dominant_color(pm.sample_pixels(scaled_img[tile], 1000))
-               for tile in tqdm(tiles, desc='analyzing tiles')]
+tile_colors = [np.mean(scaled_img[tile].reshape(-1, 3), 0)
+               for tile in tiles]
 match = pm.simple_matcher(pool)
 matches = [match(tc) for tc in tile_colors]
 canvas = np.ones_like(scaled_img)  # white canvas

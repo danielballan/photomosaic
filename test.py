@@ -1,6 +1,8 @@
+import os
 import numpy as np
 import tempfile
 import photomosaic as pm
+import photomosaic.parallel as pa
 from skimage import draw
 
 
@@ -55,3 +57,17 @@ def test_conversion(image):
     p = pm.perceptual(image)
     pm.rgb(p)  # clip=True by default
     pm.rgb(p, clip=False)
+
+
+def test_pool_parallel(pool):
+    # reverse-engineer what the temporary pool is
+    for k in pool.keys():
+        path, = k
+        break
+    pool_dir = os.path.dirname(path)
+    parallel_pool = pa.make_pool(os.path.join(pool_dir, '*.png'))
+    assert pool.keys() == parallel_pool.keys()
+    for k in pool:
+        v1 = parallel_pool[k]
+        v2 = pool[k]
+        assert np.all(v1 == v2)
