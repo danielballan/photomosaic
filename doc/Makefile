@@ -48,6 +48,10 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
+.PHONY: images
+images:
+	find source/scripts/*.py | sort | xargs python
+
 .PHONY: html
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html

@@ -43,6 +43,6 @@ after_success:
   - coverage report -m
   - pip install doctr sphinx numpydoc ipython sphinx_rtd_theme  # docs dependencies
   - cd doc
-  - make html
+  - make images && make html
   - cd ..
   - doctr deploy
