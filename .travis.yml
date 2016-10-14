@@ -28,9 +28,8 @@ install:
   # Install heavy stuff with conda, for speed.
   - conda create -n testenv python=$TRAVIS_PYTHON_VERSION scipy numpy coverage scikit-image pip -c conda-forge
   - source activate testenv
-  - pip install -r requirements.txt
+  - pip install .[parallel]
   - pip install pytest codecov pytest-cov
-  - python setup.py install
   # Need to clean the python build directory (and other cruft) or pytest is
   # going to find the build directory and get confused why there are two sets
   # of every test file
