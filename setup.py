@@ -16,7 +16,7 @@ short_description = (
     which, viewed at a distance, gives the impression of one large photo.""")
 
 extras_require = {
-      'parallel': ['dask'],
+      'parallel': ['dask[bag]'],
 }
 extras_require['complete'] = sorted(set(sum(extras_require.values(), [])))
 
