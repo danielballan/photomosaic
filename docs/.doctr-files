@@ -7,8 +7,8 @@ docs/_images/palette-1.png
 docs/_images/palette-2.png
 docs/_images/palette-3.png
 docs/_images/tutorial-1.png
-docs/_images/tutorial-2.png
 docs/_modules/index.html
+docs/_modules/photomosaic/photomosaic.html
 docs/_sources/index.txt
 docs/_sources/palette.txt
 docs/_sources/reference.txt
@@ -77,8 +77,4 @@ docs/tutorial-1.hires.png
 docs/tutorial-1.pdf
 docs/tutorial-1.png
 docs/tutorial-1.py
-docs/tutorial-2.hires.png
-docs/tutorial-2.pdf
-docs/tutorial-2.png
-docs/tutorial-2.py
 docs/tutorial.html

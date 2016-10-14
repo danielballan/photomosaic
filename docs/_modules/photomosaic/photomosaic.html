@@ -1,0 +1,1101 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>photomosaic.photomosaic &mdash; photomosaic 0+untagged.64.gaca1ab3 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="photomosaic 0+untagged.64.gaca1ab3 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> photomosaic
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0+untagged.64.gaca1ab3
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../palette.html">Palette Adjustment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">photomosaic</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>photomosaic.photomosaic</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for photomosaic.photomosaic</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">glob</span>
+<span class="kn">import</span> <span class="nn">json</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">copy</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">import</span> <span class="nn">colorspacious</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="k">import</span> <span class="n">draw</span><span class="p">,</span> <span class="n">img_as_float</span>
+<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="k">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">imsave</span>
+<span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="k">import</span> <span class="n">resize</span>
+<span class="kn">from</span> <span class="nn">skimage.color</span> <span class="k">import</span> <span class="n">gray2rgb</span>
+<span class="kn">from</span> <span class="nn">skimage.util</span> <span class="k">import</span> <span class="n">crop</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="k">import</span> <span class="n">cKDTree</span>
+<span class="kn">from</span> <span class="nn">scipy.cluster</span> <span class="k">import</span> <span class="n">vq</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+
+
+<span class="n">options</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;imread&#39;</span><span class="p">:</span> <span class="p">{},</span>
+           <span class="s1">&#39;perceptual&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;J&#39;a&#39;b&#39;&quot;</span><span class="p">,</span>
+                          <span class="s2">&quot;ciecam02_space&quot;</span><span class="p">:</span> <span class="n">colorspacious</span><span class="o">.</span><span class="n">CIECAM02Space</span><span class="o">.</span><span class="n">sRGB</span><span class="p">,</span>
+                          <span class="s2">&quot;luoetal2006_space&quot;</span><span class="p">:</span> <span class="n">colorspacious</span><span class="o">.</span><span class="n">CAM02UCS</span><span class="p">},</span>
+           <span class="s1">&#39;rgb&#39;</span><span class="p">:</span> <span class="s1">&#39;sRGB1&#39;</span><span class="p">}</span>
+
+
+<div class="viewcode-block" id="set_options"><a class="viewcode-back" href="../../reference.html#photomosaic.set_options">[docs]</a><span class="k">def</span> <span class="nf">set_options</span><span class="p">(</span><span class="n">imread</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">perceptual</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Set global options</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    imread : dict</span>
+<span class="sd">        keyword arguments passed through to every call to ``imread``</span>
+<span class="sd">        e.g., ``{&#39;plugin&#39;: &#39;matplotlib&#39;}``</span>
+<span class="sd">    perceptual : string or dict</span>
+<span class="sd">        perceptually-uniform colorspace used for color comparisions; see</span>
+<span class="sd">        colorspacious documentation for details</span>
+<span class="sd">    rgb : string or dict</span>
+<span class="sd">        specific RGB colorspace used for color conversion</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">options</span>
+    <span class="k">if</span> <span class="n">imread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;imread&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">imread</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">perceptual</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;perceptual&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">perceptual</span>
+    <span class="k">if</span> <span class="n">rgb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;rgb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rgb</span></div>
+
+
+<div class="viewcode-block" id="basic_mosaic"><a class="viewcode-back" href="../../reference.html#photomosaic.basic_mosaic">[docs]</a><span class="k">def</span> <span class="nf">basic_mosaic</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="n">grid_dims</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Make a mosaic in one step with some basic settings.</span>
+
+<span class="sd">    See documentation (or the source code of this function) for more</span>
+<span class="sd">    powerful features and customization.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    pool : dict-like</span>
+<span class="sd">        output from :func:`make_pool`; or any mapping of</span>
+<span class="sd">        arguments for opening an image file to a vector characterizing it:</span>
+<span class="sd">        e.g., ``{(filename,): [1, 2, 3]}``</span>
+<span class="sd">    grid_dims : tuple</span>
+<span class="sd">        Number of tiles along height, width.</span>
+<span class="sd">    mask : array or None</span>
+<span class="sd">        must have same shape as ``image``</span>
+<span class="sd">    depth : int, optional</span>
+<span class="sd">        Each tile can be subdividing this many times in regions of high</span>
+<span class="sd">        contrast or along mask edges (if applicable). Default is 0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mosaic : array</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Before making the mosaic, you need a collection of images to use as tiles.</span>
+<span class="sd">    A collection of analyzed images is a &quot;pool&quot;. Analyzing the images takes</span>
+<span class="sd">    much more time that making the mosaic, so it is a separate step.</span>
+
+<span class="sd">        &gt;&gt;&gt; pool = make_pool(&#39;directory_of_images/*.jpg&#39;)</span>
+
+<span class="sd">    Load an image to turn into mosaic.</span>
+
+<span class="sd">        &gt;&gt;&gt; from skimage.io import imread, imsave</span>
+<span class="sd">        &gt;&gt;&gt; my_image = imread(&#39;my_image.jpg&#39;)</span>
+
+<span class="sd">    Make the mosaic and save it.</span>
+
+<span class="sd">        &gt;&gt;&gt; mosaic = basic_mosaic(my_image, (15, 15))</span>
+<span class="sd">        &gt;&gt;&gt; imsave(&#39;my_mosaic.jpg&#39;, mosaic)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Size the image to be evenly divisible by the tiles.</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">img_as_float</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">rescale_commensurate</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">grid_dims</span><span class="p">,</span> <span class="n">depth</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">rescale_commensurate</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span>
+
+    <span class="c1"># Use perceptually uniform colorspace for all analysis.</span>
+    <span class="n">converted_img</span> <span class="o">=</span> <span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+
+    <span class="c1"># Adapt the color palette of the image to resemble the palette of the pool.</span>
+    <span class="n">adapted_img</span> <span class="o">=</span> <span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">converted_img</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+
+    <span class="c1"># Partition the image into tiles and characterize each one&#39;s color.</span>
+    <span class="n">tiles</span> <span class="o">=</span> <span class="n">partition</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">,</span> <span class="n">grid_dims</span><span class="o">=</span><span class="n">grid_dims</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">)</span>
+    <span class="n">tile_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+                   <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;analyzing tiles&#39;</span><span class="p">)]</span>
+
+    <span class="c1"># Match a pool image to each tile.</span>
+    <span class="n">match</span> <span class="o">=</span> <span class="n">simple_matcher</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+    <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">match</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">tile_colors</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;matching&#39;</span><span class="p">)]</span>
+
+    <span class="c1"># Draw the mosaic.</span>
+    <span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>  <span class="c1"># white canvas same shape as input image</span>
+    <span class="k">return</span> <span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="perceptual"><a class="viewcode-back" href="../../reference.html#photomosaic.perceptual">[docs]</a><span class="k">def</span> <span class="nf">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert color from RGB (sRGB1) to a perceptually uniform colorspace.</span>
+
+<span class="sd">    This is a convenience function wrapping ``colorspacious.csapce_convert``.</span>
+<span class="sd">    To configure the specific perceptual colorspace used, change</span>
+<span class="sd">    ``photomosaic.options[&#39;colorspace&#39;]``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">colorspacious</span><span class="o">.</span><span class="n">cspace_convert</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;rgb&#39;</span><span class="p">],</span>
+                                        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;perceptual&#39;</span><span class="p">])</span></div>
+
+
+<div class="viewcode-block" id="rgb"><a class="viewcode-back" href="../../reference.html#photomosaic.rgb">[docs]</a><span class="k">def</span> <span class="nf">rgb</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">clip</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert color from a perceptually uniform colorspace to RGB.</span>
+
+<span class="sd">    This is a convenience function wrapping ``colorspacious.csapce_convert``.</span>
+<span class="sd">    To configure the specific perceptual colorspace used, change</span>
+<span class="sd">    ``photomosaic.options[&#39;perceptual&#39;]`` and ``photomosaic.options[&#39;rgb&#39;]``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    clip : bool, option</span>
+<span class="sd">        Clip values out of the gamut [0, 1]. True by default.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">colorspacious</span><span class="o">.</span><span class="n">cspace_convert</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">options</span><span class="p">[</span><span class="s1">&#39;perceptual&#39;</span><span class="p">],</span>
+                                          <span class="n">options</span><span class="p">[</span><span class="s1">&#39;rgb&#39;</span><span class="p">])</span>
+    <span class="k">if</span> <span class="n">clip</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span></div>
+
+
+<div class="viewcode-block" id="adapt_to_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.adapt_to_pool">[docs]</a><span class="k">def</span> <span class="nf">adapt_to_pool</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Adjust the color timing of an image to use colors available in the pool.</span>
+
+<span class="sd">    For meaningful results, ``image`` and ``pool`` must be in the same</span>
+<span class="sd">    colorspace.</span>
+
+<span class="sd">    This is a convenience function wrapping ``color_palette`` and</span>
+<span class="sd">    ``palette_map``.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    pool : dict</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    adapted_image : array</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    If the image is RGB, first convert to perceptual space. Finally, before</span>
+<span class="sd">    visualizing, convert back.</span>
+
+<span class="sd">        &gt;&gt;&gt; rgb(adapt_to_pool(perceptual(image), pool)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image_palette</span> <span class="o">=</span> <span class="n">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="n">pool_palette</span> <span class="o">=</span> <span class="n">color_palette</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+    <span class="k">return</span> <span class="n">palette_map</span><span class="p">(</span><span class="n">image_palette</span><span class="p">,</span> <span class="n">pool_palette</span><span class="p">)(</span><span class="n">image</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="rescale_commensurate"><a class="viewcode-back" href="../../reference.html#photomosaic.rescale_commensurate">[docs]</a><span class="k">def</span> <span class="nf">rescale_commensurate</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">grid_dims</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    For given grid dimensions and grid subdivision depth, scale image.</span>
+
+<span class="sd">    The image is rescaled so that its shape can be evenly split into tiles.</span>
+<span class="sd">    If necessary, one dimension is cropped to fit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    grid_dims : tuple</span>
+<span class="sd">        Number of tiles along height, width.</span>
+<span class="sd">    depth : int, optional</span>
+<span class="sd">        Each tile can be subdivided this many times. Default is 0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    rescaled_image : array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">grid_dims</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span><span class="o">**</span><span class="n">depth</span>
+    <span class="n">new_shape</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">factor</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">/</span> <span class="n">factor</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+    <span class="k">return</span> <span class="n">crop_to_fit</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">new_shape</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="sample_pixels"><a class="viewcode-back" href="../../reference.html#photomosaic.sample_pixels">[docs]</a><span class="k">def</span> <span class="nf">sample_pixels</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Randomly sample pixels from an image.</span>
+
+<span class="sd">    This is a wrapper around ``np.random.choice`` (which only works directly</span>
+<span class="sd">    on 1-dimensional arrays).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    size : int</span>
+<span class="sd">        number of pixels to sample</span>
+<span class="sd">    replace : boolean, optional</span>
+<span class="sd">        whether to sample with or without replacement; default True</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">random_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">pixels</span><span class="p">[</span><span class="n">random_indexes</span><span class="p">]</span></div>
+
+
+<div class="viewcode-block" id="dominant_color"><a class="viewcode-back" href="../../reference.html#photomosaic.dominant_color">[docs]</a><span class="k">def</span> <span class="nf">dominant_color</span><span class="p">(</span><span class="n">pixels</span><span class="p">,</span> <span class="n">n_clusters</span><span class="o">=</span><span class="mi">5</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Cluster colors and identify the &quot;central&quot; color of the largest cluster.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pixels : array</span>
+<span class="sd">        List of pixels. The second axis is expected to be the color axis.</span>
+<span class="sd">    n_clusters : int, optional</span>
+<span class="sd">        number of clusters; default 5</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dominant_color : array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">colors</span><span class="p">,</span> <span class="n">dist</span> <span class="o">=</span> <span class="n">vq</span><span class="o">.</span><span class="n">kmeans</span><span class="p">(</span><span class="n">pixels</span><span class="p">,</span> <span class="n">n_clusters</span><span class="p">)</span>
+    <span class="n">vecs</span><span class="p">,</span> <span class="n">dist</span> <span class="o">=</span> <span class="n">vq</span><span class="o">.</span><span class="n">vq</span><span class="p">(</span><span class="n">pixels</span><span class="p">,</span> <span class="n">colors</span><span class="p">)</span>
+    <span class="n">counts</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">vecs</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">colors</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">colors</span><span class="p">[</span><span class="n">counts</span><span class="o">.</span><span class="n">argmax</span><span class="p">()]</span></div>
+
+
+<div class="viewcode-block" id="make_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.make_pool">[docs]</a><span class="k">def</span> <span class="nf">make_pool</span><span class="p">(</span><span class="n">glob_string</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">pool</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">skip_read_failures</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+              <span class="n">analyzer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sample_size</span><span class="o">=</span><span class="mi">1000</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Analyze a collection of images.</span>
+
+<span class="sd">    For each file:</span>
+<span class="sd">    (1) Read image.</span>
+<span class="sd">    (2) Convert to perceptually-uniform color space.</span>
+<span class="sd">    (3) Characterize the colors in the image as a vector.</span>
+
+<span class="sd">    A progress bar is displayed and then hidden after completion.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    glob_string : string</span>
+<span class="sd">        a filepath with optional wildcards, like `&#39;*.jpg&#39;`</span>
+<span class="sd">    pool : dict-like, optional</span>
+<span class="sd">        dict-like data structure to hold results; if None, dict is used</span>
+<span class="sd">    skip_read_failures: bool, optional</span>
+<span class="sd">        If True (default), convert any exceptions that occur while reading a</span>
+<span class="sd">        file into warnings and continue.</span>
+<span class="sd">    analyzer : callable, optional</span>
+<span class="sd">        Function with signature: ``f(img) -&gt; arr`` where ``arr`` is a vector.</span>
+<span class="sd">        The default analyzer is :func:`numpy.mean` along the 0th axis.</span>
+<span class="sd">    sample_size : int or None, optional</span>
+<span class="sd">        Number of pixels to randomly sample before converting to perceptual</span>
+<span class="sd">        colorspace and passing to ``analyzer``; if None, do not subsample.</span>
+<span class="sd">        Default is 1000.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pool : dict-like</span>
+<span class="sd">        mapping arguments for opening file to analyzer&#39;s result, e.g.:</span>
+<span class="sd">        ``{(filename,): [1, 2, 3]}``</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">pool</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">analyzer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">analyzer</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">filenames</span> <span class="o">=</span> <span class="n">glob</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">glob_string</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">filenames</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No matches found for </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">glob_string</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;analyzing pool&#39;</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">raw_image</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;imread&#39;</span><span class="p">])</span>
+        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">skip_read_failures</span><span class="p">:</span>
+                <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Skipping </span><span class="si">{}</span><span class="s2">; raised exception:</span><span class="se">\n</span><span class="s2">    </span><span class="si">{}</span><span class="s2">&quot;</span>
+                              <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
+                <span class="k">continue</span>
+            <span class="k">raise</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">standardize_image</span><span class="p">(</span><span class="n">raw_image</span><span class="p">)</span>
+        <span class="c1"># Subsample before doing expensive color space conversion.</span>
+        <span class="k">if</span> <span class="n">sample_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">sample_pixels</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>  <span class="c1"># list of pixels</span>
+        <span class="c1"># Convert color to perceptually-uniform color space.</span>
+        <span class="n">converted_sample</span> <span class="o">=</span> <span class="n">perceptual</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
+        <span class="n">vector</span> <span class="o">=</span> <span class="n">analyzer</span><span class="p">(</span><span class="n">converted_sample</span><span class="p">)</span>
+        <span class="n">pool</span><span class="p">[(</span><span class="n">filename</span><span class="p">,)]</span> <span class="o">=</span> <span class="n">vector</span>
+    <span class="k">return</span> <span class="n">pool</span></div>
+
+
+<div class="viewcode-block" id="standardize_image"><a class="viewcode-back" href="../../reference.html#photomosaic.standardize_image">[docs]</a><span class="k">def</span> <span class="nf">standardize_image</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ensure that image is float 0-1 RGB with no alpha.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    image : array</span>
+<span class="sd">        may or may not be a copy of the original</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">img_as_float</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>  <span class="c1"># ensure float scaled 0-1</span>
+    <span class="c1"># If there is no color axis, create one.</span>
+    <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">gray2rgb</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="c1"># Assume last axis is color axis. If alpha channel exists, drop it.</span>
+    <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">image</span></div>
+
+
+<div class="viewcode-block" id="simple_matcher"><a class="viewcode-back" href="../../reference.html#photomosaic.simple_matcher">[docs]</a><span class="k">def</span> <span class="nf">simple_matcher</span><span class="p">(</span><span class="n">pool</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a matching function that simply matches to the closest color.</span>
+
+<span class="sd">    It maintains an internal tree representation of the pool for fast lookups.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pool : dict</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    match_func : function</span>
+<span class="sd">        function that accepts a color vector and returns a match</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>  <span class="c1"># same iteration order over keys and vals below</span>
+    <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">vector</span> <span class="k">for</span> <span class="n">vector</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the key of the pool image that is &quot;nearest&quot; (in color space).</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array</span>
+<span class="sd">            characterizing the color to be matched</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        args : tuple</span>
+<span class="sd">            arguments that specify how to open the image</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">distance</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">match</span></div>
+
+
+<div class="viewcode-block" id="draw_mosaic"><a class="viewcode-back" href="../../reference.html#photomosaic.draw_mosaic">[docs]</a><span class="k">def</span> <span class="nf">draw_mosaic</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Assemble the mosaic, the final result.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">        the &quot;canvas&quot; on which to draw the tiles, modified in place</span>
+<span class="sd">    tiles : list</span>
+<span class="sd">        list of pairs of slice objects</span>
+<span class="sd">    matches : list</span>
+<span class="sd">        for each tile in ``tiles``, a tuple of arguments for opening the</span>
+<span class="sd">        matching image file</span>
+<span class="sd">    scale : int, optional</span>
+<span class="sd">        Scale up tiles for higher resolution image; default is 1.</span>
+<span class="sd">        Any not-integer input will be cast to int.</span>
+<span class="sd">    resized_copy_cache : dict or None, optional</span>
+<span class="sd">        cache of images from the pool, sized to fit tiles</span>
+<span class="sd">        entries look like: ``(pool_key, (height, width))``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    image : array</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Basic usage:</span>
+
+<span class="sd">        &gt;&gt;&gt; draw_mosaic(image, tiles, matches)</span>
+
+<span class="sd">    Cache the resized pool images to speed up repeated drawings:</span>
+
+<span class="sd">        &gt;&gt;&gt; cache = {}  # any mutable mapping</span>
+<span class="sd">        &gt;&gt;&gt; draw_mosiac(image, tiles, matches, resized_copy_cache=cache)</span>
+
+<span class="sd">    The above populated ``cache`` with every resized pool image used in a tile.</span>
+<span class="sd">    Now, ``draw_mosaic`` will check the cache before loading the pool image and</span>
+<span class="sd">    resizing it, which is the most expensive step.</span>
+
+<span class="sd">        &gt;&gt;&gt; draw_mosiac(image, tiles, matches, resized_copy_cache=cache)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">resized_copy_cache</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">resized_copy_cache</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">tile</span><span class="p">,</span> <span class="n">match_args</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tqdm</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;drawing mosaic&#39;</span><span class="p">),</span> <span class="n">matches</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">scale</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">tile</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">scale</span> <span class="o">*</span> <span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">s</span><span class="o">.</span><span class="n">stop</span><span class="p">)</span>
+                         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">tile</span><span class="p">)</span>
+        <span class="n">target_shape</span> <span class="o">=</span> <span class="n">_tile_shape</span><span class="p">(</span><span class="n">tile</span><span class="p">)</span>
+        <span class="n">cache_key</span> <span class="o">=</span> <span class="p">(</span><span class="n">match_args</span><span class="p">,</span> <span class="n">target_shape</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">sized_match_image</span> <span class="o">=</span> <span class="n">resized_copy_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span>
+        <span class="k">except</span> <span class="ne">KeyError</span><span class="p">:</span>
+            <span class="n">target_shape</span> <span class="o">=</span> <span class="n">_tile_shape</span><span class="p">(</span><span class="n">tile</span><span class="p">)</span>
+            <span class="n">raw_match_image</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="o">*</span><span class="n">match_args</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;imread&#39;</span><span class="p">])</span>
+            <span class="n">match_image</span> <span class="o">=</span> <span class="n">standardize_image</span><span class="p">(</span><span class="n">raw_match_image</span><span class="p">)</span>
+            <span class="n">sized_match_image</span> <span class="o">=</span> <span class="n">crop_to_fit</span><span class="p">(</span><span class="n">match_image</span><span class="p">,</span> <span class="n">target_shape</span><span class="p">)</span>
+            <span class="n">resized_copy_cache</span><span class="p">[</span><span class="n">cache_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">sized_match_image</span>
+        <span class="n">image</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span> <span class="o">=</span> <span class="n">sized_match_image</span>
+    <span class="k">return</span> <span class="n">image</span></div>
+
+
+<span class="k">def</span> <span class="nf">_subdivide</span><span class="p">(</span><span class="n">tile</span><span class="p">):</span>
+    <span class="s2">&quot;Create four tiles from the four quadrants of the input tile.&quot;</span>
+    <span class="n">tile_dims</span> <span class="o">=</span> <span class="p">[(</span><span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">tile</span><span class="p">]</span>
+    <span class="n">subtiles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="n">subtile</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">tile</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">y</span> <span class="o">*</span> <span class="n">tile_dims</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                             <span class="n">tile</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">tile_dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                       <span class="nb">slice</span><span class="p">(</span><span class="n">tile</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">x</span> <span class="o">*</span> <span class="n">tile_dims</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                             <span class="n">tile</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">tile_dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+            <span class="n">subtiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">subtile</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">subtiles</span>
+
+
+<div class="viewcode-block" id="partition"><a class="viewcode-back" href="../../reference.html#photomosaic.partition">[docs]</a><span class="k">def</span> <span class="nf">partition</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">grid_dims</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">split_thresh</span><span class="o">=</span><span class="mi">10</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Parition the target image into tiles.</span>
+
+<span class="sd">    Optionally, subdivide tiles that straddle a mask edge or contain high</span>
+<span class="sd">    contrast, creating a grid with tiles of varied size.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grid_dims : int or tuple</span>
+<span class="sd">        number of (largest) tiles along each dimension</span>
+<span class="sd">    mask : array, optional</span>
+<span class="sd">        Tiles that straddle a mask edge will be subdivided, creating a smooth</span>
+<span class="sd">        edge.</span>
+<span class="sd">    depth : int, optional</span>
+<span class="sd">        Default is 0. Maximum times a tile can be subdivided.</span>
+<span class="sd">    split_thresh : float or None</span>
+<span class="sd">        Threshold of standard deviation in color above which tile should be</span>
+<span class="sd">        subdivided; default is 0.1. This only applies if depth &gt; 0.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tiles : list</span>
+<span class="sd">        list of pairs of slice objects</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Validate inputs.</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_3d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="p">))</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">grid_dims</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">tile_dims</span><span class="p">,</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">grid_dims</span><span class="p">,)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="n">image_dim</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">grid_dim</span> <span class="o">=</span> <span class="n">grid_dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">image_dim</span> <span class="o">%</span> <span class="n">grid_dim</span><span class="o">*</span><span class="mi">2</span><span class="o">**</span><span class="n">depth</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Image dimensions must be evenly divisible by &quot;</span>
+                             <span class="s2">&quot;dimensions of the (subdivided) grid. &quot;</span>
+                             <span class="s2">&quot;Dimension </span><span class="si">{image_dim}</span><span class="s2"> is not &quot;</span>
+                             <span class="s2">&quot;evenly divisible by </span><span class="si">{grid_dim}</span><span class="s2">*2**</span><span class="si">{depth}</span><span class="s2"> &quot;</span>
+                             <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">image_dim</span><span class="o">=</span><span class="n">image_dim</span><span class="p">,</span> <span class="n">grid_dim</span><span class="o">=</span><span class="n">grid_dim</span><span class="p">,</span>
+                                       <span class="n">depth</span><span class="o">=</span><span class="n">depth</span><span class="p">))</span>
+
+    <span class="c1"># Partition into equal-sized tiles. Each tile is a pair of slice objects.</span>
+    <span class="n">tile_height</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">//</span> <span class="n">grid_dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">tile_width</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="n">grid_dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">tiles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">grid_dims</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;partitioning: depth 0&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">grid_dims</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">grid_dims</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">tile</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">y</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">y</span><span class="p">)</span> <span class="o">*</span> <span class="n">tile_height</span><span class="p">),</span>
+                        <span class="nb">slice</span><span class="p">(</span><span class="n">x</span> <span class="o">*</span> <span class="n">tile_width</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">x</span><span class="p">)</span> <span class="o">*</span> <span class="n">tile_width</span><span class="p">))</span>
+                <span class="n">tiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile</span><span class="p">)</span>
+                <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">()</span>
+
+    <span class="c1"># Discard any tiles that reside fully outside the mask.</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">tile</span> <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="n">tile</span><span class="p">])]</span>
+
+    <span class="c1"># If depth &gt; 0, subdivide any tiles that straddle a mask edge or that</span>
+    <span class="c1"># contain an image with high contrast.</span>
+    <span class="n">num_channels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+        <span class="n">new_tiles</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;partitioning: depth </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">d</span><span class="p">):</span>
+            <span class="k">if</span> <span class="p">((</span><span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="n">tile</span><span class="p">])</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="o">~</span><span class="n">mask</span><span class="p">[</span><span class="n">tile</span><span class="p">])):</span>
+                <span class="c1"># This tile straddles a mask edge.</span>
+                <span class="n">subtiles</span> <span class="o">=</span> <span class="n">_subdivide</span><span class="p">(</span><span class="n">tile</span><span class="p">)</span>
+                <span class="c1"># Discard subtiles that reside fully outside the mask.</span>
+                <span class="n">subtiles</span> <span class="o">=</span> <span class="p">[</span><span class="n">tile</span> <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">subtiles</span> <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">mask</span><span class="p">[</span><span class="n">tile</span><span class="p">])]</span>
+                <span class="n">new_tiles</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">subtiles</span><span class="p">)</span>
+                <span class="k">continue</span>
+            <span class="k">if</span> <span class="n">split_thresh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">pixels</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">split_thresh</span><span class="p">:</span>
+                    <span class="c1"># This tile has high color variation.</span>
+                    <span class="n">new_tiles</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_subdivide</span><span class="p">(</span><span class="n">tile</span><span class="p">))</span>
+                    <span class="k">continue</span>
+            <span class="n">new_tiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">tile</span><span class="p">)</span>
+        <span class="n">tiles</span> <span class="o">=</span> <span class="n">new_tiles</span>
+    <span class="k">return</span> <span class="n">tiles</span></div>
+
+
+<div class="viewcode-block" id="scatter"><a class="viewcode-back" href="../../reference.html#photomosaic.scatter">[docs]</a><span class="k">def</span> <span class="nf">scatter</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">margin</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Randomly nudge the tiles off center within a given margin.</span>
+
+<span class="sd">    Also, shift all tiles in the positive direction by ``margin`` so that no</span>
+<span class="sd">    slices are randomly placed &lt; 0.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tiles : list</span>
+<span class="sd">        list of tuples of slices</span>
+<span class="sd">    margin : tuple</span>
+<span class="sd">        maximum distance off tile center, given as ``(y, x)``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tiles : list</span>
+<span class="sd">        a copy; the input is unchaged</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">y_margin</span><span class="p">,</span> <span class="n">x_margin</span> <span class="o">=</span> <span class="n">margin</span>
+    <span class="n">new_tiles</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">:</span>
+        <span class="c1"># random  shift + constant shift to ensure positive result</span>
+        <span class="n">dy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">y_margin</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">y_margin</span><span class="p">)</span> <span class="o">+</span> <span class="n">y_margin</span>
+        <span class="n">dx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="o">-</span><span class="n">x_margin</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">x_margin</span><span class="p">)</span> <span class="o">+</span> <span class="n">x_margin</span>
+        <span class="n">new_tiles</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">translate</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="p">(</span><span class="n">dy</span><span class="p">,</span> <span class="n">dx</span><span class="p">)))</span>
+    <span class="k">return</span> <span class="n">new_tiles</span></div>
+
+
+<div class="viewcode-block" id="translate"><a class="viewcode-back" href="../../reference.html#photomosaic.translate">[docs]</a><span class="k">def</span> <span class="nf">translate</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="n">offset</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Move a tile. This returns a moved copy; the original is unchaged.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tile : tuple</span>
+<span class="sd">        containing y and x slice objects</span>
+<span class="sd">    offset : tuple</span>
+<span class="sd">        translation, given as ``(y, x)``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tile : tuple</span>
+<span class="sd">        a copy; the input is unchaged</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">offset</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">tile</span>
+    <span class="n">new_tile</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">stop</span> <span class="o">+</span> <span class="n">dy</span><span class="p">),</span>
+                <span class="nb">slice</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">stop</span> <span class="o">+</span> <span class="n">dx</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">new_tile</span></div>
+
+
+<div class="viewcode-block" id="pad"><a class="viewcode-back" href="../../reference.html#photomosaic.pad">[docs]</a><span class="k">def</span> <span class="nf">pad</span><span class="p">(</span><span class="n">tile</span><span class="p">,</span> <span class="n">padding</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Shrink a tile in place, leaving a padding. This returns a copy.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tile : tuple</span>
+<span class="sd">        containing y and x slice objects</span>
+<span class="sd">    padding : tuple</span>
+<span class="sd">        number of pixels to leave along each side, given as ``(y, x)``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tile : tuple</span>
+<span class="sd">        a copy; the input is unchaged</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">dy</span><span class="p">,</span> <span class="n">dx</span> <span class="o">=</span> <span class="n">padding</span>
+    <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="o">=</span> <span class="n">tile</span>
+    <span class="n">new_tile</span> <span class="o">=</span> <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">dy</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">dy</span><span class="p">),</span>
+                <span class="nb">slice</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">start</span> <span class="o">+</span> <span class="n">dx</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">dx</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">new_tile</span></div>
+
+
+<div class="viewcode-block" id="color_palette"><a class="viewcode-back" href="../../reference.html#photomosaic.color_palette">[docs]</a><span class="k">def</span> <span class="nf">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the distribution of each color channel.</span>
+
+<span class="sd">    This wraps ``numpy.histogram``, merely adding data munging relevant to</span>
+<span class="sd">    image array with color channels. See numpy documentation for details on the</span>
+<span class="sd">    meaning of the parameters.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">        The last axis is expected to be the color axis.</span>
+<span class="sd">    bins : int or list</span>
+<span class="sd">        default 256; passed through to ``numpy.historgram``</span>
+<span class="sd">    density : bool</span>
+<span class="sd">        True by default; passed through to ``numpy.histrogram``.</span>
+<span class="sd">    kwargs :</span>
+<span class="sd">        passed through to ``numpy.histogram``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tuple :</span>
+<span class="sd">        ``((counts, bins), (counts, bins), ...)`` -- one pair for color channel</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="n">num_channels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+    <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
+        <span class="n">counts</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">pixels</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span>
+                                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">counts</span><span class="p">,</span> <span class="n">bins</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">results</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="palette_map"><a class="viewcode-back" href="../../reference.html#photomosaic.palette_map">[docs]</a><span class="k">def</span> <span class="nf">palette_map</span><span class="p">(</span><span class="n">old_palette</span><span class="p">,</span> <span class="n">new_palette</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a function that maps from one color palette onto another.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    old_palette: tuple</span>
+<span class="sd">        list of histogram arrays ``(count, bins)`` for each color channel</span>
+<span class="sd">    new_palette : tuple</span>
+<span class="sd">        list of histogram arrays ``(count, bins)`` for each color channel</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Make a mapping function for each channel.</span>
+    <span class="n">functions</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">old</span><span class="p">,</span> <span class="n">new</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">old_palette</span><span class="p">,</span> <span class="n">new_palette</span><span class="p">):</span>
+        <span class="n">f</span> <span class="o">=</span> <span class="n">hist_map</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="n">new</span><span class="p">)</span>
+        <span class="n">functions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
+
+    <span class="c1"># Make a function that applies each mapping function to its channel.</span>
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">image</span><span class="p">):</span>
+        <span class="s2">&quot;Adapt colors in image from old palette to new.&quot;</span>
+        <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+        <span class="n">num_channels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">num_channels</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">functions</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expected image with </span><span class="si">{}</span><span class="s2"> color channels; this has &quot;</span>
+                             <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">functions</span><span class="p">),</span> <span class="n">num_channels</span><span class="p">))</span>
+        <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">functions</span><span class="p">):</span>
+            <span class="n">result</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">f</span><span class="p">(</span><span class="n">pixels</span><span class="p">[:,</span> <span class="n">i</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">result</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">f</span></div>
+
+
+<div class="viewcode-block" id="hist_map"><a class="viewcode-back" href="../../reference.html#photomosaic.hist_map">[docs]</a><span class="k">def</span> <span class="nf">hist_map</span><span class="p">(</span><span class="n">old_hist</span><span class="p">,</span> <span class="n">new_hist</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a function that maps from one distribution onto another.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    old_hist : tuple</span>
+<span class="sd">        histogram arrays ``(count, bins)``</span>
+<span class="sd">    new_hist : tuple</span>
+<span class="sd">        histogram arrays ``(count, bins)``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    f : function</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">old_counts</span><span class="p">,</span> <span class="n">old_bins</span> <span class="o">=</span> <span class="n">old_hist</span>
+    <span class="n">new_counts</span><span class="p">,</span> <span class="n">new_bins</span> <span class="o">=</span> <span class="n">new_hist</span>
+    <span class="c1"># cumulative distribution functions</span>
+    <span class="n">old_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">old_counts</span><span class="p">)</span> <span class="o">/</span> <span class="n">old_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">new_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">new_counts</span><span class="p">)</span> <span class="o">/</span> <span class="n">new_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Rescale values in ``arr`` from old distribution to new.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Identify a color bin for each pixel.</span>
+        <span class="n">old_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">old_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">arr</span><span class="p">)</span>
+
+        <span class="c1"># Where in the original gamut did this color fall?</span>
+        <span class="n">old_y</span> <span class="o">=</span> <span class="n">old_cdf</span><span class="p">[</span><span class="n">old_x</span><span class="p">]</span>
+
+        <span class="c1"># Find that same position in the new gamut. What is the color?</span>
+        <span class="n">new_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">new_cdf</span><span class="p">,</span> <span class="n">old_y</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">new_bins</span><span class="p">[</span><span class="n">new_x</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="n">f</span></div>
+
+
+<span class="k">def</span> <span class="nf">_tile_center</span><span class="p">(</span><span class="n">tile</span><span class="p">):</span>
+    <span class="s2">&quot;Compute (y, x) center of tile.&quot;</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="o">+</span> <span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">tile</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_tile_shape</span><span class="p">(</span><span class="n">tile</span><span class="p">):</span>
+    <span class="s2">&quot;Compute the (y, x) dimensions of tile.&quot;</span>
+    <span class="k">return</span> <span class="nb">tuple</span><span class="p">((</span><span class="n">s</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="n">s</span><span class="o">.</span><span class="n">start</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">tile</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="draw_tile_layout"><a class="viewcode-back" href="../../reference.html#photomosaic.draw_tile_layout">[docs]</a><span class="k">def</span> <span class="nf">draw_tile_layout</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Draw the tile edges on a copy of image. Make a dot at each tile center.</span>
+
+<span class="sd">    This is a utility for inspecting a tile layout, not a necessary step in</span>
+<span class="sd">    the mosaic-building process.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    tiles : list</span>
+<span class="sd">        list of pairs of slices, as generated by :func:`partition`</span>
+<span class="sd">    color : int or array</span>
+<span class="sd">        value to &quot;draw&quot; onto ``image`` at tile boundaries</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    annotated_image : array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">annotated_image</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">y</span><span class="p">,</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">tiles</span><span class="p">):</span>
+        <span class="n">edges</span> <span class="o">=</span> <span class="p">((</span><span class="n">y</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">start</span><span class="p">),</span>
+                 <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                 <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span>
+                 <span class="p">(</span><span class="n">y</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">stop</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">y</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">start</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">edge</span> <span class="ow">in</span> <span class="n">edges</span><span class="p">:</span>
+            <span class="n">rr</span><span class="p">,</span> <span class="n">cc</span> <span class="o">=</span> <span class="n">draw</span><span class="o">.</span><span class="n">line</span><span class="p">(</span><span class="o">*</span><span class="n">edge</span><span class="p">)</span>
+            <span class="n">annotated_image</span><span class="p">[</span><span class="n">rr</span><span class="p">,</span> <span class="n">cc</span><span class="p">]</span> <span class="o">=</span> <span class="n">color</span>  <span class="c1"># tile edges</span>
+            <span class="n">annotated_image</span><span class="p">[</span><span class="n">_tile_center</span><span class="p">((</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="p">))]</span> <span class="o">=</span> <span class="n">color</span>  <span class="c1"># dot at center</span>
+    <span class="k">return</span> <span class="n">annotated_image</span></div>
+
+
+<div class="viewcode-block" id="crop_to_fit"><a class="viewcode-back" href="../../reference.html#photomosaic.crop_to_fit">[docs]</a><span class="k">def</span> <span class="nf">crop_to_fit</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Return a copy of image resized and cropped to precisely fill a shape.</span>
+
+<span class="sd">    To resize a colored 2D image, pass in a shape with two entries. When</span>
+<span class="sd">    ``len(shape) &lt; image.ndim``, higher dimensions are ignored.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
+<span class="sd">    shape : tuple</span>
+<span class="sd">        e.g., ``(height, width)`` but any length &lt;= ``image.ndim`` is allowed</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    cropped_image : array</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Resize smallest dimension (width or height) to fit.</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">)[:</span><span class="mi">2</span><span class="p">]</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">shape</span><span class="p">))</span>
+    <span class="n">enlarged_shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)])</span> <span class="o">*</span>
+                                    <span class="n">shape</span><span class="p">[</span><span class="n">d</span><span class="p">]</span><span class="o">/</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">d</span><span class="p">]))</span> <span class="o">+</span>
+                      <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">):])</span>
+    <span class="n">resized</span> <span class="o">=</span> <span class="n">resize</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">enlarged_shape</span><span class="p">)</span>
+    <span class="c1"># Now the image is as large or larger than the shape along all dimensions.</span>
+    <span class="c1"># Crop any overhang in the other dimension.</span>
+    <span class="n">crop_width</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">actual</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">resized</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">shape</span><span class="p">):</span>
+        <span class="n">overflow</span> <span class="o">=</span> <span class="n">actual</span> <span class="o">-</span> <span class="n">target</span>
+        <span class="c1"># Center the image and crop, biasing left if overflow is odd.</span>
+        <span class="n">left_margin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">overflow</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">right_margin</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">overflow</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="n">crop_width</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">left_margin</span><span class="p">,</span> <span class="n">right_margin</span><span class="p">))</span>
+    <span class="c1"># Do not crop any additional dimensions beyond those given in shape.</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">resized</span><span class="o">.</span><span class="n">ndim</span> <span class="o">-</span> <span class="nb">len</span><span class="p">(</span><span class="n">shape</span><span class="p">)):</span>
+        <span class="n">crop_width</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">cropped</span> <span class="o">=</span> <span class="n">crop</span><span class="p">(</span><span class="n">resized</span><span class="p">,</span> <span class="n">crop_width</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cropped</span></div>
+
+
+<div class="viewcode-block" id="rainbow_of_squares"><a class="viewcode-back" href="../../reference.html#photomosaic.rainbow_of_squares">[docs]</a><span class="k">def</span> <span class="nf">rainbow_of_squares</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">),</span> <span class="n">range_params</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">15</span><span class="p">)):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Generate 5832 small solid-color tiles for experimentation and testing.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    target_dir : string</span>
+<span class="sd">    shape : tuple, optional</span>
+<span class="sd">        default is (10, 10)</span>
+<span class="sd">    range_params : tuple, optional</span>
+<span class="sd">        Passed to ``range()`` to stride through each color channel.</span>
+<span class="sd">        Default is ``(0, 256, 15)``.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="mi">3</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">range_params</span><span class="p">)))</span> <span class="k">as</span> <span class="n">pbar</span><span class="p">:</span>
+        <span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">3</span><span class="p">,))</span>
+        <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">range_params</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">g</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">range_params</span><span class="p">):</span>
+                <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="o">*</span><span class="n">range_params</span><span class="p">):</span>
+                    <span class="n">img</span> <span class="o">=</span> <span class="p">(</span><span class="n">canvas</span> <span class="o">*</span> <span class="p">[</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+                    <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:03d}</span><span class="s1">-</span><span class="si">{:03d}</span><span class="s1">-</span><span class="si">{:03d}</span><span class="s1">.png&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">b</span><span class="p">)</span>
+                    <span class="c1"># imsave warns when saving low-contrast images.</span>
+                    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+                        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="s2">&quot;.*low contrast.*&quot;</span><span class="p">)</span>
+                        <span class="n">imsave</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">target_dir</span><span class="p">,</span> <span class="n">filename</span><span class="p">),</span> <span class="n">img</span><span class="p">)</span>
+                    <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
+
+
+<div class="viewcode-block" id="export_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.export_pool">[docs]</a><span class="k">def</span> <span class="nf">export_pool</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Export pool to json.</span>
+
+<span class="sd">    This is a thin convenience wrapper around ``json.dump``. The pool is just a</span>
+<span class="sd">    dict, but it contains numpy arrays, which must be converted to plain lists</span>
+<span class="sd">    before being exported to JSON.</span>
+
+<span class="sd">    Unlike the rest of this package, the export and import functions assume</span>
+<span class="sd">    that the pool is keyed on a tuple with a string (e.g., a filepath) as its</span>
+<span class="sd">    only element.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pool : dict</span>
+<span class="sd">    filepath : string</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">f</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="import_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.import_pool">[docs]</a><span class="k">def</span> <span class="nf">import_pool</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Import pool from json.</span>
+
+<span class="sd">    This is a thin convenience wrapper around ``json.load``. It puts the data</span>
+<span class="sd">    into the expected data structures, which don&#39;t directly translate to JSON.</span>
+
+<span class="sd">    Unlike the rest of this package, the export and import functions assume</span>
+<span class="sd">    that the pool is keyed on a tuple with a string (e.g., a filepath) as its</span>
+<span class="sd">    only element.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    filepath : string</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pool : dict</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">{</span><span class="nb">tuple</span><span class="p">([</span><span class="n">k</span><span class="p">]):</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">json</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span></div>
+
+
+<div class="viewcode-block" id="plot_palette"><a class="viewcode-back" href="../../reference.html#photomosaic.plot_palette">[docs]</a><span class="k">def</span> <span class="nf">plot_palette</span><span class="p">(</span><span class="n">palette</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Plot color palette (histograms of each channel).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    palette : tuple</span>
+<span class="sd">        color palette, such as created by :func:`color_palette`</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        passed through to ``matplotlib.Axes.plot``</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lines : line artists created by matplotlib</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">palette</span><span class="p">))</span>
+    <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">palette</span><span class="p">):</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">counts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">lines</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Photomosaic Contributors.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0+untagged.64.gaca1ab3',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

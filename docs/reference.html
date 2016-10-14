@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; photomosaic 0+untagged.68.g88a8162 documentation</title>
+  <title>Reference &mdash; photomosaic 0+untagged.64.gaca1ab3 documentation</title>
   
 
   
@@ -33,9 +33,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.68.g88a8162 documentation" href="index.html"/>
-        <link rel="next" title="Palette Adjustment" href="palette.html"/>
-        <link rel="prev" title="Tutorial" href="tutorial.html"/> 
+    <link rel="top" title="photomosaic 0+untagged.64.gaca1ab3 documentation" href="index.html"/>
+        <link rel="prev" title="Palette Adjustment" href="palette.html"/> 
 
   
   <script src="_static/js/modernizr.min.js"></script>
@@ -63,7 +62,7 @@
             
             
               <div class="version">
-                0+untagged.68.g88a8162
+                0+untagged.64.gaca1ab3
               </div>
             
           
@@ -86,18 +85,18 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#candidate-pool">Candidate Pool</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#color-conversion">Color Conversion</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#utilities">Utilities</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#color-characterization">Color Characterization</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#color-palettes">Color Palettes</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#tiles">Tiles</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#matching">Matching</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#drawing">Drawing</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#color-characterization">Color Characterization</a></li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
 </ul>
 
             
@@ -148,12 +147,12 @@
 <h2>Candidate Pool<a class="headerlink" href="#candidate-pool" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.make_pool">
-<code class="descclassname">photomosaic.</code><code class="descname">make_pool</code><span class="sig-paren">(</span><em>glob_string</em>, <em>*</em>, <em>pool=None</em>, <em>skip_read_failures=True</em>, <em>analyzer=&lt;function dominant_color&gt;</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.make_pool" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">make_pool</code><span class="sig-paren">(</span><em>glob_string</em>, <em>*</em>, <em>pool=None</em>, <em>skip_read_failures=True</em>, <em>analyzer=None</em>, <em>sample_size=1000</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#make_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.make_pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Analyze a collection of images.</p>
 <p>For each file:
-1. Read image.
-2. Convert to perceptually-uniform color space.
-3. Characterize the colors in the image as a vector.</p>
+(1) Read image.
+(2) Convert to perceptually-uniform color space.
+(3) Characterize the colors in the image as a vector.</p>
 <p>A progress bar is displayed and then hidden after completion.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -175,11 +174,17 @@ file into warnings and continue.</p>
 <p><strong>analyzer</strong> : callable, optional</p>
 <blockquote>
 <div><p>Function with signature: <code class="docutils literal"><span class="pre">f(img)</span> <span class="pre">-&gt;</span> <span class="pre">arr</span></code> where <code class="docutils literal"><span class="pre">arr</span></code> is a vector.
-The default analyzer is <a class="reference internal" href="#photomosaic.dominant_color" title="photomosaic.dominant_color"><code class="xref py py-func docutils literal"><span class="pre">dominant_color()</span></code></a>.</p>
+The default analyzer is <code class="xref py py-func docutils literal"><span class="pre">numpy.mean()</span></code> along the 0th axis.</p>
+</div></blockquote>
+<p><strong>sample_size</strong> : int or None, optional</p>
+<blockquote>
+<div><p>Number of pixels to randomly sample before converting to perceptual
+colorspace and passing to <code class="docutils literal"><span class="pre">analyzer</span></code>; if None, do not subsample.
+Default is 1000.</p>
 </div></blockquote>
 </td>
 </tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>cache</strong> : dict-like</p>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first"><strong>pool</strong> : dict-like</p>
 <blockquote class="last">
 <div><p>mapping arguments for opening file to analyzer&#8217;s result, e.g.:
 <code class="docutils literal"><span class="pre">{(filename,):</span> <span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">3]}</span></code></p>
@@ -192,7 +197,7 @@ The default analyzer is <a class="reference internal" href="#photomosaic.dominan
 
 <dl class="function">
 <dt id="photomosaic.import_pool">
-<code class="descclassname">photomosaic.</code><code class="descname">import_pool</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.import_pool" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">import_pool</code><span class="sig-paren">(</span><em>filepath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#import_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.import_pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Import pool from json.</p>
 <p>This is a thin convenience wrapper around <code class="docutils literal"><span class="pre">json.load</span></code>. It puts the data
 into the expected data structures, which don&#8217;t directly translate to JSON.</p>
@@ -213,7 +218,7 @@ only element.</p>
 
 <dl class="function">
 <dt id="photomosaic.export_pool">
-<code class="descclassname">photomosaic.</code><code class="descname">export_pool</code><span class="sig-paren">(</span><em>pool</em>, <em>filepath</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.export_pool" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">export_pool</code><span class="sig-paren">(</span><em>pool</em>, <em>filepath</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#export_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.export_pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Export pool to json.</p>
 <p>This is a thin convenience wrapper around <code class="docutils literal"><span class="pre">json.dump</span></code>. The pool is just a
 dict, but it contains numpy arrays, which must be converted to plain lists
@@ -235,7 +240,7 @@ only element.</p>
 
 <dl class="function">
 <dt id="photomosaic.rainbow_of_squares">
-<code class="descclassname">photomosaic.</code><code class="descname">rainbow_of_squares</code><span class="sig-paren">(</span><em>target_dir</em>, <em>shape=(10</em>, <em>10)</em>, <em>range_params=(0</em>, <em>256</em>, <em>15)</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.rainbow_of_squares" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">rainbow_of_squares</code><span class="sig-paren">(</span><em>target_dir</em>, <em>shape=(10</em>, <em>10)</em>, <em>range_params=(0</em>, <em>256</em>, <em>15)</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#rainbow_of_squares"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.rainbow_of_squares" title="Permalink to this definition">¶</a></dt>
 <dd><p>Generate 5832 small solid-color tiles for experimentation and testing.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -262,7 +267,7 @@ Default is <code class="docutils literal"><span class="pre">(0,</span> <span cla
 <h2>Color Conversion<a class="headerlink" href="#color-conversion" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.perceptual">
-<code class="descclassname">photomosaic.</code><code class="descname">perceptual</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.perceptual" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">perceptual</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#perceptual"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.perceptual" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert color from RGB (sRGB1) to a perceptually uniform colorspace.</p>
 <p>This is a convenience function wrapping <code class="docutils literal"><span class="pre">colorspacious.csapce_convert</span></code>.
 To configure the specific perceptual colorspace used, change
@@ -279,7 +284,7 @@ To configure the specific perceptual colorspace used, change
 
 <dl class="function">
 <dt id="photomosaic.rgb">
-<code class="descclassname">photomosaic.</code><code class="descname">rgb</code><span class="sig-paren">(</span><em>image</em>, <em>clip=True</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.rgb" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">rgb</code><span class="sig-paren">(</span><em>image</em>, <em>clip=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#rgb"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.rgb" title="Permalink to this definition">¶</a></dt>
 <dd><p>Convert color from a perceptually uniform colorspace to RGB.</p>
 <p>This is a convenience function wrapping <code class="docutils literal"><span class="pre">colorspacious.csapce_convert</span></code>.
 To configure the specific perceptual colorspace used, change
@@ -301,7 +306,7 @@ To configure the specific perceptual colorspace used, change
 
 <dl class="function">
 <dt id="photomosaic.set_options">
-<code class="descclassname">photomosaic.</code><code class="descname">set_options</code><span class="sig-paren">(</span><em>imread=None</em>, <em>perceptual=None</em>, <em>rgb=None</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.set_options" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">set_options</code><span class="sig-paren">(</span><em>imread=None</em>, <em>perceptual=None</em>, <em>rgb=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#set_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.set_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set global options</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -332,7 +337,7 @@ colorspacious documentation for details</p>
 <h2>Utilities<a class="headerlink" href="#utilities" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.standardize_image">
-<code class="descclassname">photomosaic.</code><code class="descname">standardize_image</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.standardize_image" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">standardize_image</code><span class="sig-paren">(</span><em>image</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#standardize_image"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.standardize_image" title="Permalink to this definition">¶</a></dt>
 <dd><p>Ensure that image is float 0-1 RGB with no alpha.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -353,7 +358,7 @@ colorspacious documentation for details</p>
 
 <dl class="function">
 <dt id="photomosaic.rescale_commensurate">
-<code class="descclassname">photomosaic.</code><code class="descname">rescale_commensurate</code><span class="sig-paren">(</span><em>image</em>, <em>grid_dims</em>, <em>depth=0</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.rescale_commensurate" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">rescale_commensurate</code><span class="sig-paren">(</span><em>image</em>, <em>grid_dims</em>, <em>depth=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#rescale_commensurate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.rescale_commensurate" title="Permalink to this definition">¶</a></dt>
 <dd><p>For given grid dimensions and grid subdivision depth, scale image.</p>
 <p>The image is rescaled so that its shape can be evenly split into tiles.
 If necessary, one dimension is cropped to fit.</p>
@@ -381,7 +386,7 @@ If necessary, one dimension is cropped to fit.</p>
 
 <dl class="function">
 <dt id="photomosaic.crop_to_fit">
-<code class="descclassname">photomosaic.</code><code class="descname">crop_to_fit</code><span class="sig-paren">(</span><em>image</em>, <em>shape</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.crop_to_fit" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">crop_to_fit</code><span class="sig-paren">(</span><em>image</em>, <em>shape</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#crop_to_fit"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.crop_to_fit" title="Permalink to this definition">¶</a></dt>
 <dd><p>Return a copy of image resized and cropped to precisely fill a shape.</p>
 <p>To resize a colored 2D image, pass in a shape with two entries. When
 <code class="docutils literal"><span class="pre">len(shape)</span> <span class="pre">&lt;</span> <span class="pre">image.ndim</span></code>, higher dimensions are ignored.</p>
@@ -403,12 +408,9 @@ If necessary, one dimension is cropped to fit.</p>
 </table>
 </dd></dl>
 
-</div>
-<div class="section" id="color-characterization">
-<h2>Color Characterization<a class="headerlink" href="#color-characterization" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.sample_pixels">
-<code class="descclassname">photomosaic.</code><code class="descname">sample_pixels</code><span class="sig-paren">(</span><em>image</em>, <em>size</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.sample_pixels" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">sample_pixels</code><span class="sig-paren">(</span><em>image</em>, <em>size</em>, <em>replace=True</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#sample_pixels"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.sample_pixels" title="Permalink to this definition">¶</a></dt>
 <dd><p>Randomly sample pixels from an image.</p>
 <p>This is a wrapper around <code class="docutils literal"><span class="pre">np.random.choice</span></code> (which only works directly
 on 1-dimensional arrays).</p>
@@ -431,37 +433,12 @@ on 1-dimensional arrays).</p>
 </table>
 </dd></dl>
 
-<dl class="function">
-<dt id="photomosaic.dominant_color">
-<code class="descclassname">photomosaic.</code><code class="descname">dominant_color</code><span class="sig-paren">(</span><em>pixels</em>, <em>n_clusters=5</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.dominant_color" title="Permalink to this definition">¶</a></dt>
-<dd><p>Cluster colors and identify the &#8220;central&#8221; color of the largest cluster.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>pixels</strong> : array</p>
-<blockquote>
-<div><p>List of pixels. The second axis is expected to be the color axis.</p>
-</div></blockquote>
-<p><strong>n_clusters</strong> : int, optional</p>
-<blockquote>
-<div><p>number of clusters; default 5</p>
-</div></blockquote>
-</td>
-</tr>
-<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>dominant_color</strong> : array</p>
-</td>
-</tr>
-</tbody>
-</table>
-</dd></dl>
-
 </div>
 <div class="section" id="color-palettes">
 <h2>Color Palettes<a class="headerlink" href="#color-palettes" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.adapt_to_pool">
-<code class="descclassname">photomosaic.</code><code class="descname">adapt_to_pool</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.adapt_to_pool" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">adapt_to_pool</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#adapt_to_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.adapt_to_pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adjust the color timing of an image to use colors available in the pool.</p>
 <p>For meaningful results, <code class="docutils literal"><span class="pre">image</span></code> and <code class="docutils literal"><span class="pre">pool</span></code> must be in the same
 colorspace.</p>
@@ -490,7 +467,7 @@ visualizing, convert back.</p>
 
 <dl class="function">
 <dt id="photomosaic.color_palette">
-<code class="descclassname">photomosaic.</code><code class="descname">color_palette</code><span class="sig-paren">(</span><em>image</em>, <em>bins=256</em>, <em>density=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.color_palette" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">color_palette</code><span class="sig-paren">(</span><em>image</em>, <em>bins=256</em>, <em>density=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#color_palette"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.color_palette" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the distribution of each color channel.</p>
 <p>This wraps <code class="docutils literal"><span class="pre">numpy.histogram</span></code>, merely adding data munging relevant to
 image array with color channels. See numpy documentation for details on the
@@ -529,7 +506,7 @@ meaning of the parameters.</p>
 
 <dl class="function">
 <dt id="photomosaic.palette_map">
-<code class="descclassname">photomosaic.</code><code class="descname">palette_map</code><span class="sig-paren">(</span><em>old_palette</em>, <em>new_palette</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.palette_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">palette_map</code><span class="sig-paren">(</span><em>old_palette</em>, <em>new_palette</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#palette_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.palette_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a function that maps from one color palette onto another.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -554,7 +531,7 @@ meaning of the parameters.</p>
 
 <dl class="function">
 <dt id="photomosaic.hist_map">
-<code class="descclassname">photomosaic.</code><code class="descname">hist_map</code><span class="sig-paren">(</span><em>old_hist</em>, <em>new_hist</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.hist_map" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">hist_map</code><span class="sig-paren">(</span><em>old_hist</em>, <em>new_hist</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#hist_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.hist_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a function that maps from one distribution onto another.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -579,7 +556,7 @@ meaning of the parameters.</p>
 
 <dl class="function">
 <dt id="photomosaic.plot_palette">
-<code class="descclassname">photomosaic.</code><code class="descname">plot_palette</code><span class="sig-paren">(</span><em>palette</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.plot_palette" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">plot_palette</code><span class="sig-paren">(</span><em>palette</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#plot_palette"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.plot_palette" title="Permalink to this definition">¶</a></dt>
 <dd><p>Plot color palette (histograms of each channel).</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -607,7 +584,7 @@ meaning of the parameters.</p>
 <h2>Tiles<a class="headerlink" href="#tiles" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.partition">
-<code class="descclassname">photomosaic.</code><code class="descname">partition</code><span class="sig-paren">(</span><em>image</em>, <em>grid_dims</em>, <em>mask=None</em>, <em>depth=0</em>, <em>split_thresh=10</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.partition" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">partition</code><span class="sig-paren">(</span><em>image</em>, <em>grid_dims</em>, <em>mask=None</em>, <em>depth=0</em>, <em>split_thresh=10</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#partition"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.partition" title="Permalink to this definition">¶</a></dt>
 <dd><p>Parition the target image into tiles.</p>
 <p>Optionally, subdivide tiles that straddle a mask edge or contain high
 contrast, creating a grid with tiles of varied size.</p>
@@ -647,7 +624,7 @@ subdivided; default is 0.1. This only applies if depth &gt; 0.</p>
 
 <dl class="function">
 <dt id="photomosaic.translate">
-<code class="descclassname">photomosaic.</code><code class="descname">translate</code><span class="sig-paren">(</span><em>tile</em>, <em>offset</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.translate" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">translate</code><span class="sig-paren">(</span><em>tile</em>, <em>offset</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#translate"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.translate" title="Permalink to this definition">¶</a></dt>
 <dd><p>Move a tile. This returns a moved copy; the original is unchaged.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -675,7 +652,7 @@ subdivided; default is 0.1. This only applies if depth &gt; 0.</p>
 
 <dl class="function">
 <dt id="photomosaic.pad">
-<code class="descclassname">photomosaic.</code><code class="descname">pad</code><span class="sig-paren">(</span><em>tile</em>, <em>padding</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.pad" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">pad</code><span class="sig-paren">(</span><em>tile</em>, <em>padding</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#pad"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.pad" title="Permalink to this definition">¶</a></dt>
 <dd><p>Shrink a tile in place, leaving a padding. This returns a copy.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -703,7 +680,7 @@ subdivided; default is 0.1. This only applies if depth &gt; 0.</p>
 
 <dl class="function">
 <dt id="photomosaic.scatter">
-<code class="descclassname">photomosaic.</code><code class="descname">scatter</code><span class="sig-paren">(</span><em>tiles</em>, <em>margin</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.scatter" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">scatter</code><span class="sig-paren">(</span><em>tiles</em>, <em>margin</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#scatter"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.scatter" title="Permalink to this definition">¶</a></dt>
 <dd><p>Randomly nudge the tiles off center within a given margin.</p>
 <p>Also, shift all tiles in the positive direction by <code class="docutils literal"><span class="pre">margin</span></code> so that no
 slices are randomly placed &lt; 0.</p>
@@ -736,7 +713,7 @@ slices are randomly placed &lt; 0.</p>
 <h2>Matching<a class="headerlink" href="#matching" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.simple_matcher">
-<code class="descclassname">photomosaic.</code><code class="descname">simple_matcher</code><span class="sig-paren">(</span><em>pool</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.simple_matcher" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">simple_matcher</code><span class="sig-paren">(</span><em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#simple_matcher"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.simple_matcher" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a matching function that simply matches to the closest color.</p>
 <p>It maintains an internal tree representation of the pool for fast lookups.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -761,7 +738,7 @@ slices are randomly placed &lt; 0.</p>
 <h2>Drawing<a class="headerlink" href="#drawing" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.basic_mosaic">
-<code class="descclassname">photomosaic.</code><code class="descname">basic_mosaic</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em>, <em>grid_dims</em>, <em>*</em>, <em>mask=None</em>, <em>depth=0</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.basic_mosaic" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">basic_mosaic</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em>, <em>grid_dims</em>, <em>*</em>, <em>mask=None</em>, <em>depth=0</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#basic_mosaic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.basic_mosaic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Make a mosaic in one step with some basic settings.</p>
 <p>See documentation (or the source code of this function) for more
 powerful features and customization.</p>
@@ -817,7 +794,7 @@ much more time that making the mosaic, so it is a separate step.</p>
 
 <dl class="function">
 <dt id="photomosaic.draw_mosaic">
-<code class="descclassname">photomosaic.</code><code class="descname">draw_mosaic</code><span class="sig-paren">(</span><em>image</em>, <em>tiles</em>, <em>matches</em>, <em>scale=1</em>, <em>resized_copy_cache=None</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.draw_mosaic" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">draw_mosaic</code><span class="sig-paren">(</span><em>image</em>, <em>tiles</em>, <em>matches</em>, <em>scale=1</em>, <em>resized_copy_cache=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#draw_mosaic"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.draw_mosaic" title="Permalink to this definition">¶</a></dt>
 <dd><p>Assemble the mosaic, the final result.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -873,7 +850,7 @@ resizing it, which is the most expensive step.</p>
 
 <dl class="function">
 <dt id="photomosaic.draw_tile_layout">
-<code class="descclassname">photomosaic.</code><code class="descname">draw_tile_layout</code><span class="sig-paren">(</span><em>image</em>, <em>tiles</em>, <em>color=1</em><span class="sig-paren">)</span><a class="headerlink" href="#photomosaic.draw_tile_layout" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">draw_tile_layout</code><span class="sig-paren">(</span><em>image</em>, <em>tiles</em>, <em>color=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#draw_tile_layout"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.draw_tile_layout" title="Permalink to this definition">¶</a></dt>
 <dd><p>Draw the tile edges on a copy of image. Make a dot at each tile center.</p>
 <p>This is a utility for inspecting a tile layout, not a necessary step in
 the mosaic-building process.</p>
@@ -900,6 +877,35 @@ the mosaic-building process.</p>
 </dd></dl>
 
 </div>
+<div class="section" id="color-characterization">
+<h2>Color Characterization<a class="headerlink" href="#color-characterization" title="Permalink to this headline">¶</a></h2>
+<p>This seems to perform worse than simply using <code class="xref py py-func docutils literal"><span class="pre">numpy.mean()</span></code>.</p>
+<dl class="function">
+<dt id="photomosaic.dominant_color">
+<code class="descclassname">photomosaic.</code><code class="descname">dominant_color</code><span class="sig-paren">(</span><em>pixels</em>, <em>n_clusters=5</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#dominant_color"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.dominant_color" title="Permalink to this definition">¶</a></dt>
+<dd><p>Cluster colors and identify the &#8220;central&#8221; color of the largest cluster.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>pixels</strong> : array</p>
+<blockquote>
+<div><p>List of pixels. The second axis is expected to be the color axis.</p>
+</div></blockquote>
+<p><strong>n_clusters</strong> : int, optional</p>
+<blockquote>
+<div><p>number of clusters; default 5</p>
+</div></blockquote>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>dominant_color</strong> : array</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
 </div>
 
 
@@ -909,10 +915,8 @@ the mosaic-building process.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="palette.html" class="btn btn-neutral float-right" title="Palette Adjustment" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-      
-        <a href="tutorial.html" class="btn btn-neutral" title="Tutorial" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="palette.html" class="btn btn-neutral" title="Palette Adjustment" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -943,7 +947,7 @@ the mosaic-building process.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.68.g88a8162',
+            VERSION:'0+untagged.64.gaca1ab3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

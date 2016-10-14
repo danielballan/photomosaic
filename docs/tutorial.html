@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Tutorial &mdash; photomosaic 0+untagged.68.g88a8162 documentation</title>
+  <title>Tutorial &mdash; photomosaic 0+untagged.64.gaca1ab3 documentation</title>
   
 
   
@@ -33,8 +33,8 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.68.g88a8162 documentation" href="index.html"/>
-        <link rel="next" title="Reference" href="reference.html"/>
+    <link rel="top" title="photomosaic 0+untagged.64.gaca1ab3 documentation" href="index.html"/>
+        <link rel="next" title="Palette Adjustment" href="palette.html"/>
         <link rel="prev" title="photomosaic" href="index.html"/> 
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0+untagged.68.g88a8162
+                0+untagged.64.gaca1ab3
               </div>
             
           
@@ -94,13 +94,12 @@
 <li class="toctree-l3"><a class="reference internal" href="#partition-tiles">Partition Tiles</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#match-tiles-to-pool-images">Match Tiles to Pool Images</a></li>
 <li class="toctree-l3"><a class="reference internal" href="#draw-mosaic">Draw Mosaic</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#optional-rearrange-tiles">Optional: Rearrange Tiles</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 <li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
 </ul>
 
             
@@ -248,9 +247,7 @@ This greatly improves the contrast in the final result.</p>
 <span class="n">adapted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">converted_img</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
 </pre></div>
 </div>
-<div class="figure">
-<img alt="_images/tutorial-1.png" src="_images/tutorial-1.png" />
-</div>
+<p>Details and illustrations are given in the section, <a class="reference internal" href="palette.html"><span class="doc">Palette Adjustment</span></a>.</p>
 </div>
 <div class="section" id="partition-tiles">
 <h3>Partition Tiles<a class="headerlink" href="#partition-tiles" title="Permalink to this headline">¶</a></h3>
@@ -287,50 +284,48 @@ to RGB for visualization.)</p>
 </pre></div>
 </div>
 <div class="figure">
-<img alt="_images/tutorial-2.png" src="_images/tutorial-2.png" />
+<img alt="_images/tutorial-1.png" src="_images/tutorial-1.png" />
 </div>
 </div>
 <div class="section" id="match-tiles-to-pool-images">
 <h3>Match Tiles to Pool Images<a class="headerlink" href="#match-tiles-to-pool-images" title="Permalink to this headline">¶</a></h3>
-<p>First, analyze the dominant color of each tile in the target image. We judge
-the dominant color by:</p>
-<ul class="simple">
-<li>sampling up to 1000 pixels from the tile (for speed)</li>
-<li>clustering the pixels by color</li>
-<li>computing the &#8220;central&#8221; color of the largest cluster</li>
-</ul>
-<p>It would be interesting to explore alternative ways to characterize the
-dominant color.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">tile_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">pm</span><span class="o">.</span><span class="n">dominant_color</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">sample_pixels</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">[</span><span class="n">tile</span><span class="p">],</span> <span class="mi">1000</span><span class="p">))</span>
+<p>First, analyze the average color of each tile in the target image.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span>
+
+<span class="c1"># Reshape the 3D array (height, width, color_channels) into</span>
+<span class="c1"># a 2D array (num_pixels, color_channels) and average over the pixels.</span>
+<span class="n">tile_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">numpy</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
                <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tiles</span><span class="p">]</span>
 </pre></div>
 </div>
-<p>For large number of tiles, this process takes awhile. Optionally, use the tqdm
-package to add a nice progress bar.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
-<span class="n">tile_colors</span> <span class="o">=</span> <span class="p">[</span><span class="n">pm</span><span class="o">.</span><span class="n">dominant_color</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">sample_pixels</span><span class="p">(</span><span class="n">adapted_img</span><span class="p">[</span><span class="n">tile</span><span class="p">],</span> <span class="mi">1000</span><span class="p">))</span>
-               <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;analyzing tiles&#39;</span><span class="p">)]</span>
-</pre></div>
-</div>
-<p>The result is a list of color &#8220;vectors&#8221; characterizing the color of each tile
-in <code class="docutils literal"><span class="pre">tiles</span></code>. These vectors can be compared to the values in <code class="docutils literal"><span class="pre">pool</span></code>, which
-were generated using the same algorithm.</p>
+<p>The result is a list of colors, one for each tile in <code class="docutils literal"><span class="pre">tiles</span></code>. The values in
+<code class="docutils literal"><span class="pre">pool</span></code> were generated using the same algorithm.</p>
 <p>The function <code class="docutils literal"><span class="pre">simple_matcher</span></code> takes the analyzed colors in <code class="docutils literal"><span class="pre">pool</span></code> and loads
-into a data structure for fast nearest-color lookups (a KD tree). It returns a
-function, <code class="docutils literal"><span class="pre">match</span></code>, which we map onto each tile color.</p>
+them into a data structure for fast nearest-color lookups (a KD tree). It
+returns a function, <code class="docutils literal"><span class="pre">match</span></code>. We map <code class="docutils literal"><span class="pre">match</span></code> map onto each tile color to
+find the corresponding tile&#8217;s best match in the pool.</p>
 <div class="highlight-python"><div class="highlight"><pre><span></span><span class="c1"># Match a pool image to each tile.</span>
 <span class="n">match</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">simple_matcher</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
 <span class="n">matches</span> <span class="o">=</span> <span class="p">[</span><span class="n">match</span><span class="p">(</span><span class="n">tc</span><span class="p">)</span> <span class="k">for</span> <span class="n">tc</span> <span class="ow">in</span> <span class="n">tile_colors</span><span class="p">]</span>
 </pre></div>
+</div>
+<div class="admonition note">
+<p class="first admonition-title">Note</p>
+<p class="last">A different strategy for characterizing the tiles and the pool could be
+used. The <code class="docutils literal"><span class="pre">simpler_matcher</span></code> expects that each tile and each
+element in the pool is summarized by some vector. Additionally, a more
+complex matching algorithm &#8212; say, one that avoids using any element in
+the pool more than once &#8212; could also be used in place of
+<code class="docutils literal"><span class="pre">simple_matcher</span></code>.</p>
 </div>
 </div>
 <div class="section" id="draw-mosaic">
 <h3>Draw Mosaic<a class="headerlink" href="#draw-mosaic" title="Permalink to this headline">¶</a></h3>
 <p>First, create a &#8220;canvas&#8221; image on which to draw the mosiac. Use numpy functions
 for generating a &#8220;white&#8221; or &#8220;black&#8221; canvas of the right shape,</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
-<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">)</span>  <span class="c1"># white canvas</span>
-<span class="n">canvas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">)</span>  <span class="c1"># black canvas</span>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">)</span>  <span class="c1"># white canvas</span>
+<span class="n">canvas</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">)</span>  <span class="c1"># black canvas</span>
 </pre></div>
 </div>
 <p>or load a background image and scale/crop it the right shape.</p>
@@ -358,9 +353,6 @@ repeated draws, reuse the cache of resized pool images.</p>
 </pre></div>
 </div>
 </div>
-<div class="section" id="optional-rearrange-tiles">
-<h3>Optional: Rearrange Tiles<a class="headerlink" href="#optional-rearrange-tiles" title="Permalink to this headline">¶</a></h3>
-</div>
 </div>
 </div>
 
@@ -371,7 +363,7 @@ repeated draws, reuse the cache of resized pool images.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="palette.html" class="btn btn-neutral float-right" title="Palette Adjustment" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
         <a href="index.html" class="btn btn-neutral" title="photomosaic" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
@@ -405,7 +397,7 @@ repeated draws, reuse the cache of resized pool images.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.68.g88a8162',
+            VERSION:'0+untagged.64.gaca1ab3',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
