@@ -619,7 +619,7 @@ def pad(tile, padding):
     return new_tile
 
 
-def color_palette(image, bins=256, density=True, **kwargs):
+def color_palette(image, bins=256, **kwargs):
     """
     Compute the distribution of each color channel.
 
@@ -633,8 +633,6 @@ def color_palette(image, bins=256, density=True, **kwargs):
         The last axis is expected to be the color axis.
     bins : int or list
         default 256; passed through to ``numpy.historgram``
-    density : bool
-        True by default; passed through to ``numpy.histrogram``.
     kwargs :
         passed through to ``numpy.histogram``
 
@@ -645,13 +643,11 @@ def color_palette(image, bins=256, density=True, **kwargs):
     """
     image = np.asarray(image)
     num_channels = image.shape[-1]
-    num_pixels = np.product(image.shape[:-1])
-    pixels = image.reshape(num_pixels, num_channels)
+    pixels = image.reshape(-1, num_channels)
     results = []
     for i in range(num_channels):
-        counts, bins = np.histogram(pixels[:, i], bins=bins, density=density,
-                                    **kwargs)
-        results.append((counts, bins))
+        counts, bin_edges = np.histogram(pixels[:, i], bins=bins, **kwargs)
+        results.append((counts, bin_edges))
     return tuple(results)
 
 
@@ -915,5 +911,6 @@ def plot_palette(palette, **kwargs):
     fig, axes = plt.subplots(len(palette))
     lines = []
     for ax, (counts, bins) in zip(axes, palette):
-        lines.append(ax.plot(bins[:-1], counts, **kwargs))
+        bin_centers = np.mean([bins[1:], bins[:-1]], 0)
+        lines.append(ax.plot(bin_centers, counts, **kwargs))
     return lines
