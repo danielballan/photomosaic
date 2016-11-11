@@ -3,6 +3,7 @@ import re
 import urllib
 import requests
 import itertools
+import json
 from tqdm import tqdm
 from .photomosaic import options
 
@@ -60,13 +61,20 @@ def from_search(text, dest, cutoff=None, license=None):
                 raise RuntimeError("response: {}".format(response))
             break
         photos = response['photos']['photo']
-        for photo in tqdm(photos, desc='downloading page {}'.format(page)):
+        pbar = tqdm(photos, desc='downloading page {}'.format(page))
+        for photo in pbar:
             if (cutoff is not None) and (next(total) > cutoff):
+                pbar.close()
                 return
+            # Download and save image.
             url = (PATH + NAME).format(**photo)
             filename = (NAME).format(**photo)
             filepath = os.path.join(dest, filename)
             urllib.request.urlretrieve(url, filepath)
+            # Save metadata for attribution.
+            metapath = os.path.splitext(filepath)[0] + '.json'
+            with open(metapath, 'w') as metafile:
+                json.dump(photo, metafile)
 
 
 def _get_photoset(photoset_id, nsid, dest):
@@ -91,6 +99,10 @@ def _get_photoset(photoset_id, nsid, dest):
             filename = (NAME).format(**photo)
             filepath = os.path.join(dest, filename)
             urllib.request.urlretrieve(url, filepath)
+            # Save metadata for attribution.
+            metapath = os.path.splitext(filepath)[0] + '.json'
+            with open(metapath, 'w') as metafile:
+                json.dump(photo, metafile)
 
 
 def from_url(url, dest):
@@ -102,7 +114,7 @@ def from_url(url, dest):
     Parameters
     ----------
     url : string
-        e.g., https://www.flickr.com/phtoos/<username>/sets/<photoset_id>
+        e.g., https://www.flickr.com/photos/<username>/sets/<photoset_id>
     dest : string
         Output directory
     """

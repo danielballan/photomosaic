@@ -8,15 +8,14 @@ target image: George Washington drawn from presidential protraits, Yoda drawn
 from frames from Star Wars, etc.
 
 The photomosaic package includes convenience functions for downloading image
-collections from public websites. They do not "scrape" the websites; they use
-the websites' official API. At this time, we only support Flickr, but more will
-be added in the future. For full flexibility, you may want to just use the API
-directly. These convenience functions just aim to make the basics easy:
-downloading search results or downloading an album with a line or two of code.
+collections from public websites. They use the websites' official public API to
+"politely" scrape images and collect attribution information. For each image
+file, a text file (JSON) with attribution information is also saved. It is
+possible to filter queries based on their copyright license. If you plan to
+share or sell your mosiac, pay due attention to the copyright license on the
+images you download.
 
-If you plan to share or sell your mosiac, pay due attention to the copyright
-license on the images you download. Where possible, we use the API to make
-compliance easier.
+At this time, we only support Flickr, but more will be added in the future.
 
 Flickr
 ------
