@@ -38,8 +38,6 @@ install:
 
 script:
   - python run_tests.py
-
-after_success:
   - coverage report -m
   - pip install doctr sphinx numpydoc ipython sphinx_rtd_theme  # docs dependencies
   - cd doc
