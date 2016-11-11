@@ -25,7 +25,7 @@ options = {'imread': {},
            'rgb': 'sRGB1'}
 
 
-def set_options(imread=None, perceptual=None, rgb=None):
+def set_options(imread=None, perceptual=None, rgb=None, flickr_api_key=None):
     """
     Set global options
 
@@ -39,6 +39,8 @@ def set_options(imread=None, perceptual=None, rgb=None):
         colorspacious documentation for details
     rgb : string or dict
         specific RGB colorspace used for color conversion
+    flickr_api_key : string
+        API key used by photomosaic.flickr module
     """
     global options
     if imread is not None:
@@ -47,6 +49,8 @@ def set_options(imread=None, perceptual=None, rgb=None):
         options['perceptual'] = perceptual
     if rgb is not None:
         options['rgb'] = rgb
+    if flickr_api_key is not None:
+        options['flickr_api_key'] = flickr_api_key
 
 
 def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=0):
