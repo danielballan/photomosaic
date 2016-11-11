@@ -94,7 +94,7 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=0):
 
     Make the mosaic and save it.
 
-        >>> mosaic = basic_mosaic(my_image, (15, 15))
+        >>> mosaic = basic_mosaic(my_image, pool, (15, 15))
         >>> imsave('my_mosaic.jpg', mosaic)
     """
     # Size the image to be evenly divisible by the tiles.
