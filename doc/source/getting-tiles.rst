@@ -20,7 +20,7 @@ Apply for a Flickr API key
 `here <https://www.flickr.com/services/api/keys/apply/>`_. You will get an API
 key and a secret key. For this application we don't need the secret key.
 
-.. code-block::
+.. code-block:: python
 
     import photomosaic as pm
     import photomosaic.flickr as pmf
@@ -28,6 +28,9 @@ key and a secret key. For this application we don't need the secret key.
     # Provide your API key.
     pm.set_options(flickr_api_key='YOUR_API_KEY_HERE')
 
-    # Find an album on Flickr, and download it into a direcotry.
+    # Download the first 300 results from a search for 'cats cars'.
+    pm.from_serach('cats cars', 'some_directory', 300)
+
+    # Download a specific album.
     pmf.from_url('https://www.flickr.com/photos/anapaunkovic/sets/72157646150658189',
-                 'cats')
+                 'some_directory')
