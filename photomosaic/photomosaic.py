@@ -718,23 +718,28 @@ def hist_map(old_hist, new_hist):
     """
     old_counts, old_bins = old_hist
     new_counts, new_bins = new_hist
+
+    # validate input
+    if 1 + len(old_counts) != len(old_bins):
+        raise ValueError("The input old_hist is invalid. "
+                         "Length of bins should be 1 + length of counts")
+    if 1 + len(new_counts) != len(new_bins):
+        raise ValueError("The input new_hist is invalid. "
+                         "Length of bins should be 1 + length of counts")
+
     # cumulative distribution functions
-    old_cdf = np.cumsum(old_counts) / old_counts.sum()
-    new_cdf = np.cumsum(new_counts) / new_counts.sum()
+    old_cdf = np.insert(np.cumsum(old_counts), 0, 0) / np.sum(old_counts)
+    new_cdf = np.insert(np.cumsum(new_counts), 0, 0) / np.sum(new_counts)
 
     def f(arr):
         """
         Rescale values in ``arr`` from old distribution to new.
         """
-        # Identify a color bin for each pixel.
-        old_x = np.searchsorted(old_bins[:-2], arr)
+        # Where in the old cdf did value(s) in arr fall?
+        old_y = np.interp(arr, old_bins, old_cdf)
 
-        # Where in the original gamut did this color fall?
-        old_y = old_cdf[old_x]
-
-        # Find that same position in the new gamut. What is the color?
-        new_x = np.searchsorted(new_cdf, old_y)
-        return new_bins[new_x]
+        # Find the value at the corresponding position in the new cdf.
+        return np.interp(old_y, new_cdf, new_bins)
 
     return f
 
