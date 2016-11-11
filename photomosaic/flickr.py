@@ -38,11 +38,11 @@ def from_search(text, dest, cutoff=None, license=None):
     license : list or None
         List of license codes documented by Flickr at
         https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html
-        If None, photomosaic defaults to ``[7]``, returning only photos in the
-        "commons" with "no known copyright restrictions."
+        If None, photomosaic defaults to ``[1, 2, 4, 5, 7, 8]``. See link for
+        details.
     """
     if license is None:
-        license = [7]
+        license = [1, 2, 4, 5, 7, 8]
     os.makedirs(dest, exist_ok=True)
     total = itertools.count(0)
     for page in itertools.count(1):
