@@ -11,3 +11,4 @@ viewed at a distance, gives the impression of one large photo.
    getting-tiles
    palette
    reference
+   release-notes

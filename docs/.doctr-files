@@ -14,6 +14,7 @@ docs/_sources/getting-tiles.txt
 docs/_sources/index.txt
 docs/_sources/palette.txt
 docs/_sources/reference.txt
+docs/_sources/release-notes.txt
 docs/_sources/tutorial.txt
 docs/_static/ajax-loader.gif
 docs/_static/basic.css
@@ -74,6 +75,7 @@ docs/palette-3.png
 docs/palette-3.py
 docs/palette.html
 docs/reference.html
+docs/release-notes.html
 docs/search.html
 docs/searchindex.js
 docs/tutorial-1.hires.png
