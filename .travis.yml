@@ -28,6 +28,7 @@ install:
   # Install heavy stuff with conda, for speed.
   - conda create -n testenv python=$TRAVIS_PYTHON_VERSION scipy numpy coverage scikit-image pip -c conda-forge
   - source activate testenv
+  - git fetch origin --tags  # used by versioneer
   - pip install .[parallel]
   - pip install pytest codecov pytest-cov
   # Need to clean the python build directory (and other cruft) or pytest is
