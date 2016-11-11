@@ -22,9 +22,9 @@ def _flickr_request(**kwargs):
     return response.json()
 
 
-def from_search(text, dest, cutoff=None):
+def from_search(text, dest, cutoff=None, license=None):
     """
-    Download photos matching a search query.
+    Download photos matching a search query and the specified license(s).
 
     Parameters
     ----------
@@ -35,12 +35,20 @@ def from_search(text, dest, cutoff=None):
     cutoff : integer or None, optional
         Max number of images to download. By default, None; all matches
         up to Flickr's max (4000) will be downloaded.
+    license : list or None
+        List of license codes documented by Flickr at
+        https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html
+        If None, photomosaic defaults to ``[7]``, returning only photos in the
+        "commons" with "no known copyright restrictions."
     """
+    if license is None:
+        license = [7]
     os.makedirs(dest, exist_ok=True)
     total = itertools.count(0)
     for page in itertools.count(1):
         response = _flickr_request(
                 method='flickr.photos.search',
+                license=','.join(map(str, license)),
                 text=text,
                 content_type=1,  # photos only
                 page=page
@@ -88,6 +96,8 @@ def _get_photoset(photoset_id, nsid, dest):
 def from_url(url, dest):
     """
     Download an album ("photoset") from its url.
+
+    The is no programmatic license-checking here; that is up to the user.
 
     Parameters
     ----------

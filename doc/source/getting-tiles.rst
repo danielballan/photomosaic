@@ -10,8 +10,11 @@ from frames from Star Wars, etc.
 The photomosaic package includes tools for downloading image collections from
 public websites easily. These do not "scrape" the websites; they use the
 website's official API for programmatic access. At this time, we only support
-Flickr, but more will be added in the future. If you plan to share or sell the
-results, pay due attention to the license on the images you download.
+Flickr, but more will be added in the future.
+
+If you plan to share or sell your mosiac, pay due attention to the copyright
+license on the images you download. Where possible, we use the API to make
+compliance easier.
 
 Flickr
 ------
@@ -29,8 +32,12 @@ key and a secret key. For this application we don't need the secret key.
     pm.set_options(flickr_api_key='YOUR_API_KEY_HERE')
 
     # Download the first 300 results from a search for 'cats cars'.
-    pm.from_serach('cats cars', 'some_directory', 300)
+    pm.from_search('cats cars', 'some_directory', 300)
 
     # Download a specific album.
     pmf.from_url('https://www.flickr.com/photos/anapaunkovic/sets/72157646150658189',
                  'some_directory')
+
+.. autofunction:: photomosaic.flickr.from_search
+
+.. autofunction:: photomosaic.flickr.from_url
