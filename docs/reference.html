@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
+  <title>Reference &mdash; photomosaic 0+untagged.51.gd0ec6cf documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gd0ec6cf documentation" href="index.html"/>
         <link rel="prev" title="Palette Adjustment" href="palette.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0+untagged.51.gf562ef0
+                0+untagged.51.gd0ec6cf
               </div>
             
           
@@ -472,9 +472,9 @@ visualizing, convert back.</p>
 
 <dl class="function">
 <dt id="photomosaic.color_palette">
-<code class="descclassname">photomosaic.</code><code class="descname">color_palette</code><span class="sig-paren">(</span><em>image</em>, <em>bins=256</em>, <em>density=True</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#color_palette"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.color_palette" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">color_palette</code><span class="sig-paren">(</span><em>image</em>, <em>bins=256</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#color_palette"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.color_palette" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the distribution of each color channel.</p>
-<p>This wraps <code class="docutils literal"><span class="pre">numpy.histogram</span></code>, merely adding data munging relevant to
+<p>This wraps <code class="docutils literal"><span class="pre">numpy.histogram</span></code>, providing data munging relevant to
 image array with color channels. See numpy documentation for details on the
 meaning of the parameters.</p>
 <table class="docutils field-list" frame="void" rules="none">
@@ -488,10 +488,6 @@ meaning of the parameters.</p>
 <p><strong>bins</strong> : int or list</p>
 <blockquote>
 <div><p>default 256; passed through to <code class="docutils literal"><span class="pre">numpy.historgram</span></code></p>
-</div></blockquote>
-<p><strong>density</strong> : bool</p>
-<blockquote>
-<div><p>True by default; passed through to <code class="docutils literal"><span class="pre">numpy.histrogram</span></code>.</p>
 </div></blockquote>
 <p><strong>kwargs :</strong></p>
 <blockquote>
@@ -513,6 +509,8 @@ meaning of the parameters.</p>
 <dt id="photomosaic.palette_map">
 <code class="descclassname">photomosaic.</code><code class="descname">palette_map</code><span class="sig-paren">(</span><em>old_palette</em>, <em>new_palette</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#palette_map"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.palette_map" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a function that maps from one color palette onto another.</p>
+<p>These is wrapper around <a class="reference internal" href="#photomosaic.hist_map" title="photomosaic.hist_map"><code class="xref py py-func docutils literal"><span class="pre">hist_map()</span></code></a> that applies it to each color
+channel.</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
 <col class="field-body" />
@@ -544,11 +542,13 @@ meaning of the parameters.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>old_hist</strong> : tuple</p>
 <blockquote>
-<div><p>histogram arrays <code class="docutils literal"><span class="pre">(count,</span> <span class="pre">bins)</span></code></p>
+<div><p>Histogram arrays <code class="docutils literal"><span class="pre">(count,</span> <span class="pre">bins)</span></code> like those from <code class="docutils literal"><span class="pre">numpy.histogram</span></code>,
+where bins give edges, such that <code class="docutils literal"><span class="pre">len(bins)</span> <span class="pre">==</span> <span class="pre">1</span> <span class="pre">+</span> <span class="pre">len(counts)</span></code>.</p>
 </div></blockquote>
 <p><strong>new_hist</strong> : tuple</p>
 <blockquote>
-<div><p>histogram arrays <code class="docutils literal"><span class="pre">(count,</span> <span class="pre">bins)</span></code></p>
+<div><p>Histogram arrays <code class="docutils literal"><span class="pre">(count,</span> <span class="pre">bins)</span></code> like those from <code class="docutils literal"><span class="pre">numpy.histogram</span></code>,
+where bins give edges, such that <code class="docutils literal"><span class="pre">len(bins)</span> <span class="pre">==</span> <span class="pre">1</span> <span class="pre">+</span> <span class="pre">len(counts)</span></code>.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -952,7 +952,7 @@ the mosaic-building process.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.51.gf562ef0',
+            VERSION:'0+untagged.51.gd0ec6cf',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

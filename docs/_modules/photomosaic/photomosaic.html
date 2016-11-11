@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.photomosaic &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
+  <title>photomosaic.photomosaic &mdash; photomosaic 0+untagged.51.gd0ec6cf documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="../../index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gd0ec6cf documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0+untagged.51.gf562ef0
+                0+untagged.51.gd0ec6cf
               </div>
             
           
@@ -754,11 +754,11 @@
     <span class="k">return</span> <span class="n">new_tile</span></div>
 
 
-<div class="viewcode-block" id="color_palette"><a class="viewcode-back" href="../../reference.html#photomosaic.color_palette">[docs]</a><span class="k">def</span> <span class="nf">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="color_palette"><a class="viewcode-back" href="../../reference.html#photomosaic.color_palette">[docs]</a><span class="k">def</span> <span class="nf">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the distribution of each color channel.</span>
 
-<span class="sd">    This wraps ``numpy.histogram``, merely adding data munging relevant to</span>
+<span class="sd">    This wraps ``numpy.histogram``, providing data munging relevant to</span>
 <span class="sd">    image array with color channels. See numpy documentation for details on the</span>
 <span class="sd">    meaning of the parameters.</span>
 
@@ -768,8 +768,6 @@
 <span class="sd">        The last axis is expected to be the color axis.</span>
 <span class="sd">    bins : int or list</span>
 <span class="sd">        default 256; passed through to ``numpy.historgram``</span>
-<span class="sd">    density : bool</span>
-<span class="sd">        True by default; passed through to ``numpy.histrogram``.</span>
 <span class="sd">    kwargs :</span>
 <span class="sd">        passed through to ``numpy.histogram``</span>
 
@@ -780,19 +778,20 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
     <span class="n">num_channels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+    <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
-        <span class="n">counts</span><span class="p">,</span> <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">pixels</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="n">density</span><span class="p">,</span>
-                                    <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">counts</span><span class="p">,</span> <span class="n">bins</span><span class="p">))</span>
+        <span class="n">counts</span><span class="p">,</span> <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">pixels</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">counts</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">))</span>
     <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">results</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="palette_map"><a class="viewcode-back" href="../../reference.html#photomosaic.palette_map">[docs]</a><span class="k">def</span> <span class="nf">palette_map</span><span class="p">(</span><span class="n">old_palette</span><span class="p">,</span> <span class="n">new_palette</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build a function that maps from one color palette onto another.</span>
+
+<span class="sd">    These is wrapper around :func:`hist_map` that applies it to each color</span>
+<span class="sd">    channel.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -838,9 +837,11 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    old_hist : tuple</span>
-<span class="sd">        histogram arrays ``(count, bins)``</span>
+<span class="sd">        Histogram arrays ``(count, bins)`` like those from ``numpy.histogram``,</span>
+<span class="sd">        where bins give edges, such that ``len(bins) == 1 + len(counts)``.</span>
 <span class="sd">    new_hist : tuple</span>
-<span class="sd">        histogram arrays ``(count, bins)``</span>
+<span class="sd">        Histogram arrays ``(count, bins)`` like those from ``numpy.histogram``,</span>
+<span class="sd">        where bins give edges, such that ``len(bins) == 1 + len(counts)``.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -848,23 +849,28 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">old_counts</span><span class="p">,</span> <span class="n">old_bins</span> <span class="o">=</span> <span class="n">old_hist</span>
     <span class="n">new_counts</span><span class="p">,</span> <span class="n">new_bins</span> <span class="o">=</span> <span class="n">new_hist</span>
+
+    <span class="c1"># validate input</span>
+    <span class="k">if</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_counts</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">old_bins</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The input old_hist is invalid. &quot;</span>
+                         <span class="s2">&quot;Length of bins should be 1 + length of counts&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="mi">1</span> <span class="o">+</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_counts</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">new_bins</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;The input new_hist is invalid. &quot;</span>
+                         <span class="s2">&quot;Length of bins should be 1 + length of counts&quot;</span><span class="p">)</span>
+
     <span class="c1"># cumulative distribution functions</span>
-    <span class="n">old_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">old_counts</span><span class="p">)</span> <span class="o">/</span> <span class="n">old_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
-    <span class="n">new_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">new_counts</span><span class="p">)</span> <span class="o">/</span> <span class="n">new_counts</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">old_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">old_counts</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">old_counts</span><span class="p">)</span>
+    <span class="n">new_cdf</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">new_counts</span><span class="p">),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">new_counts</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">f</span><span class="p">(</span><span class="n">arr</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Rescale values in ``arr`` from old distribution to new.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># Identify a color bin for each pixel.</span>
-        <span class="n">old_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">old_bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">arr</span><span class="p">)</span>
+        <span class="c1"># Where in the old cdf did value(s) in arr fall?</span>
+        <span class="n">old_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">arr</span><span class="p">,</span> <span class="n">old_bins</span><span class="p">,</span> <span class="n">old_cdf</span><span class="p">)</span>
 
-        <span class="c1"># Where in the original gamut did this color fall?</span>
-        <span class="n">old_y</span> <span class="o">=</span> <span class="n">old_cdf</span><span class="p">[</span><span class="n">old_x</span><span class="p">]</span>
-
-        <span class="c1"># Find that same position in the new gamut. What is the color?</span>
-        <span class="n">new_x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">new_cdf</span><span class="p">,</span> <span class="n">old_y</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">new_bins</span><span class="p">[</span><span class="n">new_x</span><span class="p">]</span>
+        <span class="c1"># Find the value at the corresponding position in the new cdf.</span>
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">interp</span><span class="p">(</span><span class="n">old_y</span><span class="p">,</span> <span class="n">new_cdf</span><span class="p">,</span> <span class="n">new_bins</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">f</span></div>
 
@@ -1040,7 +1046,8 @@
     <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">palette</span><span class="p">))</span>
     <span class="n">lines</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">palette</span><span class="p">):</span>
-        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">counts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+        <span class="n">bin_centers</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">bins</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]],</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">bin_centers</span><span class="p">,</span> <span class="n">counts</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
     <span class="k">return</span> <span class="n">lines</span></div>
 </pre></div>
 
@@ -1075,7 +1082,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0+untagged.51.gf562ef0',
+            VERSION:'0+untagged.51.gd0ec6cf',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

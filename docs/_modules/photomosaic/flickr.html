@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.flickr &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
+  <title>photomosaic.flickr &mdash; photomosaic 0+untagged.51.gd0ec6cf documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="../../index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gd0ec6cf documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0+untagged.51.gf562ef0
+                0+untagged.51.gd0ec6cf
               </div>
             
           
@@ -138,6 +138,7 @@
 <span class="kn">import</span> <span class="nn">urllib</span>
 <span class="kn">import</span> <span class="nn">requests</span>
 <span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">import</span> <span class="nn">json</span>
 <span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
 <span class="kn">from</span> <span class="nn">.photomosaic</span> <span class="k">import</span> <span class="n">options</span>
 
@@ -173,11 +174,11 @@
 <span class="sd">    license : list or None</span>
 <span class="sd">        List of license codes documented by Flickr at</span>
 <span class="sd">        https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html</span>
-<span class="sd">        If None, photomosaic defaults to ``[7]``, returning only photos in the</span>
-<span class="sd">        &quot;commons&quot; with &quot;no known copyright restrictions.&quot;</span>
+<span class="sd">        If None, photomosaic defaults to ``[1, 2, 4, 5, 7, 8]``. See link for</span>
+<span class="sd">        details.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="n">license</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">license</span> <span class="o">=</span> <span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+        <span class="n">license</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
     <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
@@ -195,13 +196,20 @@
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;response: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
             <span class="k">break</span>
         <span class="n">photos</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;photos&#39;</span><span class="p">][</span><span class="s1">&#39;photo&#39;</span><span class="p">]</span>
-        <span class="k">for</span> <span class="n">photo</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">photos</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;downloading page </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">)):</span>
+        <span class="n">pbar</span> <span class="o">=</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">photos</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;downloading page </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">photo</span> <span class="ow">in</span> <span class="n">pbar</span><span class="p">:</span>
             <span class="k">if</span> <span class="p">(</span><span class="n">cutoff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">total</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">cutoff</span><span class="p">):</span>
+                <span class="n">pbar</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
                 <span class="k">return</span>
+            <span class="c1"># Download and save image.</span>
             <span class="n">url</span> <span class="o">=</span> <span class="p">(</span><span class="n">PATH</span> <span class="o">+</span> <span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
             <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-            <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span></div>
+            <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+            <span class="c1"># Save metadata for attribution.</span>
+            <span class="n">metapath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metapath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">metafile</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">photo</span><span class="p">,</span> <span class="n">metafile</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">_get_photoset</span><span class="p">(</span><span class="n">photoset_id</span><span class="p">,</span> <span class="n">nsid</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
@@ -226,6 +234,10 @@
             <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
             <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
             <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+            <span class="c1"># Save metadata for attribution.</span>
+            <span class="n">metapath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metapath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">metafile</span><span class="p">:</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">photo</span><span class="p">,</span> <span class="n">metafile</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="from_url"><a class="viewcode-back" href="../../getting-tiles.html#photomosaic.flickr.from_url">[docs]</a><span class="k">def</span> <span class="nf">from_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
@@ -237,7 +249,7 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    url : string</span>
-<span class="sd">        e.g., https://www.flickr.com/phtoos/&lt;username&gt;/sets/&lt;photoset_id&gt;</span>
+<span class="sd">        e.g., https://www.flickr.com/photos/&lt;username&gt;/sets/&lt;photoset_id&gt;</span>
 <span class="sd">    dest : string</span>
 <span class="sd">        Output directory</span>
 <span class="sd">    &quot;&quot;&quot;</span>
@@ -283,7 +295,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0+untagged.51.gf562ef0',
+            VERSION:'0+untagged.51.gd0ec6cf',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

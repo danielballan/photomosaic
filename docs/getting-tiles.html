@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Obtaining Images for Tiles &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
+  <title>Obtaining Images for Tiles &mdash; photomosaic 0+untagged.51.gd0ec6cf documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gd0ec6cf documentation" href="index.html"/>
         <link rel="next" title="Palette Adjustment" href="palette.html"/>
         <link rel="prev" title="Tutorial" href="tutorial.html"/> 
 
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0+untagged.51.gf562ef0
+                0+untagged.51.gd0ec6cf
               </div>
             
           
@@ -87,6 +87,7 @@
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Obtaining Images for Tiles</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#attribution">Attribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="#flickr">Flickr</a></li>
 </ul>
 </li>
@@ -143,15 +144,17 @@ variety of colors. Typically, about 300 images is the minimum for good results.
 And of course, it&#8217;s more fun if the pool images are thematically related to the
 target image: George Washington drawn from presidential protraits, Yoda drawn
 from frames from Star Wars, etc.</p>
+<div class="section" id="attribution">
+<h2>Attribution<a class="headerlink" href="#attribution" title="Permalink to this headline">¶</a></h2>
 <p>The photomosaic package includes convenience functions for downloading image
-collections from public websites. They do not &#8220;scrape&#8221; the websites; they use
-the websites&#8217; official API. At this time, we only support Flickr, but more will
-be added in the future. For full flexibility, you may want to just use the API
-directly. These convenience functions just aim to make the basics easy:
-downloading search results or downloading an album with a line or two of code.</p>
-<p>If you plan to share or sell your mosiac, pay due attention to the copyright
-license on the images you download. Where possible, we use the API to make
-compliance easier.</p>
+collections from public websites. They use the websites&#8217; official public API to
+&#8220;politely&#8221; scrape images and collect attribution information. For each image
+file, a text file (JSON) with attribution information is also saved. It is
+possible to filter queries based on their copyright license. If you plan to
+share or sell your mosiac, pay due attention to the copyright license on the
+images you download.</p>
+<p>At this time, we only support Flickr, but more will be added in the future.</p>
+</div>
 <div class="section" id="flickr">
 <h2>Flickr<a class="headerlink" href="#flickr" title="Permalink to this headline">¶</a></h2>
 <p>Apply for a Flickr API key
@@ -196,8 +199,8 @@ up to Flickr&#8217;s max (4000) will be downloaded.</p>
 <blockquote class="last">
 <div><p>List of license codes documented by Flickr at
 <a class="reference external" href="https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html">https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html</a>
-If None, photomosaic defaults to <code class="docutils literal"><span class="pre">[7]</span></code>, returning only photos in the
-&#8220;commons&#8221; with &#8220;no known copyright restrictions.&#8221;</p>
+If None, photomosaic defaults to <code class="docutils literal"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">4,</span> <span class="pre">5,</span> <span class="pre">7,</span> <span class="pre">8]</span></code>. See link for
+details.</p>
 </div></blockquote>
 </td>
 </tr>
@@ -216,7 +219,7 @@ If None, photomosaic defaults to <code class="docutils literal"><span class="pre
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string</p>
 <blockquote>
-<div><p>e.g., <a class="reference external" href="https://www.flickr.com/phtoos">https://www.flickr.com/phtoos</a>/&lt;username&gt;/sets/&lt;photoset_id&gt;</p>
+<div><p>e.g., <a class="reference external" href="https://www.flickr.com/photos">https://www.flickr.com/photos</a>/&lt;username&gt;/sets/&lt;photoset_id&gt;</p>
 </div></blockquote>
 <p><strong>dest</strong> : string</p>
 <blockquote class="last">
@@ -272,7 +275,7 @@ If None, photomosaic defaults to <code class="docutils literal"><span class="pre
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.51.gf562ef0',
+            VERSION:'0+untagged.51.gd0ec6cf',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

@@ -19,12 +19,14 @@ Mosaic with Palette Adjustment:
 .. figure:: _static/generated_images/basic.png
 
 The mosaic of the unadjusted image is truer to the original colors, but the
-adjusted image achieves higher detail.
+adjusted image achieves higher detail. The boost in details is especially
+important when the color palette of the tile pool lacks variety or does not
+overlap well with the color palette of the original image.
 
-To see how palette adjustment works, we'll look at "color palettes," histograms
-f the values in each color channel.
+To visualize color palette, we'll look at histograms of the values in each
+color channel.
 
-This is the "color palette" of the original image.
+This is the palette of the original image.
 
 .. code-block:: python
 
@@ -33,12 +35,14 @@ This is the "color palette" of the original image.
 
 .. plot::
 
+    import matplotlib.pyplot as plt
     from skimage import img_as_float
     from skimage.data import chelsea
     import photomosaic as pm
     image = img_as_float(chelsea())
     converted_img = pm.perceptual(image)
     pm.plot_palette(pm.color_palette(converted_img))
+    plt.suptitle('Color Palette of Original Target Image')
 
 Contrast this with the color palette of the candidate images in the pool,
 below.  The palette of the pool is broader (particularly in the second and
@@ -53,14 +57,16 @@ contrast.
 
 .. plot::
 
-    POOL_PATH = '/tmp/photomosaic-docs-pool/pool.json'
+    import matplotlib.pyplot as plt
     import photomosaic as pm
+    POOL_PATH = '/tmp/photomosaic-docs-pool/pool.json'
     pool = pm.import_pool(POOL_PATH)
     pm.plot_palette(pm.color_palette(list(pool.values())))
+    plt.suptitle('Color Palette of Tile Pool')
 
 The function :func:`adapt_to_pool` distorts the colors of the original
 image so that it has a color palette similar to the pool. Notice that the
-envelopes of the histograms below roughly match those above.
+envelopes of the histograms below match those above.
 
 .. code-block:: python
 
@@ -69,6 +75,7 @@ envelopes of the histograms below roughly match those above.
 
 .. plot::
 
+    import matplotlib.pyplot as plt
     from skimage.data import chelsea
     from skimage import img_as_float
     import photomosaic as pm
@@ -78,6 +85,7 @@ envelopes of the histograms below roughly match those above.
     pool = pm.import_pool(POOL_PATH)
     adjusted_img = pm.adapt_to_pool(converted_img, pool)
     pm.plot_palette(pm.color_palette(adjusted_img))
+    plt.suptitle('Color Palette of Adjusted Target Image')
 
 The adjusted image looks like this.
 

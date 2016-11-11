@@ -1,3 +1,4 @@
+import matplotlib.pyplot as plt
 from skimage.data import chelsea
 from skimage import img_as_float
 import photomosaic as pm
@@ -7,3 +8,4 @@ POOL_PATH = '/tmp/photomosaic-docs-pool/pool.json'
 pool = pm.import_pool(POOL_PATH)
 adjusted_img = pm.adapt_to_pool(converted_img, pool)
 pm.plot_palette(pm.color_palette(adjusted_img))
+plt.suptitle('Color Palette of Adjusted Target Image')
