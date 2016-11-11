@@ -2,15 +2,17 @@ Obtaining Images for Tiles
 ==========================
 
 The best mosaics come from using a large pool of tile images with a wide
-variety of colors. Typically, about 300 images in the minimum for good results.
+variety of colors. Typically, about 300 images is the minimum for good results.
 And of course, it's more fun if the pool images are thematically related to the
 target image: George Washington drawn from presidential protraits, Yoda drawn
 from frames from Star Wars, etc.
 
-The photomosaic package includes tools for downloading image collections from
-public websites easily. These do not "scrape" the websites; they use the
-website's official API for programmatic access. At this time, we only support
-Flickr, but more will be added in the future.
+The photomosaic package includes convenience functions for downloading image
+collections from public websites. They do not "scrape" the websites; they use
+the websites' official API. At this time, we only support Flickr, but more will
+be added in the future. For full flexibility, you may want to just use the API
+directly. These convenience functions just aim to make the basics easy:
+downloading search results or downloading an album with a line or two of code.
 
 If you plan to share or sell your mosiac, pay due attention to the copyright
 license on the images you download. Where possible, we use the API to make
