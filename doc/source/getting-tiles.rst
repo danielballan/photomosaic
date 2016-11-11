@@ -7,6 +7,9 @@ And of course, it's more fun if the pool images are thematically related to the
 target image: George Washington drawn from presidential protraits, Yoda drawn
 from frames from Star Wars, etc.
 
+Attribution
+-----------
+
 The photomosaic package includes convenience functions for downloading image
 collections from public websites. They use the websites' official public API to
 "politely" scrape images and collect attribution information. For each image
