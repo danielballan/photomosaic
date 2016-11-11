@@ -623,7 +623,7 @@ def color_palette(image, bins=256, density=True, **kwargs):
     """
     Compute the distribution of each color channel.
 
-    This wraps ``numpy.histogram``, merely adding data munging relevant to
+    This wraps ``numpy.histogram``, providing data munging relevant to
     image array with color channels. See numpy documentation for details on the
     meaning of the parameters.
 
@@ -658,6 +658,9 @@ def color_palette(image, bins=256, density=True, **kwargs):
 def palette_map(old_palette, new_palette):
     """
     Build a function that maps from one color palette onto another.
+
+    These is wrapper around :func:`hist_map` that applies it to each color
+    channel.
 
     Parameters
     ----------
@@ -703,9 +706,11 @@ def hist_map(old_hist, new_hist):
     Parameters
     ----------
     old_hist : tuple
-        histogram arrays ``(count, bins)``
+        Histogram arrays ``(count, bins)`` like those from ``numpy.histogram``,
+        where bins give edges, such that ``len(bins) == 1 + len(counts)``.
     new_hist : tuple
-        histogram arrays ``(count, bins)``
+        Histogram arrays ``(count, bins)`` like those from ``numpy.histogram``,
+        where bins give edges, such that ``len(bins) == 1 + len(counts)``.
 
     Returns
     -------
