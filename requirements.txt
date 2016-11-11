@@ -1,6 +1,7 @@
 colorspacious
+matplotlib
 numpy
+requests
 scikit-image
 scipy
 tqdm
-matplotlib
