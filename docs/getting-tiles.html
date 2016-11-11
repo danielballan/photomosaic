@@ -1,0 +1,303 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>Obtaining Images for Tiles &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="genindex.html"/>
+        <link rel="search" title="Search" href="search.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="index.html"/>
+        <link rel="next" title="Palette Adjustment" href="palette.html"/>
+        <link rel="prev" title="Tutorial" href="tutorial.html"/> 
+
+  
+  <script src="_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="index.html" class="icon icon-home"> photomosaic
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0+untagged.51.gf562ef0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Obtaining Images for Tiles</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#flickr">Flickr</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">photomosaic</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+ 
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>Obtaining Images for Tiles</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+            <a href="_sources/getting-tiles.txt" rel="nofollow"> View page source</a>
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <div class="section" id="obtaining-images-for-tiles">
+<h1>Obtaining Images for Tiles<a class="headerlink" href="#obtaining-images-for-tiles" title="Permalink to this headline">¶</a></h1>
+<p>The best mosaics come from using a large pool of tile images with a wide
+variety of colors. Typically, about 300 images is the minimum for good results.
+And of course, it&#8217;s more fun if the pool images are thematically related to the
+target image: George Washington drawn from presidential protraits, Yoda drawn
+from frames from Star Wars, etc.</p>
+<p>The photomosaic package includes convenience functions for downloading image
+collections from public websites. They do not &#8220;scrape&#8221; the websites; they use
+the websites&#8217; official API. At this time, we only support Flickr, but more will
+be added in the future. For full flexibility, you may want to just use the API
+directly. These convenience functions just aim to make the basics easy:
+downloading search results or downloading an album with a line or two of code.</p>
+<p>If you plan to share or sell your mosiac, pay due attention to the copyright
+license on the images you download. Where possible, we use the API to make
+compliance easier.</p>
+<div class="section" id="flickr">
+<h2>Flickr<a class="headerlink" href="#flickr" title="Permalink to this headline">¶</a></h2>
+<p>Apply for a Flickr API key
+<a class="reference external" href="https://www.flickr.com/services/api/keys/apply/">here</a>. You will get an API
+key and a secret key. For this application we don&#8217;t need the secret key.</p>
+<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
+<span class="kn">import</span> <span class="nn">photomosaic.flickr</span> <span class="kn">as</span> <span class="nn">pmf</span>
+
+<span class="c1"># Provide your API key.</span>
+<span class="n">pm</span><span class="o">.</span><span class="n">set_options</span><span class="p">(</span><span class="n">flickr_api_key</span><span class="o">=</span><span class="s1">&#39;YOUR_API_KEY_HERE&#39;</span><span class="p">)</span>
+
+<span class="c1"># Download the first 300 results from a search for &#39;cats cars&#39;.</span>
+<span class="n">pm</span><span class="o">.</span><span class="n">from_search</span><span class="p">(</span><span class="s1">&#39;cats cars&#39;</span><span class="p">,</span> <span class="s1">&#39;some_directory&#39;</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
+
+<span class="c1"># Download a specific album.</span>
+<span class="n">pmf</span><span class="o">.</span><span class="n">from_url</span><span class="p">(</span><span class="s1">&#39;https://www.flickr.com/photos/anapaunkovic/sets/72157646150658189&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;some_directory&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<dl class="function">
+<dt id="photomosaic.flickr.from_search">
+<code class="descclassname">photomosaic.flickr.</code><code class="descname">from_search</code><span class="sig-paren">(</span><em>text</em>, <em>dest</em>, <em>cutoff=None</em>, <em>license=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/flickr.html#from_search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.flickr.from_search" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download photos matching a search query and the specified license(s).</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>text</strong> : string</p>
+<blockquote>
+<div><p>Search query</p>
+</div></blockquote>
+<p><strong>dest</strong> : string</p>
+<blockquote>
+<div><p>Output directory</p>
+</div></blockquote>
+<p><strong>cutoff</strong> : integer or None, optional</p>
+<blockquote>
+<div><p>Max number of images to download. By default, None; all matches
+up to Flickr&#8217;s max (4000) will be downloaded.</p>
+</div></blockquote>
+<p><strong>license</strong> : list or None</p>
+<blockquote class="last">
+<div><p>List of license codes documented by Flickr at
+<a class="reference external" href="https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html">https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html</a>
+If None, photomosaic defaults to <code class="docutils literal"><span class="pre">[7]</span></code>, returning only photos in the
+&#8220;commons&#8221; with &#8220;no known copyright restrictions.&#8221;</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="function">
+<dt id="photomosaic.flickr.from_url">
+<code class="descclassname">photomosaic.flickr.</code><code class="descname">from_url</code><span class="sig-paren">(</span><em>url</em>, <em>dest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/flickr.html#from_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.flickr.from_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download an album (&#8220;photoset&#8221;) from its url.</p>
+<p>The is no programmatic license-checking here; that is up to the user.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string</p>
+<blockquote>
+<div><p>e.g., <a class="reference external" href="https://www.flickr.com/phtoos">https://www.flickr.com/phtoos</a>/&lt;username&gt;/sets/&lt;photoset_id&gt;</p>
+</div></blockquote>
+<p><strong>dest</strong> : string</p>
+<blockquote class="last">
+<div><p>Output directory</p>
+</div></blockquote>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</div>
+</div>
+
+
+           </div>
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="palette.html" class="btn btn-neutral float-right" title="Palette Adjustment" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="tutorial.html" class="btn btn-neutral" title="Tutorial" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Photomosaic Contributors.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0+untagged.51.gf562ef0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

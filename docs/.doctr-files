@@ -8,7 +8,9 @@ docs/_images/palette-2.png
 docs/_images/palette-3.png
 docs/_images/tutorial-1.png
 docs/_modules/index.html
+docs/_modules/photomosaic/flickr.html
 docs/_modules/photomosaic/photomosaic.html
+docs/_sources/getting-tiles.txt
 docs/_sources/index.txt
 docs/_sources/palette.txt
 docs/_sources/reference.txt
@@ -55,6 +57,7 @@ docs/_static/up-pressed.png
 docs/_static/up.png
 docs/_static/websupport.js
 docs/genindex.html
+docs/getting-tiles.html
 docs/index.html
 docs/objects.inv
 docs/palette-1.hires.png

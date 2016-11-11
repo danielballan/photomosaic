@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.photomosaic &mdash; photomosaic 0+untagged.61.gf6489b7 documentation</title>
+  <title>photomosaic.photomosaic &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.61.gf6489b7 documentation" href="../../index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0+untagged.61.gf6489b7
+                0+untagged.51.gf562ef0
               </div>
             
           
@@ -85,6 +85,7 @@
             
                 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-tiles.html">Obtaining Images for Tiles</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../palette.html">Palette Adjustment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../reference.html">Reference</a></li>
 </ul>
@@ -159,7 +160,7 @@
            <span class="s1">&#39;rgb&#39;</span><span class="p">:</span> <span class="s1">&#39;sRGB1&#39;</span><span class="p">}</span>
 
 
-<div class="viewcode-block" id="set_options"><a class="viewcode-back" href="../../reference.html#photomosaic.set_options">[docs]</a><span class="k">def</span> <span class="nf">set_options</span><span class="p">(</span><span class="n">imread</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">perceptual</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="set_options"><a class="viewcode-back" href="../../reference.html#photomosaic.set_options">[docs]</a><span class="k">def</span> <span class="nf">set_options</span><span class="p">(</span><span class="n">imread</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">perceptual</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">rgb</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">flickr_api_key</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Set global options</span>
 
@@ -173,6 +174,8 @@
 <span class="sd">        colorspacious documentation for details</span>
 <span class="sd">    rgb : string or dict</span>
 <span class="sd">        specific RGB colorspace used for color conversion</span>
+<span class="sd">    flickr_api_key : string</span>
+<span class="sd">        API key used by photomosaic.flickr module</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">global</span> <span class="n">options</span>
     <span class="k">if</span> <span class="n">imread</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -180,7 +183,9 @@
     <span class="k">if</span> <span class="n">perceptual</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">options</span><span class="p">[</span><span class="s1">&#39;perceptual&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">perceptual</span>
     <span class="k">if</span> <span class="n">rgb</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;rgb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rgb</span></div>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;rgb&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">rgb</span>
+    <span class="k">if</span> <span class="n">flickr_api_key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">options</span><span class="p">[</span><span class="s1">&#39;flickr_api_key&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">flickr_api_key</span></div>
 
 
 <div class="viewcode-block" id="basic_mosaic"><a class="viewcode-back" href="../../reference.html#photomosaic.basic_mosaic">[docs]</a><span class="k">def</span> <span class="nf">basic_mosaic</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="n">grid_dims</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
@@ -1070,7 +1075,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0+untagged.61.gf6489b7',
+            VERSION:'0+untagged.51.gf562ef0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

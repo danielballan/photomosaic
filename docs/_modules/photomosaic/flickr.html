@@ -1,0 +1,314 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>photomosaic.flickr &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
+  
+
+  
+  
+
+  
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  
+
+  
+
+  
+        <link rel="index" title="Index"
+              href="../../genindex.html"/>
+        <link rel="search" title="Search" href="../../search.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="../../index.html"/>
+        <link rel="up" title="Module code" href="../index.html"/> 
+
+  
+  <script src="../../_static/js/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search">
+          
+
+          
+            <a href="../../index.html" class="icon icon-home"> photomosaic
+          
+
+          
+          </a>
+
+          
+            
+            
+              <div class="version">
+                0+untagged.51.gf562ef0
+              </div>
+            
+          
+
+          
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+
+          
+        </div>
+
+        <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+          
+            
+            
+                <ul>
+<li class="toctree-l1"><a class="reference internal" href="../../tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../getting-tiles.html">Obtaining Images for Tiles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../palette.html">Palette Adjustment</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../reference.html">Reference</a></li>
+</ul>
+
+            
+          
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="../../index.html">photomosaic</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          
+
+
+
+
+
+<div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="../../index.html">Docs</a> &raquo;</li>
+      
+          <li><a href="../index.html">Module code</a> &raquo;</li>
+      
+    <li>photomosaic.flickr</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+            
+  <h1>Source code for photomosaic.flickr</h1><div class="highlight"><pre>
+<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">urllib</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">itertools</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">.photomosaic</span> <span class="k">import</span> <span class="n">options</span>
+
+
+<span class="n">PUBLIC_URL</span> <span class="o">=</span> <span class="s2">&quot;https://www.flickr.com/photos/&quot;</span>
+<span class="n">API_URL</span> <span class="o">=</span> <span class="s1">&#39;https://api.flickr.com/services/rest/&#39;</span>
+<span class="n">PATH</span> <span class="o">=</span> <span class="s2">&quot;http://farm</span><span class="si">{farm}</span><span class="s2">.staticflickr.com/</span><span class="si">{server}</span><span class="s2">/&quot;</span>
+<span class="n">NAME</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{id}</span><span class="s2">_</span><span class="si">{secret}</span><span class="s2">_b.jpg&quot;</span>
+
+
+<span class="k">def</span> <span class="nf">_flickr_request</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">params</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">api_key</span><span class="o">=</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;flickr_api_key&#39;</span><span class="p">],</span>
+                  <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;json&#39;</span><span class="p">,</span>
+                  <span class="n">nojsoncallback</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                  <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">API_URL</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="n">params</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
+
+
+<div class="viewcode-block" id="from_search"><a class="viewcode-back" href="../../getting-tiles.html#photomosaic.flickr.from_search">[docs]</a><span class="k">def</span> <span class="nf">from_search</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">license</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download photos matching a search query and the specified license(s).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    text : string</span>
+<span class="sd">        Search query</span>
+<span class="sd">    dest : string</span>
+<span class="sd">        Output directory</span>
+<span class="sd">    cutoff : integer or None, optional</span>
+<span class="sd">        Max number of images to download. By default, None; all matches</span>
+<span class="sd">        up to Flickr&#39;s max (4000) will be downloaded.</span>
+<span class="sd">    license : list or None</span>
+<span class="sd">        List of license codes documented by Flickr at</span>
+<span class="sd">        https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html</span>
+<span class="sd">        If None, photomosaic defaults to ``[7]``, returning only photos in the</span>
+<span class="sd">        &quot;commons&quot; with &quot;no known copyright restrictions.&quot;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">license</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">license</span> <span class="o">=</span> <span class="p">[</span><span class="mi">7</span><span class="p">]</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">_flickr_request</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="s1">&#39;flickr.photos.search&#39;</span><span class="p">,</span>
+                <span class="n">license</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">license</span><span class="p">)),</span>
+                <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
+                <span class="n">content_type</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># photos only</span>
+                <span class="n">page</span><span class="o">=</span><span class="n">page</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stat&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;ok&#39;</span><span class="p">:</span>
+            <span class="c1"># If we fail requesting page 1, that&#39;s an error. If we fail</span>
+            <span class="c1"># requesting page &gt; 1, we&#39;re just out of photos.</span>
+            <span class="k">if</span> <span class="n">page</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;response: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+            <span class="k">break</span>
+        <span class="n">photos</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;photos&#39;</span><span class="p">][</span><span class="s1">&#39;photo&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">photo</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">photos</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;downloading page </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">cutoff</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="n">total</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">cutoff</span><span class="p">):</span>
+                <span class="k">return</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="p">(</span><span class="n">PATH</span> <span class="o">+</span> <span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span></div>
+
+
+<span class="k">def</span> <span class="nf">_get_photoset</span><span class="p">(</span><span class="n">photoset_id</span><span class="p">,</span> <span class="n">nsid</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
+        <span class="n">response</span> <span class="o">=</span> <span class="n">_flickr_request</span><span class="p">(</span>
+                <span class="n">method</span><span class="o">=</span><span class="s1">&#39;flickr.photosets.getPhotos&#39;</span><span class="p">,</span>
+                <span class="n">photoset_id</span><span class="o">=</span><span class="n">photoset_id</span><span class="p">,</span>
+                <span class="n">nsid</span><span class="o">=</span><span class="n">nsid</span><span class="p">,</span>
+                <span class="n">content_type</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># photos only</span>
+                <span class="n">page</span><span class="o">=</span><span class="n">page</span>
+        <span class="p">)</span>
+        <span class="k">if</span> <span class="n">response</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;stat&#39;</span><span class="p">)</span> <span class="o">!=</span> <span class="s1">&#39;ok&#39;</span><span class="p">:</span>
+            <span class="c1"># If we fail requesting page 1, that&#39;s an error. If we fail</span>
+            <span class="c1"># requesting page &gt; 1, we&#39;re just out of photos.</span>
+            <span class="k">if</span> <span class="n">page</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;response: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">response</span><span class="p">))</span>
+            <span class="k">break</span>
+        <span class="n">photos</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;photoset&#39;</span><span class="p">][</span><span class="s1">&#39;photo&#39;</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">photo</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">photos</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;downloading page </span><span class="si">{}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">page</span><span class="p">)):</span>
+            <span class="n">url</span> <span class="o">=</span> <span class="p">(</span><span class="n">PATH</span> <span class="o">+</span> <span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
+            <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+            <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="from_url"><a class="viewcode-back" href="../../getting-tiles.html#photomosaic.flickr.from_url">[docs]</a><span class="k">def</span> <span class="nf">from_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Download an album (&quot;photoset&quot;) from its url.</span>
+
+<span class="sd">    The is no programmatic license-checking here; that is up to the user.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    url : string</span>
+<span class="sd">        e.g., https://www.flickr.com/phtoos/&lt;username&gt;/sets/&lt;photoset_id&gt;</span>
+<span class="sd">    dest : string</span>
+<span class="sd">        Output directory</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">PUBLIC_URL</span> <span class="o">+</span> <span class="s2">&quot;(.*)/sets/([0-9]+)&quot;</span><span class="p">,</span> <span class="n">url</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">m</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;&quot;&quot;Expected URL like:</span>
+<span class="s2">https://www.flickr.com/photos/&lt;username&gt;/sets/&lt;photoset_id&gt;&quot;&quot;&quot;</span><span class="p">)</span>
+    <span class="n">username</span><span class="p">,</span> <span class="n">photoset_id</span> <span class="o">=</span> <span class="n">m</span><span class="o">.</span><span class="n">groups</span><span class="p">()</span>
+    <span class="n">response</span> <span class="o">=</span> <span class="n">_flickr_request</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s2">&quot;flickr.urls.lookupUser&quot;</span><span class="p">,</span>
+                               <span class="n">url</span><span class="o">=</span><span class="n">PUBLIC_URL</span> <span class="o">+</span> <span class="n">username</span><span class="p">)</span>
+    <span class="n">nsid</span> <span class="o">=</span> <span class="n">response</span><span class="p">[</span><span class="s1">&#39;user&#39;</span><span class="p">][</span><span class="s1">&#39;username&#39;</span><span class="p">][</span><span class="s1">&#39;_content&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">_get_photoset</span><span class="p">(</span><span class="n">photoset_id</span><span class="p">,</span> <span class="n">nsid</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2016, Photomosaic Contributors.
+
+    </p>
+  </div>
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+
+</footer>
+
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'../../',
+            VERSION:'0+untagged.51.gf562ef0',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="../../_static/jquery.js"></script>
+      <script type="text/javascript" src="../../_static/underscore.js"></script>
+      <script type="text/javascript" src="../../_static/doctools.js"></script>
+      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="../../_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; photomosaic 0+untagged.61.gf6489b7 documentation</title>
+  <title>Reference &mdash; photomosaic 0+untagged.51.gf562ef0 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0+untagged.61.gf6489b7 documentation" href="index.html"/>
+    <link rel="top" title="photomosaic 0+untagged.51.gf562ef0 documentation" href="index.html"/>
         <link rel="prev" title="Palette Adjustment" href="palette.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0+untagged.61.gf6489b7
+                0+untagged.51.gf562ef0
               </div>
             
           
@@ -85,6 +85,7 @@
             
                 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="getting-tiles.html">Obtaining Images for Tiles</a></li>
 <li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Reference</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#candidate-pool">Candidate Pool</a></li>
@@ -306,7 +307,7 @@ To configure the specific perceptual colorspace used, change
 
 <dl class="function">
 <dt id="photomosaic.set_options">
-<code class="descclassname">photomosaic.</code><code class="descname">set_options</code><span class="sig-paren">(</span><em>imread=None</em>, <em>perceptual=None</em>, <em>rgb=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#set_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.set_options" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">set_options</code><span class="sig-paren">(</span><em>imread=None</em>, <em>perceptual=None</em>, <em>rgb=None</em>, <em>flickr_api_key=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#set_options"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.set_options" title="Permalink to this definition">¶</a></dt>
 <dd><p>Set global options</p>
 <table class="docutils field-list" frame="void" rules="none">
 <col class="field-name" />
@@ -323,8 +324,12 @@ e.g., <code class="docutils literal"><span class="pre">{'plugin':</span> <span c
 colorspacious documentation for details</p>
 </div></blockquote>
 <p><strong>rgb</strong> : string or dict</p>
-<blockquote class="last">
+<blockquote>
 <div><p>specific RGB colorspace used for color conversion</p>
+</div></blockquote>
+<p><strong>flickr_api_key</strong> : string</p>
+<blockquote class="last">
+<div><p>API key used by photomosaic.flickr module</p>
 </div></blockquote>
 </td>
 </tr>
@@ -947,7 +952,7 @@ the mosaic-building process.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0+untagged.61.gf6489b7',
+            VERSION:'0+untagged.51.gf562ef0',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
