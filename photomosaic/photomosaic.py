@@ -849,7 +849,7 @@ def rainbow_of_squares(target_dir, shape=(10, 10), range_params=(0, 256, 15)):
                     pbar.update()
 
 
-def export_pool(pool, filepath):
+def export_pool(pool, filepath, abspath=True):
     """
     Export pool to json.
 
@@ -865,9 +865,11 @@ def export_pool(pool, filepath):
     ----------
     pool : dict
     filepath : string
+    abspath : boolean, optional
+        Convert pool keys (assumed to be filenames) to absolute paths if True.
     """
     with open(filepath, 'w') as f:
-        json.dump({k[0]: list(v) for k, v in pool.items()}, f)
+        json.dump({os.path.abspath(k[0]): list(v) for k, v in pool.items()}, f)
 
 
 def import_pool(filepath):
