@@ -200,7 +200,7 @@ First, analyze the average color of each tile in the target image.
 
     # Reshape the 3D array (height, width, color_channels) into
     # a 2D array (num_pixels, color_channels) and average over the pixels.
-    tile_colors = [numpy.mean(adapted_img[tile].reshape(-1, 3), 0)
+    tile_colors = [numpy.mean(scaled_img[tile].reshape(-1, 3), 0)
                    for tile in tiles]
 
 The result is a list of colors, one for each tile in ``tiles``. The values in

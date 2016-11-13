@@ -45,3 +45,15 @@ key and a secret key. For this application we don't need the secret key.
 .. autofunction:: photomosaic.flickr.from_search
 
 .. autofunction:: photomosaic.flickr.from_url
+
+Instagram
+---------
+
+Instagram's API requires users to create an app and through a review process to
+download more than a couple photos.
+`Instaport <https://vibbi.com/instaport/>`_ provides an officially-sanctioned
+way to download some or all of the photos from any Instagram account, but it is
+noted to be unreliable. (The first Google suggestion is "instaport not working"
+and the author's experience corroborates this.) Alternatively, open
+https://www.instagram.com/<username>, scroll down until the full history of the
+account has loaded, and save the page.

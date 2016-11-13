@@ -3,8 +3,8 @@ Reference
 
 .. currentmodule:: photomosaic
 
-Candidate Pool
---------------
+Candidate Image Pool
+--------------------
 
 .. autofunction:: make_pool
 .. autofunction:: import_pool
@@ -47,6 +47,7 @@ Matching
 --------
 
 .. autofunction:: simple_matcher
+.. autofunction:: simple_matcher_unique
 
 Drawing
 -------

@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.0+2.g666f2a0 documentation</title>
+  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.0+9.ga8c6cf4 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+2.g666f2a0 documentation" href="../../index.html"/>
+    <link rel="top" title="photomosaic 0.3.0+9.ga8c6cf4 documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.0+2.g666f2a0
+                0.3.0+9.ga8c6cf4
               </div>
             
           
@@ -479,6 +479,53 @@
     <span class="k">if</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
         <span class="n">image</span> <span class="o">=</span> <span class="n">image</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">image</span></div>
+
+
+<div class="viewcode-block" id="simple_matcher_unique"><a class="viewcode-back" href="../../reference.html#photomosaic.simple_matcher_unique">[docs]</a><span class="k">def</span> <span class="nf">simple_matcher_unique</span><span class="p">(</span><span class="n">pool</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Build a matching function that matches to the closest color not yet used.</span>
+
+<span class="sd">    It maintains an internal copy of the pool to tracky which items have been</span>
+<span class="sd">    used.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pool : dict</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    match_func : function</span>
+<span class="sd">        function that accepts a color vector and returns a match</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">pool</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+    <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">vector</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Return the key of the &quot;nearest&quot; unused pool image.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        vector : array</span>
+<span class="sd">            characterizing the color to be matched</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        args : tuple</span>
+<span class="sd">            arguments that specify how to open the image</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;All but one of the </span><span class="si">{total}</span><span class="s2"> pool images have &quot;</span>
+                               <span class="s2">&quot;been used.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">total</span><span class="o">=</span><span class="n">total</span><span class="p">))</span>
+        <span class="n">args</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">vector</span> <span class="k">for</span> <span class="n">vector</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        <span class="n">tree</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+        <span class="n">distance</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="n">pool</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>  <span class="c1"># Remove this tile from our local copy of pool.</span>
+        <span class="k">return</span> <span class="n">key</span>
+
+    <span class="k">return</span> <span class="n">match</span></div>
 
 
 <div class="viewcode-block" id="simple_matcher"><a class="viewcode-back" href="../../reference.html#photomosaic.simple_matcher">[docs]</a><span class="k">def</span> <span class="nf">simple_matcher</span><span class="p">(</span><span class="n">pool</span><span class="p">):</span>
@@ -985,7 +1032,7 @@
                     <span class="n">pbar</span><span class="o">.</span><span class="n">update</span><span class="p">()</span></div>
 
 
-<div class="viewcode-block" id="export_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.export_pool">[docs]</a><span class="k">def</span> <span class="nf">export_pool</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+<div class="viewcode-block" id="export_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.export_pool">[docs]</a><span class="k">def</span> <span class="nf">export_pool</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">filepath</span><span class="p">,</span> <span class="n">abspath</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Export pool to json.</span>
 
@@ -1001,9 +1048,11 @@
 <span class="sd">    ----------</span>
 <span class="sd">    pool : dict</span>
 <span class="sd">    filepath : string</span>
+<span class="sd">    abspath : boolean, optional</span>
+<span class="sd">        Convert pool keys (assumed to be filenames) to absolute paths if True.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">f</span><span class="p">)</span></div>
+        <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">({</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span> <span class="nb">list</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">pool</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span> <span class="n">f</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="import_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.import_pool">[docs]</a><span class="k">def</span> <span class="nf">import_pool</span><span class="p">(</span><span class="n">filepath</span><span class="p">):</span>
@@ -1083,7 +1132,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.3.0+2.g666f2a0',
+            VERSION:'0.3.0+9.ga8c6cf4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

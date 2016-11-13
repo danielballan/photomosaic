@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic &mdash; photomosaic 0.3.0+2.g666f2a0 documentation</title>
+  <title>photomosaic &mdash; photomosaic 0.3.0+9.ga8c6cf4 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+2.g666f2a0 documentation" href="#"/>
+    <link rel="top" title="photomosaic 0.3.0+9.ga8c6cf4 documentation" href="#"/>
         <link rel="next" title="Tutorial" href="tutorial.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.0+2.g666f2a0
+                0.3.0+9.ga8c6cf4
               </div>
             
           
@@ -135,8 +135,41 @@
             
   <div class="section" id="photomosaic">
 <h1>photomosaic<a class="headerlink" href="#photomosaic" title="Permalink to this headline">¶</a></h1>
-<p>Assemble thumbnail-sized images from a large collection into a tiling which,
-viewed at a distance, gives the impression of one large photo.</p>
+<p>Tile images from a large collection into a mosaic which, viewed at a distance,
+gives the impression of one large photo.</p>
+<p>This implementation has several distinguishing features:</p>
+<ul class="simple">
+<li>Mix tiles of different sizes and place them in irreigular or overlapping
+positions &#8212; not confined to the usual rectangular grid.</li>
+<li>Parition an image into tiles adaptively, subdividing regions of high detail
+into smaller tiles.</li>
+<li>Include a mask, and tile paritioning can roughly trace its edge, giving the
+appearance of puzzle pieces scattered on a table in some shape.</li>
+<li>To maximize contrast and reduce tile repetition, adapt the color palette of
+the target image to the palette of colors available in the tile pool.</li>
+<li>Obtain large collections of images to use as tiles using the official
+Flickr API. Easily collect attribution info and filter results by license.</li>
+<li>Employ perceptually-accurate color matching via the
+<a class="reference external" href="colorspacious.readthedocs.io">colorspacious</a> package.</li>
+</ul>
+<div class="section" id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
+<p>The code is factored with maximum flexibility in mind and uses only standard
+data structures: numpy arrays, Python slice objects, and other built-in Python
+types. It is easy to experiment with custom strategies for paritioning tiles,
+characterizing colors, choosing matches, or drawing the final result.</p>
+<p>You are cheerfully invited to contribute to this project
+<a class="reference external" href="https://github.com/danielballan/photomosaic">on GitHub</a>. In particular,
+these topics might be interesting:</p>
+<ul class="simple">
+<li>Alternative matching algorithms that minimize tile repetition</li>
+<li>Alternative tile-partitioning algorithms</li>
+<li>Additional image-havesting tools (continuing to give due attention to
+licenses, attribution)</li>
+</ul>
+</div>
+<div class="section" id="table-of-contents">
+<h2>Table of Contents<a class="headerlink" href="#table-of-contents" title="Permalink to this headline">¶</a></h2>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a><ul>
@@ -148,11 +181,12 @@ viewed at a distance, gives the impression of one large photo.</p>
 <li class="toctree-l1"><a class="reference internal" href="getting-tiles.html">Obtaining Images for Tiles</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="getting-tiles.html#attribution">Attribution</a></li>
 <li class="toctree-l2"><a class="reference internal" href="getting-tiles.html#flickr">Flickr</a></li>
+<li class="toctree-l2"><a class="reference internal" href="getting-tiles.html#instagram">Instagram</a></li>
 </ul>
 </li>
 <li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="reference.html#candidate-pool">Candidate Pool</a></li>
+<li class="toctree-l2"><a class="reference internal" href="reference.html#candidate-image-pool">Candidate Image Pool</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#color-conversion">Color Conversion</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#utilities">Utilities</a></li>
 <li class="toctree-l2"><a class="reference internal" href="reference.html#color-palettes">Color Palettes</a></li>
@@ -169,6 +203,7 @@ viewed at a distance, gives the impression of one large photo.</p>
 </ul>
 </li>
 </ul>
+</div>
 </div>
 </div>
 
@@ -211,7 +246,7 @@ viewed at a distance, gives the impression of one large photo.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0+2.g666f2a0',
+            VERSION:'0.3.0+9.ga8c6cf4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
