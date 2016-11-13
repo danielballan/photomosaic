@@ -3,8 +3,8 @@ Reference
 
 .. currentmodule:: photomosaic
 
-Candidate Pool
---------------
+Candidate Image Pool
+--------------------
 
 .. autofunction:: make_pool
 .. autofunction:: import_pool
