@@ -345,6 +345,53 @@ def standardize_image(image):
     return image
 
 
+def simple_matcher_unique(pool):
+    """
+    Build a matching function that matches to the closest color not yet used.
+
+    It maintains an internal copy of the pool to tracky which items have been
+    used.
+
+    Parameters
+    ----------
+    pool : dict
+
+    Returns
+    -------
+    match_func : function
+        function that accepts a color vector and returns a match
+    """
+    pool = OrderedDict(pool)
+    total = len(pool)
+
+    def match(vector):
+        """
+        Return the key of the "nearest" unused pool image.
+
+        Parameters
+        ----------
+        vector : array
+            characterizing the color to be matched
+
+        Returns
+        -------
+        args : tuple
+            arguments that specify how to open the image
+        """
+        if len(pool) < 2:
+            raise RuntimeError("All but one of the {total} pool images have "
+                               "been used.".format(total=total))
+        args = list(pool.keys())
+        data = np.array([vector for vector in pool.values()])
+        tree = cKDTree(data)
+        distance, index = tree.query(vector, k=1)
+        key = args[index]
+        pool.pop(key)  # Remove this tile from our local copy of pool.
+        return key
+
+    return match
+
+
 def simple_matcher(pool):
     """
     Build a matching function that simply matches to the closest color.

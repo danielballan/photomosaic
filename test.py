@@ -17,6 +17,14 @@ def test_basic_mosiac(image, pool):
     pm.basic_mosaic(image, pool, (5, 5))
 
 
+def test_exhaust_simple_matcher_unique(pool):
+    m = pm.simple_matcher_unique(pool)
+    for _ in range(len(pool) - 1):
+        m([0, 0, 0])
+    with pytest.raises(RuntimeError):
+        m([0, 0, 0])
+
+
 def test_depth(pool):
     "using greater depth should trace out the mask edge more closely"
     image = np.zeros((1000, 1000))

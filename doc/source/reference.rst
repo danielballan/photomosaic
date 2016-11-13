@@ -47,6 +47,7 @@ Matching
 --------
 
 .. autofunction:: simple_matcher
+.. autofunction:: simple_matcher_unique
 
 Drawing
 -------
