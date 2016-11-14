@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.flickr &mdash; photomosaic 0.3.0+9.ga8c6cf4 documentation</title>
+  <title>photomosaic.flickr &mdash; photomosaic 0.3.0+14.g8f392dd documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+9.ga8c6cf4 documentation" href="../../index.html"/>
+    <link rel="top" title="photomosaic 0.3.0+14.g8f392dd documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.0+9.ga8c6cf4
+                0.3.0+14.g8f392dd
               </div>
             
           
@@ -134,7 +134,8 @@
            <div itemprop="articleBody">
             
   <h1>Source code for photomosaic.flickr</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">os</span>
+<span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">import</span> <span class="nn">os</span>
 <span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">urllib</span>
 <span class="kn">import</span> <span class="nn">requests</span>
@@ -159,7 +160,7 @@
     <span class="k">return</span> <span class="n">response</span><span class="o">.</span><span class="n">json</span><span class="p">()</span>
 
 
-<div class="viewcode-block" id="from_search"><a class="viewcode-back" href="../../getting-tiles.html#photomosaic.flickr.from_search">[docs]</a><span class="k">def</span> <span class="nf">from_search</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">license</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<div class="viewcode-block" id="from_search"><a class="viewcode-back" href="../../getting-tiles.html#photomosaic.flickr.from_search">[docs]</a><span class="k">def</span> <span class="nf">from_search</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="mi">4000</span><span class="p">,</span> <span class="n">license</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Download photos matching a search query and the specified license(s).</span>
 
@@ -182,10 +183,15 @@
         <span class="n">license</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">8</span><span class="p">]</span>
     <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">raw_licenses</span> <span class="o">=</span> <span class="n">_flickr_request</span><span class="p">(</span><span class="n">method</span><span class="o">=</span><span class="s1">&#39;flickr.photos.licenses.getInfo&#39;</span><span class="p">)</span>
+    <span class="n">licenses</span> <span class="o">=</span> <span class="p">{</span><span class="n">item</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;id&#39;</span><span class="p">):</span> <span class="n">item</span>
+                <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">raw_licenses</span><span class="p">[</span><span class="s1">&#39;licenses&#39;</span><span class="p">][</span><span class="s1">&#39;license&#39;</span><span class="p">]}</span>
     <span class="k">for</span> <span class="n">page</span> <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
         <span class="n">response</span> <span class="o">=</span> <span class="n">_flickr_request</span><span class="p">(</span>
                 <span class="n">method</span><span class="o">=</span><span class="s1">&#39;flickr.photos.search&#39;</span><span class="p">,</span>
                 <span class="n">license</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">license</span><span class="p">)),</span>
+                <span class="n">extras</span><span class="o">=</span><span class="s1">&#39;owner_name,license&#39;</span><span class="p">,</span>
+                <span class="n">per_page</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span>  <span class="c1"># the max allowed value, to conserve our queries</span>
                 <span class="n">text</span><span class="o">=</span><span class="n">text</span><span class="p">,</span>
                 <span class="n">content_type</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># photos only</span>
                 <span class="n">page</span><span class="o">=</span><span class="n">page</span>
@@ -206,11 +212,22 @@
             <span class="n">url</span> <span class="o">=</span> <span class="p">(</span><span class="n">PATH</span> <span class="o">+</span> <span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
             <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-            <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+            <span class="n">_try_retrieve_warn_failure</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
             <span class="c1"># Save metadata for attribution.</span>
             <span class="n">metapath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metapath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">metafile</span><span class="p">:</span>
-                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">photo</span><span class="p">,</span> <span class="n">metafile</span><span class="p">)</span></div>
+                <span class="c1"># Collect attribution info as specified by Creative Commons</span>
+                <span class="c1"># best practices:</span>
+                <span class="c1"># https://wiki.creativecommons.org/wiki/best_practices_for_attribution#Title.2C_Author.2C_Source.2C_License</span>
+                <span class="n">license_id</span> <span class="o">=</span> <span class="n">photo</span><span class="p">[</span><span class="s1">&#39;license&#39;</span><span class="p">]</span>
+                <span class="n">attribution</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;title&#39;</span><span class="p">:</span> <span class="n">photo</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;owner&#39;</span><span class="p">:</span> <span class="n">photo</span><span class="p">[</span><span class="s1">&#39;owner&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;owner_name&#39;</span><span class="p">:</span> <span class="n">photo</span><span class="p">[</span><span class="s1">&#39;ownername&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;owner_url&#39;</span><span class="p">:</span> <span class="n">PUBLIC_URL</span> <span class="o">+</span> <span class="n">photo</span><span class="p">[</span><span class="s1">&#39;ownername&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;license_url&#39;</span><span class="p">:</span> <span class="n">licenses</span><span class="p">[</span><span class="n">license_id</span><span class="p">][</span><span class="s1">&#39;url&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;license_name&#39;</span><span class="p">:</span> <span class="n">licenses</span><span class="p">[</span><span class="n">license_id</span><span class="p">][</span><span class="s1">&#39;name&#39;</span><span class="p">],</span>
+                               <span class="s1">&#39;license&#39;</span><span class="p">:</span> <span class="n">license_id</span><span class="p">}</span>
+                <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">attribution</span><span class="p">,</span> <span class="n">metafile</span><span class="p">)</span></div>
 
 
 <span class="k">def</span> <span class="nf">_get_photoset</span><span class="p">(</span><span class="n">photoset_id</span><span class="p">,</span> <span class="n">nsid</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
@@ -234,11 +251,26 @@
             <span class="n">url</span> <span class="o">=</span> <span class="p">(</span><span class="n">PATH</span> <span class="o">+</span> <span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
             <span class="n">filename</span> <span class="o">=</span> <span class="p">(</span><span class="n">NAME</span><span class="p">)</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="o">**</span><span class="n">photo</span><span class="p">)</span>
             <span class="n">filepath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
-            <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+            <span class="n">_try_retrieve_warn_failure</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
             <span class="c1"># Save metadata for attribution.</span>
             <span class="n">metapath</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filepath</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;.json&#39;</span>
             <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">metapath</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">metafile</span><span class="p">:</span>
                 <span class="n">json</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">photo</span><span class="p">,</span> <span class="n">metafile</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_try_retrieve_warn_failure</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">):</span>
+    <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlretrieve</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">filepath</span><span class="p">)</span>
+        <span class="k">except</span> <span class="n">urllib</span><span class="o">.</span><span class="n">error</span><span class="o">.</span><span class="n">HTTPError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">error</span><span class="p">)</span>
+            <span class="k">continue</span>  <span class="c1"># try again</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">break</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># tried 3 times, failed every time</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Skipping </span><span class="si">{}</span><span class="s2">: </span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">errors</span><span class="p">))</span>
 
 
 <div class="viewcode-block" id="from_url"><a class="viewcode-back" href="../../getting-tiles.html#photomosaic.flickr.from_url">[docs]</a><span class="k">def</span> <span class="nf">from_url</span><span class="p">(</span><span class="n">url</span><span class="p">,</span> <span class="n">dest</span><span class="p">):</span>
@@ -296,7 +328,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.3.0+9.ga8c6cf4',
+            VERSION:'0.3.0+14.g8f392dd',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
