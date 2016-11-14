@@ -50,6 +50,7 @@ def from_search(text, dest, cutoff=None, license=None):
         response = _flickr_request(
                 method='flickr.photos.search',
                 license=','.join(map(str, license)),
+                per_page=500,  # the max allowed value, to conserve our queries
                 text=text,
                 content_type=1,  # photos only
                 page=page
