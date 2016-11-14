@@ -1,3 +1,4 @@
+import warnings
 import os
 import re
 import urllib
@@ -114,11 +115,26 @@ def _get_photoset(photoset_id, nsid, dest):
             url = (PATH + NAME).format(**photo)
             filename = (NAME).format(**photo)
             filepath = os.path.join(dest, filename)
-            urllib.request.urlretrieve(url, filepath)
+            _try_retrieve_warn_failure(url, filepath)
             # Save metadata for attribution.
             metapath = os.path.splitext(filepath)[0] + '.json'
             with open(metapath, 'w') as metafile:
                 json.dump(photo, metafile)
+
+
+def _try_retrieve_warn_failure(url, filepath):
+    errors = []
+    for _ in range(3):
+        try:
+            urllib.request.urlretrieve(url, filepath)
+        except urllib.error.HTTPError as error:
+            errors.append(error)
+            continue  # try again
+        else:
+            break
+    else:
+        # tried 3 times, failed every time
+        warnings.warn("Skipping {}: {}".format(url, errors))
 
 
 def from_url(url, dest):
