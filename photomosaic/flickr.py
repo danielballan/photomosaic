@@ -24,7 +24,7 @@ def _flickr_request(**kwargs):
     return response.json()
 
 
-def from_search(text, dest, cutoff=None, license=None):
+def from_search(text, dest, cutoff=4000, license=None):
     """
     Download photos matching a search query and the specified license(s).
 
