@@ -46,10 +46,14 @@ def from_search(text, dest, cutoff=None, license=None):
         license = [1, 2, 4, 5, 7, 8]
     os.makedirs(dest, exist_ok=True)
     total = itertools.count(0)
+    raw_licenses = _flickr_request(method='flickr.photos.licenses.getInfo')
+    licenses = {item.pop('id'): item
+                for item in raw_licenses['licenses']['license']}
     for page in itertools.count(1):
         response = _flickr_request(
                 method='flickr.photos.search',
                 license=','.join(map(str, license)),
+                extras='owner_name,license',
                 per_page=500,  # the max allowed value, to conserve our queries
                 text=text,
                 content_type=1,  # photos only
@@ -71,11 +75,22 @@ def from_search(text, dest, cutoff=None, license=None):
             url = (PATH + NAME).format(**photo)
             filename = (NAME).format(**photo)
             filepath = os.path.join(dest, filename)
-            urllib.request.urlretrieve(url, filepath)
+            _try_retrieve_warn_failure(url, filepath)
             # Save metadata for attribution.
             metapath = os.path.splitext(filepath)[0] + '.json'
             with open(metapath, 'w') as metafile:
-                json.dump(photo, metafile)
+                # Collect attribution info as specified by Creative Commons
+                # best practices:
+                # https://wiki.creativecommons.org/wiki/best_practices_for_attribution#Title.2C_Author.2C_Source.2C_License
+                license_id = photo['license']
+                attribution = {'title': photo['title'],
+                               'owner': photo['owner'],
+                               'owner_name': photo['ownername'],
+                               'owner_url': PUBLIC_URL + photo['ownername'],
+                               'license_url': licenses[license_id]['url'],
+                               'license_name': licenses[license_id]['name'],
+                               'license': license_id}
+                json.dump(attribution, metafile)
 
 
 def _get_photoset(photoset_id, nsid, dest):
