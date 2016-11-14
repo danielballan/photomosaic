@@ -524,9 +524,10 @@ def partition(image, grid_dims, mask=None, depth=0, split_thresh=10):
         edge.
     depth : int, optional
         Default is 0. Maximum times a tile can be subdivided.
-    split_thresh : float or None
+    split_thresh : float or None, optional
         Threshold of standard deviation in color above which tile should be
-        subdivided; default is 0.1. This only applies if depth > 0.
+        subdivided. This only applies if depth > 0. The (somewhat arbitrary)
+        default is 10; a lower value leads to more aggressive splitting.
 
     Returns
     -------
