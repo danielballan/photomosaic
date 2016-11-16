@@ -69,7 +69,7 @@ def basic_mosaic(image, pool, grid_dims, *, mask=None, depth=0):
         e.g., ``{(filename,): [1, 2, 3]}``
     grid_dims : tuple
         Number of tiles along height, width.
-    mask : array or None
+    mask : array or None, optional
         must have same shape as ``image``
     depth : int, optional
         Each tile can be subdividing this many times in regions of high
@@ -160,7 +160,7 @@ def rgb(image, clip=True):
     return result
 
 
-def adapt_to_pool(image, pool):
+def adapt_to_pool(image, pool, mask=None):
     """
     Adjust the color timing of an image to use colors available in the pool.
 
@@ -174,6 +174,8 @@ def adapt_to_pool(image, pool):
     ----------
     image : array
     pool : dict
+    mask : array or None, optional
+        must have same shape as ``image``
 
     Returns
     -------
@@ -186,7 +188,7 @@ def adapt_to_pool(image, pool):
 
         >>> rgb(adapt_to_pool(perceptual(image), pool)
     """
-    image_palette = color_palette(image)
+    image_palette = color_palette(image, mask=mask)
     pool_palette = color_palette(list(pool.values()))
     return palette_map(image_palette, pool_palette)(image)
 
@@ -516,9 +518,10 @@ def partition(image, grid_dims, mask=None, depth=0, split_thresh=10):
 
     Parameters
     ----------
+    image : array
     grid_dims : int or tuple
         number of (largest) tiles along each dimension
-    mask : array, optional
+    mask : array or None, optional
         Tiles that straddle a mask edge will be subdivided, creating a smooth
         edge.
     depth : int, optional
@@ -665,7 +668,7 @@ def pad(tile, padding):
     return new_tile
 
 
-def color_palette(image, bins=256, **kwargs):
+def color_palette(image, bins=256, mask=None, **kwargs):
     """
     Compute the distribution of each color channel.
 
@@ -679,6 +682,8 @@ def color_palette(image, bins=256, **kwargs):
         The last axis is expected to be the color axis.
     bins : int or list
         default 256; passed through to ``numpy.historgram``
+    mask : array or None, optional
+        must have same shape as ``image``
     kwargs :
         passed through to ``numpy.histogram``
 
@@ -690,6 +695,8 @@ def color_palette(image, bins=256, **kwargs):
     image = np.asarray(image)
     num_channels = image.shape[-1]
     pixels = image.reshape(-1, num_channels)
+    if mask is not None:
+        pixels = pixels[mask.ravel()]
     results = []
     for i in range(num_channels):
         counts, bin_edges = np.histogram(pixels[:, i], bins=bins, **kwargs)
