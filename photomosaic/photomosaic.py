@@ -231,9 +231,8 @@ def sample_pixels(image, size, replace=True):
     replace : boolean, optional
         whether to sample with or without replacement; default True
     """
-    num_pixels = np.product(image.shape[:-1])
-    pixels = image.reshape(num_pixels, image.shape[-1])
-    random_indexes = np.random.choice(num_pixels, size=size, replace=replace)
+    pixels = image.reshape(-1, image.shape[-1])
+    random_indexes = np.random.choice(len(pixels), size=size, replace=replace)
     return pixels[random_indexes]
 
 
@@ -581,8 +580,7 @@ def partition(image, grid_dims, mask=None, depth=0, split_thresh=10):
                 new_tiles.extend(subtiles)
                 continue
             if split_thresh is not None:
-                num_pixels = np.product(image[tile].shape[:-1])
-                pixels = image[tile].reshape(num_pixels, num_channels)
+                pixels = image[tile].reshape(-1, num_channels)
                 if np.mean(np.std(pixels, 0)) > split_thresh:
                     # This tile has high color variation.
                     new_tiles.extend(_subdivide(tile))
@@ -731,8 +729,7 @@ def palette_map(old_palette, new_palette):
         if num_channels != len(functions):
             raise ValueError("expected image with {} color channels; this has "
                              "{}".format(len(functions), num_channels))
-        num_pixels = np.product(image.shape[:-1])
-        pixels = image.reshape(num_pixels, num_channels)
+        pixels = image.reshape(-1, num_channels)
 
         result = np.empty_like(pixels)
         for i, f in enumerate(functions):
