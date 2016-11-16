@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.0+14.g8f392dd documentation</title>
+  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.0+16.g71cd3f4 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="../../genindex.html"/>
         <link rel="search" title="Search" href="../../search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+14.g8f392dd documentation" href="../../index.html"/>
+    <link rel="top" title="photomosaic 0.3.0+16.g71cd3f4 documentation" href="../../index.html"/>
         <link rel="up" title="Module code" href="../index.html"/> 
 
   
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.0+14.g8f392dd
+                0.3.0+16.g71cd3f4
               </div>
             
           
@@ -205,7 +205,7 @@
 <span class="sd">        e.g., ``{(filename,): [1, 2, 3]}``</span>
 <span class="sd">    grid_dims : tuple</span>
 <span class="sd">        Number of tiles along height, width.</span>
-<span class="sd">    mask : array or None</span>
+<span class="sd">    mask : array or None, optional</span>
 <span class="sd">        must have same shape as ``image``</span>
 <span class="sd">    depth : int, optional</span>
 <span class="sd">        Each tile can be subdividing this many times in regions of high</span>
@@ -296,7 +296,7 @@
     <span class="k">return</span> <span class="n">result</span></div>
 
 
-<div class="viewcode-block" id="adapt_to_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.adapt_to_pool">[docs]</a><span class="k">def</span> <span class="nf">adapt_to_pool</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pool</span><span class="p">):</span>
+<div class="viewcode-block" id="adapt_to_pool"><a class="viewcode-back" href="../../reference.html#photomosaic.adapt_to_pool">[docs]</a><span class="k">def</span> <span class="nf">adapt_to_pool</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Adjust the color timing of an image to use colors available in the pool.</span>
 
@@ -310,6 +310,8 @@
 <span class="sd">    ----------</span>
 <span class="sd">    image : array</span>
 <span class="sd">    pool : dict</span>
+<span class="sd">    mask : array or None, optional</span>
+<span class="sd">        must have same shape as ``image``</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -322,7 +324,7 @@
 
 <span class="sd">        &gt;&gt;&gt; rgb(adapt_to_pool(perceptual(image), pool)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">image_palette</span> <span class="o">=</span> <span class="n">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
+    <span class="n">image_palette</span> <span class="o">=</span> <span class="n">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
     <span class="n">pool_palette</span> <span class="o">=</span> <span class="n">color_palette</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
     <span class="k">return</span> <span class="n">palette_map</span><span class="p">(</span><span class="n">image_palette</span><span class="p">,</span> <span class="n">pool_palette</span><span class="p">)(</span><span class="n">image</span><span class="p">)</span></div>
 
@@ -367,9 +369,8 @@
 <span class="sd">    replace : boolean, optional</span>
 <span class="sd">        whether to sample with or without replacement; default True</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">random_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">)</span>
+    <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">random_indexes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pixels</span><span class="p">),</span> <span class="n">size</span><span class="o">=</span><span class="n">size</span><span class="p">,</span> <span class="n">replace</span><span class="o">=</span><span class="n">replace</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">pixels</span><span class="p">[</span><span class="n">random_indexes</span><span class="p">]</span></div>
 
 
@@ -653,9 +654,10 @@
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
+<span class="sd">    image : array</span>
 <span class="sd">    grid_dims : int or tuple</span>
 <span class="sd">        number of (largest) tiles along each dimension</span>
-<span class="sd">    mask : array, optional</span>
+<span class="sd">    mask : array or None, optional</span>
 <span class="sd">        Tiles that straddle a mask edge will be subdivided, creating a smooth</span>
 <span class="sd">        edge.</span>
 <span class="sd">    depth : int, optional</span>
@@ -717,8 +719,7 @@
                 <span class="n">new_tiles</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">subtiles</span><span class="p">)</span>
                 <span class="k">continue</span>
             <span class="k">if</span> <span class="n">split_thresh</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-                <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+                <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="p">[</span><span class="n">tile</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">pixels</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span> <span class="o">&gt;</span> <span class="n">split_thresh</span><span class="p">:</span>
                     <span class="c1"># This tile has high color variation.</span>
                     <span class="n">new_tiles</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">_subdivide</span><span class="p">(</span><span class="n">tile</span><span class="p">))</span>
@@ -803,7 +804,7 @@
     <span class="k">return</span> <span class="n">new_tile</span></div>
 
 
-<div class="viewcode-block" id="color_palette"><a class="viewcode-back" href="../../reference.html#photomosaic.color_palette">[docs]</a><span class="k">def</span> <span class="nf">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="color_palette"><a class="viewcode-back" href="../../reference.html#photomosaic.color_palette">[docs]</a><span class="k">def</span> <span class="nf">color_palette</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Compute the distribution of each color channel.</span>
 
@@ -817,6 +818,8 @@
 <span class="sd">        The last axis is expected to be the color axis.</span>
 <span class="sd">    bins : int or list</span>
 <span class="sd">        default 256; passed through to ``numpy.historgram``</span>
+<span class="sd">    mask : array or None, optional</span>
+<span class="sd">        must have same shape as ``image``</span>
 <span class="sd">    kwargs :</span>
 <span class="sd">        passed through to ``numpy.histogram``</span>
 
@@ -828,6 +831,8 @@
     <span class="n">image</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
     <span class="n">num_channels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="n">pixels</span><span class="p">[</span><span class="n">mask</span><span class="o">.</span><span class="n">ravel</span><span class="p">()]</span>
     <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_channels</span><span class="p">):</span>
         <span class="n">counts</span><span class="p">,</span> <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">pixels</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -867,8 +872,7 @@
         <span class="k">if</span> <span class="n">num_channels</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">functions</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;expected image with </span><span class="si">{}</span><span class="s2"> color channels; this has &quot;</span>
                              <span class="s2">&quot;</span><span class="si">{}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">functions</span><span class="p">),</span> <span class="n">num_channels</span><span class="p">))</span>
-        <span class="n">num_pixels</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
-        <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">num_pixels</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
+        <span class="n">pixels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_channels</span><span class="p">)</span>
 
         <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">pixels</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">f</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">functions</span><span class="p">):</span>
@@ -1133,7 +1137,7 @@
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'../../',
-            VERSION:'0.3.0+14.g8f392dd',
+            VERSION:'0.3.0+16.g71cd3f4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true

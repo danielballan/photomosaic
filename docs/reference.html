@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; photomosaic 0.3.0+14.g8f392dd documentation</title>
+  <title>Reference &mdash; photomosaic 0.3.0+16.g71cd3f4 documentation</title>
   
 
   
@@ -33,7 +33,7 @@
         <link rel="index" title="Index"
               href="genindex.html"/>
         <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+14.g8f392dd documentation" href="index.html"/>
+    <link rel="top" title="photomosaic 0.3.0+16.g71cd3f4 documentation" href="index.html"/>
         <link rel="next" title="Release Notes" href="release-notes.html"/>
         <link rel="prev" title="Palette Adjustment" href="palette.html"/> 
 
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.3.0+14.g8f392dd
+                0.3.0+16.g71cd3f4
               </div>
             
           
@@ -449,7 +449,7 @@ on 1-dimensional arrays).</p>
 <h2>Color Palettes<a class="headerlink" href="#color-palettes" title="Permalink to this headline">¶</a></h2>
 <dl class="function">
 <dt id="photomosaic.adapt_to_pool">
-<code class="descclassname">photomosaic.</code><code class="descname">adapt_to_pool</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#adapt_to_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.adapt_to_pool" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">adapt_to_pool</code><span class="sig-paren">(</span><em>image</em>, <em>pool</em>, <em>mask=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#adapt_to_pool"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.adapt_to_pool" title="Permalink to this definition">¶</a></dt>
 <dd><p>Adjust the color timing of an image to use colors available in the pool.</p>
 <p>For meaningful results, <code class="docutils literal"><span class="pre">image</span></code> and <code class="docutils literal"><span class="pre">pool</span></code> must be in the same
 colorspace.</p>
@@ -461,6 +461,10 @@ colorspace.</p>
 <tbody valign="top">
 <tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image</strong> : array</p>
 <p><strong>pool</strong> : dict</p>
+<p><strong>mask</strong> : array or None, optional</p>
+<blockquote>
+<div><p>must have same shape as <code class="docutils literal"><span class="pre">image</span></code></p>
+</div></blockquote>
 </td>
 </tr>
 <tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last"><strong>adapted_image</strong> : array</p>
@@ -478,7 +482,7 @@ visualizing, convert back.</p>
 
 <dl class="function">
 <dt id="photomosaic.color_palette">
-<code class="descclassname">photomosaic.</code><code class="descname">color_palette</code><span class="sig-paren">(</span><em>image</em>, <em>bins=256</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#color_palette"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.color_palette" title="Permalink to this definition">¶</a></dt>
+<code class="descclassname">photomosaic.</code><code class="descname">color_palette</code><span class="sig-paren">(</span><em>image</em>, <em>bins=256</em>, <em>mask=None</em>, <em>**kwargs</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#color_palette"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.color_palette" title="Permalink to this definition">¶</a></dt>
 <dd><p>Compute the distribution of each color channel.</p>
 <p>This wraps <code class="docutils literal"><span class="pre">numpy.histogram</span></code>, providing data munging relevant to
 image array with color channels. See numpy documentation for details on the
@@ -494,6 +498,10 @@ meaning of the parameters.</p>
 <p><strong>bins</strong> : int or list</p>
 <blockquote>
 <div><p>default 256; passed through to <code class="docutils literal"><span class="pre">numpy.historgram</span></code></p>
+</div></blockquote>
+<p><strong>mask</strong> : array or None, optional</p>
+<blockquote>
+<div><p>must have same shape as <code class="docutils literal"><span class="pre">image</span></code></p>
 </div></blockquote>
 <p><strong>kwargs :</strong></p>
 <blockquote>
@@ -603,11 +611,12 @@ contrast, creating a grid with tiles of varied size.</p>
 <col class="field-name" />
 <col class="field-body" />
 <tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>grid_dims</strong> : int or tuple</p>
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>image</strong> : array</p>
+<p><strong>grid_dims</strong> : int or tuple</p>
 <blockquote>
 <div><p>number of (largest) tiles along each dimension</p>
 </div></blockquote>
-<p><strong>mask</strong> : array, optional</p>
+<p><strong>mask</strong> : array or None, optional</p>
 <blockquote>
 <div><p>Tiles that straddle a mask edge will be subdivided, creating a smooth
 edge.</p>
@@ -792,7 +801,7 @@ e.g., <code class="docutils literal"><span class="pre">{(filename,):</span> <spa
 <blockquote>
 <div><p>Number of tiles along height, width.</p>
 </div></blockquote>
-<p><strong>mask</strong> : array or None</p>
+<p><strong>mask</strong> : array or None, optional</p>
 <blockquote>
 <div><p>must have same shape as <code class="docutils literal"><span class="pre">image</span></code></p>
 </div></blockquote>
@@ -984,7 +993,7 @@ the mosaic-building process.</p>
     <script type="text/javascript">
         var DOCUMENTATION_OPTIONS = {
             URL_ROOT:'./',
-            VERSION:'0.3.0+14.g8f392dd',
+            VERSION:'0.3.0+16.g71cd3f4',
             COLLAPSE_INDEX:false,
             FILE_SUFFIX:'.html',
             HAS_SOURCE:  true
