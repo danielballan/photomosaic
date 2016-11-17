@@ -43,6 +43,7 @@ def from_search(text, dest, cutoff=4000, license=None):
         If None, photomosaic defaults to ``[1, 2, 4, 5, 7, 8]``. See link for
         details.
     """
+    dest = os.path.expanduser(dest)
     if license is None:
         license = [1, 2, 4, 5, 7, 8]
     os.makedirs(dest, exist_ok=True)
@@ -95,6 +96,7 @@ def from_search(text, dest, cutoff=4000, license=None):
 
 
 def _get_photoset(photoset_id, nsid, dest):
+    dest = os.path.expanduser(dest)
     os.makedirs(dest, exist_ok=True)
     for page in itertools.count(1):
         response = _flickr_request(
@@ -150,6 +152,7 @@ def from_url(url, dest):
     dest : string
         Output directory
     """
+    dest = os.path.expanduser(dest)
     m = re.match(PUBLIC_URL + "(.*)/sets/([0-9]+)", url)
     if m is None:
         raise ValueError("""Expected URL like:
