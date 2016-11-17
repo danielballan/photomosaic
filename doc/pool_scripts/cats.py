@@ -1,4 +1,5 @@
 import os
+import photomosaic.flickr
 import photomosaic as pm
 
 
