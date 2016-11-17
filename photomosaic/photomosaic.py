@@ -298,7 +298,7 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
         pool = {}
     if analyzer is None:
         analyzer = partial(np.mean, axis=0)
-    filenames = glob.glob(glob_string)
+    filenames = glob.glob(os.path.expanduser(glob_string))
     if not filenames:
         raise ValueError("No matches found for {}".format(glob_string))
     for filename in tqdm(filenames, desc='analyzing pool'):
@@ -920,7 +920,7 @@ def export_pool(pool, filepath, abspath=True):
     abspath : boolean, optional
         Convert pool keys (assumed to be filenames) to absolute paths if True.
     """
-    with open(filepath, 'w') as f:
+    with open(os.path.expanduser(filepath), 'w') as f:
         json.dump({os.path.abspath(k[0]): list(v) for k, v in pool.items()}, f)
 
 
@@ -943,7 +943,7 @@ def import_pool(filepath):
     -------
     pool : dict
     """
-    with open(filepath, 'r') as f:
+    with open(os.path.expanduser(filepath), 'r') as f:
         return {tuple([k]): np.array(v) for k, v in json.load(f).items()}
 
 

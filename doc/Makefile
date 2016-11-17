@@ -48,6 +48,10 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
+.PHONY: pools
+pools:
+	find pool_scripts/*.py | sort | xargs -t -n 1 python
+
 .PHONY: images
 images:
 	find source/scripts/*.py | sort | xargs -t -n 1 python
