@@ -350,7 +350,7 @@ def simple_matcher_unique(pool):
     """
     Build a matching function that matches to the closest color not yet used.
 
-    It maintains an internal copy of the pool to tracky which items have been
+    It maintains an internal copy of the pool to track which items have been
     used.
 
     Parameters

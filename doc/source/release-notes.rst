@@ -7,8 +7,8 @@ Release Notes
 Enhancements
 ++++++++++++
 
-* Implement histogram mapping to perform tiling in an adpative color palette.
-* Add ability to subdivide tiles based on local constrast.
+* Implement histogram mapping to perform tiling in an adaptive color palette.
+* Add ability to subdivide tiles based on local contrast.
 * Add utilities to padding, translating, and randomly scattering tiles relative
   to their true position.
 * Add a tool for downloading images from Flickr for use as tile pools.
