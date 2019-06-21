@@ -8,48 +8,48 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Obtaining Images for Tiles &mdash; photomosaic 0.3.0+20.g9e3c1cf documentation</title>
+  <title>Obtaining Images for Tiles &mdash; photomosaic 0.3.0+33.g67e3972 documentation</title>
   
 
   
   
+  
+  
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+        <script type="text/javascript" src="_static/copybutton.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+20.g9e3c1cf documentation" href="index.html"/>
-        <link rel="next" title="Palette Adjustment" href="palette.html"/>
-        <link rel="prev" title="Tutorial" href="tutorial.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Palette Adjustment" href="palette.html" />
+    <link rel="prev" title="Tutorial" href="tutorial.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
+   
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.3.0+20.g9e3c1cf
+                0.3.0+33.g67e3972
               </div>
             
           
@@ -84,7 +84,10 @@
           
             
             
-                <ul class="current">
+              
+            
+            
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Obtaining Images for Tiles</a><ul>
 <li class="toctree-l2"><a class="reference internal" href="#attribution">Attribution</a></li>
@@ -106,34 +109,54 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">photomosaic</a>
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">photomosaic</a>
+        
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Obtaining Images for Tiles</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Obtaining Images for Tiles</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/getting-tiles.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/getting-tiles.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -143,17 +166,17 @@
 <h1>Obtaining Images for Tiles<a class="headerlink" href="#obtaining-images-for-tiles" title="Permalink to this headline">¶</a></h1>
 <p>The best mosaics come from using a large pool of tile images with a wide
 variety of colors. Typically, about 300 images is the minimum for good results.
-And of course, it&#8217;s more fun if the pool images are thematically related to the
-target image: George Washington drawn from presidential protraits, Yoda drawn
+And of course, it’s more fun if the pool images are thematically related to the
+target image: George Washington drawn from presidential portraits, Yoda drawn
 from frames from Star Wars, etc.</p>
 <div class="section" id="attribution">
 <h2>Attribution<a class="headerlink" href="#attribution" title="Permalink to this headline">¶</a></h2>
 <p>The photomosaic package includes convenience functions for downloading image
-collections from public websites. They use the websites&#8217; official public API to
-&#8220;politely&#8221; scrape images and collect attribution information. For each image
+collections from public websites. They use the websites’ official public API to
+“politely” scrape images and collect attribution information. For each image
 file, a text file (JSON) with attribution information is also saved. It is
 possible to filter queries based on their copyright license. If you plan to
-share or sell your mosiac, pay due attention to the copyright license on the
+share or sell your mosaic, pay due attention to the copyright license on the
 images you download.</p>
 <p>At this time, we only support Flickr, but more will be added in the future.</p>
 </div>
@@ -161,8 +184,8 @@ images you download.</p>
 <h2>Flickr<a class="headerlink" href="#flickr" title="Permalink to this headline">¶</a></h2>
 <p>Apply for a Flickr API key
 <a class="reference external" href="https://www.flickr.com/services/api/keys/apply/">here</a>. You will get an API
-key and a secret key. For this application we don&#8217;t need the secret key.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
+key and a secret key. For this application we don’t need the secret key.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
 <span class="kn">import</span> <span class="nn">photomosaic.flickr</span> <span class="kn">as</span> <span class="nn">pmf</span>
 
 <span class="c1"># Provide your API key.</span>
@@ -178,70 +201,54 @@ key and a secret key. For this application we don&#8217;t need the secret key.</
 </div>
 <dl class="function">
 <dt id="photomosaic.flickr.from_search">
-<code class="descclassname">photomosaic.flickr.</code><code class="descname">from_search</code><span class="sig-paren">(</span><em>text</em>, <em>dest</em>, <em>cutoff=4000</em>, <em>license=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/flickr.html#from_search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.flickr.from_search" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">photomosaic.flickr.</code><code class="sig-name descname">from_search</code><span class="sig-paren">(</span><em class="sig-param">text</em>, <em class="sig-param">dest</em>, <em class="sig-param">cutoff=4000</em>, <em class="sig-param">license=None</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/flickr.html#from_search"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.flickr.from_search" title="Permalink to this definition">¶</a></dt>
 <dd><p>Download photos matching a search query and the specified license(s).</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>text</strong> : string</p>
-<blockquote>
-<div><p>Search query</p>
-</div></blockquote>
-<p><strong>dest</strong> : string</p>
-<blockquote>
-<div><p>Output directory</p>
-</div></blockquote>
-<p><strong>cutoff</strong> : integer or None, optional</p>
-<blockquote>
-<div><p>Max number of images to download. By default, None; all matches
-up to Flickr&#8217;s max (4000) will be downloaded.</p>
-</div></blockquote>
-<p><strong>license</strong> : list or None</p>
-<blockquote class="last">
-<div><p>List of license codes documented by Flickr at
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>text</strong><span class="classifier">string</span></dt><dd><p>Search query</p>
+</dd>
+<dt><strong>dest</strong><span class="classifier">string</span></dt><dd><p>Output directory</p>
+</dd>
+<dt><strong>cutoff</strong><span class="classifier">integer or None, optional</span></dt><dd><p>Max number of images to download. By default, None; all matches
+up to Flickr’s max (4000) will be downloaded.</p>
+</dd>
+<dt><strong>license</strong><span class="classifier">list or None</span></dt><dd><p>List of license codes documented by Flickr at
 <a class="reference external" href="https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html">https://www.flickr.com/services/api/flickr.photos.licenses.getInfo.html</a>
-If None, photomosaic defaults to <code class="docutils literal"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">4,</span> <span class="pre">5,</span> <span class="pre">7,</span> <span class="pre">8]</span></code>. See link for
+If None, photomosaic defaults to <code class="docutils literal notranslate"><span class="pre">[1,</span> <span class="pre">2,</span> <span class="pre">4,</span> <span class="pre">5,</span> <span class="pre">7,</span> <span class="pre">8]</span></code>. See link for
 details.</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 <dl class="function">
 <dt id="photomosaic.flickr.from_url">
-<code class="descclassname">photomosaic.flickr.</code><code class="descname">from_url</code><span class="sig-paren">(</span><em>url</em>, <em>dest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/flickr.html#from_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.flickr.from_url" title="Permalink to this definition">¶</a></dt>
-<dd><p>Download an album (&#8220;photoset&#8221;) from its url.</p>
+<code class="sig-prename descclassname">photomosaic.flickr.</code><code class="sig-name descname">from_url</code><span class="sig-paren">(</span><em class="sig-param">url</em>, <em class="sig-param">dest</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/flickr.html#from_url"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.flickr.from_url" title="Permalink to this definition">¶</a></dt>
+<dd><p>Download an album (“photoset”) from its url.</p>
 <p>The is no programmatic license-checking here; that is up to the user.</p>
-<table class="docutils field-list" frame="void" rules="none">
-<col class="field-name" />
-<col class="field-body" />
-<tbody valign="top">
-<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><p class="first"><strong>url</strong> : string</p>
-<blockquote>
-<div><p>e.g., <a class="reference external" href="https://www.flickr.com/photos">https://www.flickr.com/photos</a>/&lt;username&gt;/sets/&lt;photoset_id&gt;</p>
-</div></blockquote>
-<p><strong>dest</strong> : string</p>
-<blockquote class="last">
-<div><p>Output directory</p>
-</div></blockquote>
-</td>
-</tr>
-</tbody>
-</table>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><dl class="simple">
+<dt><strong>url</strong><span class="classifier">string</span></dt><dd><p>e.g., <a class="reference external" href="https://www.flickr.com/photos">https://www.flickr.com/photos</a>/&lt;username&gt;/sets/&lt;photoset_id&gt;</p>
+</dd>
+<dt><strong>dest</strong><span class="classifier">string</span></dt><dd><p>Output directory</p>
+</dd>
+</dl>
+</dd>
+</dl>
 </dd></dl>
 
 </div>
 <div class="section" id="instagram">
 <h2>Instagram<a class="headerlink" href="#instagram" title="Permalink to this headline">¶</a></h2>
-<p>Instagram&#8217;s API requires users to create an app and through a review process to
+<p>Instagram’s API requires users to create an app and through a review process to
 download more than a couple photos.
 <a class="reference external" href="https://vibbi.com/instaport/">Instaport</a> provides an officially-sanctioned
 way to download some or all of the photos from any Instagram account, but it is
-noted to be unreliable. (The first Google suggestion is &#8220;instaport not working&#8221;
-and the author&#8217;s experience corroborates this.) Alternatively, open
+noted to be unreliable. (The first Google suggestion is “instaport not working”
+and the author’s experience corroborates this.) Alternatively, open
 <a class="reference external" href="https://www.instagram.com">https://www.instagram.com</a>/&lt;username&gt;, scroll down until the full history of the
 account has loaded, and save the page.</p>
 </div>
@@ -249,15 +256,16 @@ account has loaded, and save the page.</p>
 
 
            </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="palette.html" class="btn btn-neutral float-right" title="Palette Adjustment" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="palette.html" class="btn btn-neutral float-right" title="Palette Adjustment" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="tutorial.html" class="btn btn-neutral" title="Tutorial" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="tutorial.html" class="btn btn-neutral float-left" title="Tutorial" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -266,11 +274,11 @@ account has loaded, and save the page.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Photomosaic Contributors.
+        &copy; Copyright 2016, Photomosaic Contributors
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -283,36 +291,15 @@ account has loaded, and save the page.</p>
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.3.0+20.g9e3c1cf',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

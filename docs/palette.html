@@ -8,48 +8,48 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Palette Adjustment &mdash; photomosaic 0.3.0+20.g9e3c1cf documentation</title>
+  <title>Palette Adjustment &mdash; photomosaic 0.3.0+33.g67e3972 documentation</title>
   
 
   
   
+  
+  
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+        <script type="text/javascript" src="_static/copybutton.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+20.g9e3c1cf documentation" href="index.html"/>
-        <link rel="next" title="Reference" href="reference.html"/>
-        <link rel="prev" title="Obtaining Images for Tiles" href="getting-tiles.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Reference" href="reference.html" />
+    <link rel="prev" title="Obtaining Images for Tiles" href="getting-tiles.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
+   
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.3.0+20.g9e3c1cf
+                0.3.0+33.g67e3972
               </div>
             
           
@@ -84,7 +84,10 @@
           
             
             
-                <ul class="current">
+              
+            
+            
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-tiles.html">Obtaining Images for Tiles</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Palette Adjustment</a></li>
@@ -101,34 +104,54 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">photomosaic</a>
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">photomosaic</a>
+        
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Palette Adjustment</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Palette Adjustment</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/palette.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/palette.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -139,29 +162,29 @@
 <p>The purpose of palette adjustment is to maximize the contrast and detail in the
 final mosaic.</p>
 <p>Original Image:</p>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/chelsea.png" src="_images/chelsea.png" />
 </div>
 <p>Mosaic without Palette Adjustment:</p>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/no-palette-adjustment.png" src="_images/no-palette-adjustment.png" />
 </div>
 <p>Mosaic with Palette Adjustment:</p>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/basic.png" src="_images/basic.png" />
 </div>
 <p>The mosaic of the unadjusted image is truer to the original colors, but the
 adjusted image achieves higher detail. The boost in details is especially
 important when the color palette of the tile pool lacks variety or does not
 overlap well with the color palette of the original image.</p>
-<p>To visualize color palette, we&#8217;ll look at histograms of the values in each
+<p>To visualize color palette, we’ll look at histograms of the values in each
 color channel.</p>
 <p>This is the palette of the original image.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">converted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>  <span class="c1"># use the perceptually-uniform space</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">converted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>  <span class="c1"># use the perceptually-uniform space</span>
 <span class="n">pm</span><span class="o">.</span><span class="n">plot_palette</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="n">converted_img</span><span class="p">))</span>
 </pre></div>
 </div>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/palette-1.png" src="_images/palette-1.png" />
 </div>
 <p>Contrast this with the color palette of the candidate images in the pool,
@@ -170,41 +193,42 @@ third channels) because there is a greater variety of colors in the pool than
 in the original image. In a mosaic, many of the pool images would not be used,
 while others would need to be reused many times over. This results in lower
 contrast.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">pm</span><span class="o">.</span><span class="n">plot_palette</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">pm</span><span class="o">.</span><span class="n">plot_palette</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">pool</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
 </pre></div>
 </div>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/palette-2.png" src="_images/palette-2.png" />
 </div>
-<p>The function <a class="reference internal" href="reference.html#photomosaic.adapt_to_pool" title="photomosaic.adapt_to_pool"><code class="xref py py-func docutils literal"><span class="pre">adapt_to_pool()</span></code></a> distorts the colors of the original
+<p>The function <a class="reference internal" href="reference.html#photomosaic.adapt_to_pool" title="photomosaic.adapt_to_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">adapt_to_pool()</span></code></a> distorts the colors of the original
 image so that it has a color palette similar to the pool. Notice that the
 envelopes of the histograms below match those above.</p>
-<div class="highlight-python"><div class="highlight"><pre><span></span><span class="n">adjusted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">converted_img</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">adjusted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">converted_img</span><span class="p">,</span> <span class="n">pool</span><span class="p">)</span>
 <span class="n">pm</span><span class="o">.</span><span class="n">plot_palette</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">color_palette</span><span class="p">(</span><span class="n">adjusted_img</span><span class="p">))</span>
 </pre></div>
 </div>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/palette-3.png" src="_images/palette-3.png" />
 </div>
 <p>The adjusted image looks like this.</p>
-<div class="figure">
+<div class="figure align-default">
 <img alt="_images/adapted-chelsea.png" src="_images/adapted-chelsea.png" />
 </div>
-<p>Of course, if we use a different pool &#8212; say, one with sepia toned images &#8212;
-we&#8217;d get a different adjusted image tuned to the color palette of that pool.</p>
+<p>Of course, if we use a different pool — say, one with sepia toned images —
+we’d get a different adjusted image tuned to the color palette of that pool.</p>
 </div>
 
 
            </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="reference.html" class="btn btn-neutral float-right" title="Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
-        <a href="getting-tiles.html" class="btn btn-neutral" title="Obtaining Images for Tiles" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="getting-tiles.html" class="btn btn-neutral float-left" title="Obtaining Images for Tiles" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -213,11 +237,11 @@ we&#8217;d get a different adjusted image tuned to the color palette of that poo
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Photomosaic Contributors.
+        &copy; Copyright 2016, Photomosaic Contributors
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -230,36 +254,15 @@ we&#8217;d get a different adjusted image tuned to the color palette of that poo
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.3.0+20.g9e3c1cf',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

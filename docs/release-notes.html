@@ -8,47 +8,47 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Release Notes &mdash; photomosaic 0.3.0+20.g9e3c1cf documentation</title>
+  <title>Release Notes &mdash; photomosaic 0.3.0+33.g67e3972 documentation</title>
   
 
   
   
+  
+  
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+        <script type="text/javascript" src="_static/copybutton.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+20.g9e3c1cf documentation" href="index.html"/>
-        <link rel="prev" title="Reference" href="reference.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="prev" title="Reference" href="reference.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
+   
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.0+20.g9e3c1cf
+                0.3.0+33.g67e3972
               </div>
             
           
@@ -83,7 +83,10 @@
           
             
             
-                <ul class="current">
+              
+            
+            
+              <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-tiles.html">Obtaining Images for Tiles</a></li>
 <li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
@@ -110,34 +113,54 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="index.html">photomosaic</a>
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">photomosaic</a>
+        
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="index.html">Docs</a> &raquo;</li>
-      
-    <li>Release Notes</li>
+    
+      <li><a href="index.html">Docs</a> &raquo;</li>
+        
+      <li>Release Notes</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/release-notes.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/release-notes.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -150,31 +173,31 @@
 <div class="section" id="enhancements">
 <h3>Enhancements<a class="headerlink" href="#enhancements" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Implement histogram mapping to perform tiling in an adpative color palette.</li>
-<li>Add ability to subdivide tiles based on local constrast.</li>
-<li>Add utilities to padding, translating, and randomly scattering tiles relative
-to their true position.</li>
-<li>Add a tool for downloading images from Flickr for use as tile pools.</li>
-<li>Add convenience functions for import/exporting tile pools, plotting palettes,
-and converting between color spaces.</li>
-<li>Add alternative implementation of <code class="docutils literal"><span class="pre">make_pool</span></code> that runs faster using dask.
-(More use of dask is planned.)</li>
+<li><p>Implement histogram mapping to perform tiling in an adaptive color palette.</p></li>
+<li><p>Add ability to subdivide tiles based on local contrast.</p></li>
+<li><p>Add utilities to padding, translating, and randomly scattering tiles relative
+to their true position.</p></li>
+<li><p>Add a tool for downloading images from Flickr for use as tile pools.</p></li>
+<li><p>Add convenience functions for import/exporting tile pools, plotting palettes,
+and converting between color spaces.</p></li>
+<li><p>Add alternative implementation of <code class="docutils literal notranslate"><span class="pre">make_pool</span></code> that runs faster using dask.
+(More use of dask is planned.)</p></li>
 </ul>
 </div>
 <div class="section" id="api-changes">
 <h3>API Changes<a class="headerlink" href="#api-changes" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Renamed <code class="docutils literal"><span class="pre">generate_tile_pool</span></code> to <code class="docutils literal"><span class="pre">rainbow_of_squares</span></code>; there may be
-different tile pool generators in future.</li>
-<li>Change <code class="docutils literal"><span class="pre">SimpleMatcher</span></code> from a class to a closure, <code class="docutils literal"><span class="pre">simple_matcher</span></code>.</li>
+<li><p>Renamed <code class="docutils literal notranslate"><span class="pre">generate_tile_pool</span></code> to <code class="docutils literal notranslate"><span class="pre">rainbow_of_squares</span></code>; there may be
+different tile pool generators in future.</p></li>
+<li><p>Change <code class="docutils literal notranslate"><span class="pre">SimpleMatcher</span></code> from a class to a closure, <code class="docutils literal notranslate"><span class="pre">simple_matcher</span></code>.</p></li>
 </ul>
 </div>
 <div class="section" id="other">
 <h3>Other<a class="headerlink" href="#other" title="Permalink to this headline">¶</a></h3>
 <ul class="simple">
-<li>Change license to 3-clause BSD (with signoff from both contributors).</li>
-<li>Publish sphinx documentation.</li>
-<li>Run automated unit tests on Travis-CI.</li>
+<li><p>Change license to 3-clause BSD (with signoff from both contributors).</p></li>
+<li><p>Publish sphinx documentation.</p></li>
+<li><p>Run automated unit tests on Travis-CI.</p></li>
 </ul>
 </div>
 </div>
@@ -192,13 +215,14 @@ for new users.</p>
 
 
            </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
       
-        <a href="reference.html" class="btn btn-neutral" title="Reference" accesskey="p"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+        <a href="reference.html" class="btn btn-neutral float-left" title="Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   
@@ -207,11 +231,11 @@ for new users.</p>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Photomosaic Contributors.
+        &copy; Copyright 2016, Photomosaic Contributors
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -224,36 +248,15 @@ for new users.</p>
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.3.0+20.g9e3c1cf',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>

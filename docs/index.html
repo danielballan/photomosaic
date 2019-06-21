@@ -8,47 +8,47 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic &mdash; photomosaic 0.3.0+20.g9e3c1cf documentation</title>
+  <title>photomosaic &mdash; photomosaic 0.3.0+33.g67e3972 documentation</title>
   
 
   
   
+  
+  
 
   
+  <script type="text/javascript" src="_static/js/modernizr.min.js"></script>
+  
+    
+      <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+        <script type="text/javascript" src="_static/jquery.js"></script>
+        <script type="text/javascript" src="_static/underscore.js"></script>
+        <script type="text/javascript" src="_static/doctools.js"></script>
+        <script type="text/javascript" src="_static/language_data.js"></script>
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.0/clipboard.min.js"></script>
+        <script type="text/javascript" src="_static/copybutton.js"></script>
+    
+    <script type="text/javascript" src="_static/js/theme.js"></script>
 
-  
-  
     
 
   
-
-  
-  
-    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  
-
-  
-
-  
-        <link rel="index" title="Index"
-              href="genindex.html"/>
-        <link rel="search" title="Search" href="search.html"/>
-    <link rel="top" title="photomosaic 0.3.0+20.g9e3c1cf documentation" href="#"/>
-        <link rel="next" title="Tutorial" href="tutorial.html"/> 
-
-  
-  <script src="_static/js/modernizr.min.js"></script>
-
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Tutorial" href="tutorial.html" /> 
 </head>
 
-<body class="wy-body-for-nav" role="document">
+<body class="wy-body-for-nav">
 
+   
   <div class="wy-grid-for-nav">
-
     
     <nav data-toggle="wy-nav-shift" class="wy-nav-side">
       <div class="wy-side-scroll">
-        <div class="wy-side-nav-search">
+        <div class="wy-side-nav-search" >
           
 
           
@@ -62,7 +62,7 @@
             
             
               <div class="version">
-                0.3.0+20.g9e3c1cf
+                0.3.0+33.g67e3972
               </div>
             
           
@@ -83,7 +83,10 @@
           
             
             
-                <ul>
+              
+            
+            
+              <ul>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-tiles.html">Obtaining Images for Tiles</a></li>
 <li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
@@ -100,34 +103,54 @@
     <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
 
       
-      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
-        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
-        <a href="#">photomosaic</a>
+      <nav class="wy-nav-top" aria-label="top navigation">
+        
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">photomosaic</a>
+        
       </nav>
 
 
-      
       <div class="wy-nav-content">
+        
         <div class="rst-content">
+        
           
 
- 
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 <div role="navigation" aria-label="breadcrumbs navigation">
+
   <ul class="wy-breadcrumbs">
-    <li><a href="#">Docs</a> &raquo;</li>
-      
-    <li>photomosaic</li>
+    
+      <li><a href="#">Docs</a> &raquo;</li>
+        
+      <li>photomosaic</li>
+    
+    
       <li class="wy-breadcrumbs-aside">
         
-          
-            <a href="_sources/index.txt" rel="nofollow"> View page source</a>
+            
+            <a href="_sources/index.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
+    
   </ul>
+
+  
   <hr/>
 </div>
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
@@ -139,33 +162,33 @@
 gives the impression of one large photo.</p>
 <p>This implementation has several distinguishing features:</p>
 <ul class="simple">
-<li>Mix tiles of different sizes and place them in irreigular or overlapping
-positions &#8212; not confined to the usual rectangular grid.</li>
-<li>Parition an image into tiles adaptively, subdividing regions of high detail
-into smaller tiles.</li>
-<li>Include a mask, and tile paritioning can roughly trace its edge, giving the
-appearance of puzzle pieces scattered on a table in some shape.</li>
-<li>To maximize contrast and reduce tile repetition, adapt the color palette of
-the target image to the palette of colors available in the tile pool.</li>
-<li>Obtain large collections of images to use as tiles using the official
-Flickr API. Easily collect attribution info and filter results by license.</li>
-<li>Employ perceptually-accurate color matching via the
-<a class="reference external" href="colorspacious.readthedocs.io">colorspacious</a> package.</li>
+<li><p>Mix tiles of different sizes and place them in irregular or overlapping
+positions — not confined to the usual rectangular grid.</p></li>
+<li><p>Partition an image into tiles adaptively, subdividing regions of high detail
+into smaller tiles.</p></li>
+<li><p>Include a mask, and tile partitioning can roughly trace its edge, giving the
+appearance of puzzle pieces scattered on a table in some shape.</p></li>
+<li><p>To maximize contrast and reduce tile repetition, adapt the color palette of
+the target image to the palette of colors available in the tile pool.</p></li>
+<li><p>Obtain large collections of images to use as tiles using the official
+Flickr API. Easily collect attribution info and filter results by license.</p></li>
+<li><p>Employ perceptually-accurate color matching via the
+<a class="reference external" href="https://colorspacious.readthedocs.io">colorspacious</a> package.</p></li>
 </ul>
 <div class="section" id="development">
 <h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
 <p>The code is factored with maximum flexibility in mind and uses only standard
 data structures: numpy arrays, Python slice objects, and other built-in Python
-types. It is easy to experiment with custom strategies for paritioning tiles,
+types. It is easy to experiment with custom strategies for partitioning tiles,
 characterizing colors, choosing matches, or drawing the final result.</p>
 <p>You are cheerfully invited to contribute to this project
 <a class="reference external" href="https://github.com/danielballan/photomosaic">on GitHub</a>. In particular,
 these topics might be interesting:</p>
 <ul class="simple">
-<li>Alternative matching algorithms that minimize tile repetition</li>
-<li>Alternative tile-partitioning algorithms</li>
-<li>Additional image-havesting tools (continuing to give due attention to
-licenses, attribution)</li>
+<li><p>Alternative matching algorithms that minimize tile repetition</p></li>
+<li><p>Alternative tile-partitioning algorithms</p></li>
+<li><p>Additional image-harvesting tools (continuing to give due attention to
+licenses, attribution)</p></li>
 </ul>
 </div>
 <div class="section" id="table-of-contents">
@@ -209,12 +232,13 @@ licenses, attribution)</li>
 
 
            </div>
+           
           </div>
           <footer>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n">Next <span class="fa fa-arrow-circle-right"></span></a>
+        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
       
     </div>
@@ -224,11 +248,11 @@ licenses, attribution)</li>
 
   <div role="contentinfo">
     <p>
-        &copy; Copyright 2016, Photomosaic Contributors.
+        &copy; Copyright 2016, Photomosaic Contributors
 
     </p>
   </div>
-  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/snide/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
+  Built with <a href="http://sphinx-doc.org/">Sphinx</a> using a <a href="https://github.com/rtfd/sphinx_rtd_theme">theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>. 
 
 </footer>
 
@@ -241,36 +265,15 @@ licenses, attribution)</li>
   
 
 
-  
-
-    <script type="text/javascript">
-        var DOCUMENTATION_OPTIONS = {
-            URL_ROOT:'./',
-            VERSION:'0.3.0+20.g9e3c1cf',
-            COLLAPSE_INDEX:false,
-            FILE_SUFFIX:'.html',
-            HAS_SOURCE:  true
-        };
-    </script>
-      <script type="text/javascript" src="_static/jquery.js"></script>
-      <script type="text/javascript" src="_static/underscore.js"></script>
-      <script type="text/javascript" src="_static/doctools.js"></script>
-      <script type="text/javascript" src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
-
-  
-
-  
-  
-    <script type="text/javascript" src="_static/js/theme.js"></script>
-  
-
-  
-  
   <script type="text/javascript">
       jQuery(function () {
-          SphinxRtdTheme.StickyNav.enable();
+          SphinxRtdTheme.Navigation.enable(true);
       });
   </script>
+
+  
+  
+    
    
 
 </body>
