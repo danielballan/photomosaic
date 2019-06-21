@@ -45,4 +45,4 @@ script:
   - make pools && make images && make html
   - cd ..
   - git config --global user.email "placeholder@placeholder.com"
-  - doctr deploy
+  - doctr deploy docs --built-docs doc/build/html
