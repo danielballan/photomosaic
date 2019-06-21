@@ -1,5 +1,13 @@
+dist: xenial
 language: python
 sudo: false
+matrix:
+  fast_finish: true
+  include:
+    - python: 3.5
+    - python: 3.6
+    - python: 3.7
+      env: PUBLISH_DOCS=1
 
 cache:
   directories:
@@ -7,42 +15,29 @@ cache:
     - $HOME/.cache/matplotlib
     - $HOME/pools/
 
-matrix:
-  include:
-    - python: 3.5
-
 env:
   global:
+    # Doctr deploy key for danielballan.github.io/photomosaic
     - secure: "f6PzI9At5FKvozluhLQnOvNB2wwVdvoVA7hur4PN5E5PbHWeICeNbj15VkIxChUUUwTXEI/mSMMRvYpDHFr205RxaNuv+/lyLo4H1VqiVlZvZi6jJLB2paYwu0AqsAeTjO5XrgKgByuwWDlQIwP02hnxgGD3LbD83h/Trh0Yln4="
 
-before_install:
-  - "export DISPLAY=:99.0"
-  - wget http://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-  - chmod +x miniconda.sh
-  - ./miniconda.sh -b -p /home/travis/mc
-  - export PATH=/home/travis/mc/bin:$PATH
-  - conda config --set show_channel_urls True
-  - conda config --set always_yes True
-
 install:
-  - export GIT_FULL_HASH=`git rev-parse HEAD`
-  # Install heavy stuff with conda, for speed.
-  - conda create -n testenv python=$TRAVIS_PYTHON_VERSION scipy numpy coverage scikit-image pip -c conda-forge
-  - source activate testenv
-  - git fetch origin --tags  # used by versioneer
+  # Install this package and the packages listed in requirements.txt.
   - pip install .[parallel]
-  - pip install pytest codecov pytest-cov
-  # Need to clean the python build directory (and other cruft) or pytest is
-  # going to find the build directory and get confused why there are two sets
-  # of every test file
-  - git clean -xfd
+  # Install extra requirements for running tests and building docs.
+  - pip install -r requirements-dev.txt
 
 script:
-  - python run_tests.py
-  - coverage report -m
-  - pip install doctr sphinx numpydoc ipython sphinx_rtd_theme  # docs dependencies
-  - cd doc
-  - make pools && make images && make html
-  - cd ..
-  - git config --global user.email "placeholder@placeholder.com"
-  - doctr deploy docs --built-docs doc/build/html
+  - coverage run -m pytest  # Run the tests and check for test coverage.
+  - coverage report -m  # Generate test coverage report.
+  - codecov  # Upload the report to codecov.
+  - flake8  # Enforce code style.
+  - set -e
+  - make -C doc pools  # Generate tile pools used in documentation.
+  - make -C doc images  # Generate example images used in documentation.
+  - make -C doc html  # Build the documentation.
+  - |
+    if [ $PUBLISH_DOCS ]; then
+      # Pubish the documentation to GitHub Pages.
+      pip install doctr;
+      doctr deploy docs --built-docs doc/build/html;
+    fi

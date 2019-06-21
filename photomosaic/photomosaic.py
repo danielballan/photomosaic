@@ -856,7 +856,8 @@ def crop_to_fit(image, shape):
     enlarged_shape = (tuple(np.ceil(np.array(image.shape[:len(shape)]) *
                                     shape[d]/image.shape[d])) +
                       image.shape[len(shape):])
-    resized = resize(image, enlarged_shape)
+    resized = resize(image, enlarged_shape,
+                     mode='constant', anti_aliasing=False)
     # Now the image is as large or larger than the shape along all dimensions.
     # Crop any overhang in the other dimension.
     crop_width = []

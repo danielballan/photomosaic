@@ -43,6 +43,7 @@ extensions = [
     'IPython.sphinxext.ipython_directive',
     'IPython.sphinxext.ipython_console_highlighting',
     'matplotlib.sphinxext.plot_directive',
+    'sphinx_copybutton',
 ]
 
 # Configuration options for plot_directive. See:
