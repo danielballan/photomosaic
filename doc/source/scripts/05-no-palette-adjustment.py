@@ -1,4 +1,3 @@
-from tqdm import tqdm
 import os
 import numpy as np
 import photomosaic as pm
