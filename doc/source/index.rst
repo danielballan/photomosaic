@@ -42,6 +42,7 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
+   install
    tutorial
    getting-tiles
    palette
