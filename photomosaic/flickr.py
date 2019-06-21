@@ -129,7 +129,7 @@ def _try_retrieve_warn_failure(url, filepath):
     for _ in range(3):
         try:
             urllib.request.urlretrieve(url, filepath)
-        except urllib.error.HTTPError as error:
+        except urllib.error.URLError as error:
             errors.append(error)
             continue  # try again
         else:
