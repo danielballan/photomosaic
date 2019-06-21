@@ -1,6 +1,14 @@
 Release Notes
 =============
 
+0.3.1 (21 June 2019)
+--------------------
+
+This release addresses some deprecations in scikit-image, which was issuing
+warnings.
+
+We now test on Python 3.5, 3.6, and 3.7.
+
 0.3.0 (11 Nov. 2016)
 --------------------
 
