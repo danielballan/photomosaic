@@ -18,7 +18,7 @@ cache:
 env:
   global:
     # Doctr deploy key for danielballan.github.io/photomosaic
-    - secure: "f6PzI9At5FKvozluhLQnOvNB2wwVdvoVA7hur4PN5E5PbHWeICeNbj15VkIxChUUUwTXEI/mSMMRvYpDHFr205RxaNuv+/lyLo4H1VqiVlZvZi6jJLB2paYwu0AqsAeTjO5XrgKgByuwWDlQIwP02hnxgGD3LbD83h/Trh0Yln4="
+    - secure: "MwJTOzI4b4AU/bkkYArBw7CSlJVx61eKqaWulttBjvJFkpqQ+c2o1/EWSskTX2SCq8ZpexwnxDxcUIDYkfZsQhWsVlkzBLrJGSRfoVQV7ndRfqRDEgiOrQpLZgKsG6CbG8zcYBP39K2HUaP7HcDQgTTuKkLwcbpc3uBx14SqvvU="
 
 install:
   # Install this package and the packages listed in requirements.txt.
