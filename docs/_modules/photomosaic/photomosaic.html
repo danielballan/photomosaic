@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.1 documentation</title>
+  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.1+2.g0b93026 documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.3.1+2.g0b93026
               </div>
             
           
@@ -502,7 +502,7 @@
     <span class="k">return</span> <span class="n">image</span></div>
 
 
-<div class="viewcode-block" id="simple_matcher_unique"><a class="viewcode-back" href="../../reference.html#photomosaic.simple_matcher_unique">[docs]</a><span class="k">def</span> <span class="nf">simple_matcher_unique</span><span class="p">(</span><span class="n">pool</span><span class="p">):</span>
+<div class="viewcode-block" id="simple_matcher_unique"><a class="viewcode-back" href="../../reference.html#photomosaic.simple_matcher_unique">[docs]</a><span class="k">def</span> <span class="nf">simple_matcher_unique</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="n">limit</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Build a matching function that matches to the closest color not yet used.</span>
 
@@ -512,6 +512,8 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    pool : dict</span>
+<span class="sd">    limit : integer</span>
+<span class="sd">        Number of instances of each pool image allowed. Default is 1 (unique).</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
@@ -520,6 +522,7 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">pool</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
     <span class="n">total</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">pool</span><span class="p">)</span>
+    <span class="n">instances</span> <span class="o">=</span> <span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">pool</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">match</span><span class="p">(</span><span class="n">vector</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
@@ -543,7 +546,9 @@
         <span class="n">tree</span> <span class="o">=</span> <span class="n">cKDTree</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
         <span class="n">distance</span><span class="p">,</span> <span class="n">index</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">vector</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">key</span> <span class="o">=</span> <span class="n">args</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
-        <span class="n">pool</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>  <span class="c1"># Remove this tile from our local copy of pool.</span>
+        <span class="n">instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="k">if</span> <span class="n">instances</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">==</span> <span class="n">limit</span><span class="p">:</span>
+            <span class="n">pool</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>  <span class="c1"># Remove this tile from our local copy of pool.</span>
         <span class="k">return</span> <span class="n">key</span>
 
     <span class="k">return</span> <span class="n">match</span></div>

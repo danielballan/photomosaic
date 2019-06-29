@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reference &mdash; photomosaic 0.3.1 documentation</title>
+  <title>Reference &mdash; photomosaic 0.3.1+2.g0b93026 documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.3.1
+                0.3.1+2.g0b93026
               </div>
             
           
@@ -676,7 +676,7 @@ slices are randomly placed &lt; 0.</p>
 
 <dl class="function">
 <dt id="photomosaic.simple_matcher_unique">
-<code class="sig-prename descclassname">photomosaic.</code><code class="sig-name descname">simple_matcher_unique</code><span class="sig-paren">(</span><em class="sig-param">pool</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#simple_matcher_unique"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.simple_matcher_unique" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname">photomosaic.</code><code class="sig-name descname">simple_matcher_unique</code><span class="sig-paren">(</span><em class="sig-param">pool</em>, <em class="sig-param">limit=1</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/photomosaic/photomosaic.html#simple_matcher_unique"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#photomosaic.simple_matcher_unique" title="Permalink to this definition">¶</a></dt>
 <dd><p>Build a matching function that matches to the closest color not yet used.</p>
 <p>It maintains an internal copy of the pool to track which items have been
 used.</p>
@@ -684,6 +684,8 @@ used.</p>
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><dl class="simple">
 <dt><strong>pool</strong><span class="classifier">dict</span></dt><dd></dd>
+<dt><strong>limit</strong><span class="classifier">integer</span></dt><dd><p>Number of instances of each pool image allowed. Default is 1 (unique).</p>
+</dd>
 </dl>
 </dd>
 <dt class="field-even">Returns</dt>
