@@ -346,7 +346,7 @@ def standardize_image(image):
     return image
 
 
-def simple_matcher_unique(pool):
+def simple_matcher_unique(pool, limit=1):
     """
     Build a matching function that matches to the closest color not yet used.
 
@@ -356,6 +356,8 @@ def simple_matcher_unique(pool):
     Parameters
     ----------
     pool : dict
+    limit : integer
+        Number of instances of each pool image allowed. Default is 1 (unique).
 
     Returns
     -------
@@ -364,6 +366,7 @@ def simple_matcher_unique(pool):
     """
     pool = OrderedDict(pool)
     total = len(pool)
+    instances = dict.fromkeys(pool, 0)
 
     def match(vector):
         """
@@ -387,7 +390,9 @@ def simple_matcher_unique(pool):
         tree = cKDTree(data)
         distance, index = tree.query(vector, k=1)
         key = args[index]
-        pool.pop(key)  # Remove this tile from our local copy of pool.
+        instances[key] += 1
+        if instances[key] == limit:
+            pool.pop(key)  # Remove this tile from our local copy of pool.
         return key
 
     return match
