@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Release Notes &mdash; photomosaic 0.3.1+4.g2f30425 documentation</title>
+  <title>Install &mdash; photomosaic 0.3.1+4.g2f30425 documentation</title>
   
 
   
@@ -38,7 +38,8 @@
   <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="prev" title="Reference" href="reference.html" /> 
+    <link rel="next" title="Tutorial" href="tutorial.html" />
+    <link rel="prev" title="photomosaic" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav">
@@ -87,23 +88,17 @@
             
             
               <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="install.html">Install</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Install</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#installation-using-pip">Installation Using Pip</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development-installation">Development Installation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#development">Development</a></li>
+</ul>
+</li>
 <li class="toctree-l1"><a class="reference internal" href="tutorial.html">Tutorial</a></li>
 <li class="toctree-l1"><a class="reference internal" href="getting-tiles.html">Obtaining Images for Tiles</a></li>
 <li class="toctree-l1"><a class="reference internal" href="palette.html">Palette Adjustment</a></li>
 <li class="toctree-l1"><a class="reference internal" href="reference.html">Reference</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Release Notes</a><ul>
-<li class="toctree-l2"><a class="reference internal" href="#june-2019">0.3.1 (21 June 2019)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#nov-2016">0.3.0 (11 Nov. 2016)</a><ul>
-<li class="toctree-l3"><a class="reference internal" href="#enhancements">Enhancements</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#api-changes">API Changes</a></li>
-<li class="toctree-l3"><a class="reference internal" href="#other">Other</a></li>
-</ul>
-</li>
-<li class="toctree-l2"><a class="reference internal" href="#oct-2016">0.2.2 (5 Oct. 2016)</a></li>
-<li class="toctree-l2"><a class="reference internal" href="#id1">0.1.0 (2012)</a></li>
-</ul>
-</li>
+<li class="toctree-l1"><a class="reference internal" href="release-notes.html">Release Notes</a></li>
 </ul>
 
             
@@ -149,13 +144,13 @@
     
       <li><a href="index.html">Docs</a> &raquo;</li>
         
-      <li>Release Notes</li>
+      <li>Install</li>
     
     
       <li class="wy-breadcrumbs-aside">
         
             
-            <a href="_sources/release-notes.rst.txt" rel="nofollow"> View page source</a>
+            <a href="_sources/install.rst.txt" rel="nofollow"> View page source</a>
           
         
       </li>
@@ -168,56 +163,62 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
            <div itemprop="articleBody">
             
-  <div class="section" id="release-notes">
-<h1>Release Notes<a class="headerlink" href="#release-notes" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="june-2019">
-<h2>0.3.1 (21 June 2019)<a class="headerlink" href="#june-2019" title="Permalink to this headline">¶</a></h2>
-<p>This release addresses some deprecations in scikit-image, which was issuing
-warnings.</p>
-<p>We now test on Python 3.5, 3.6, and 3.7.</p>
+  <div class="section" id="install">
+<h1>Install<a class="headerlink" href="#install" title="Permalink to this headline">¶</a></h1>
+<p>You can install photomosiac using pip or from source.</p>
+<p>First verify that you have Python 3.5+.</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 --version
+</pre></div>
 </div>
-<div class="section" id="nov-2016">
-<h2>0.3.0 (11 Nov. 2016)<a class="headerlink" href="#nov-2016" title="Permalink to this headline">¶</a></h2>
-<div class="section" id="enhancements">
-<h3>Enhancements<a class="headerlink" href="#enhancements" title="Permalink to this headline">¶</a></h3>
+<p>If necessary, install it by your method of choice (apt, Homebrew, conda, etc.).</p>
+<div class="section" id="installation-using-pip">
+<h2>Installation Using Pip<a class="headerlink" href="#installation-using-pip" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 -m pip install -U photomosaic
+</pre></div>
+</div>
+<p>Or, to include the optional dependencies for the experimental parallelism
+features, install:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 -m pip install -U photomosaic<span class="o">[</span>parallel<span class="o">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="development-installation">
+<h2>Development Installation<a class="headerlink" href="#development-installation" title="Permalink to this headline">¶</a></h2>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>git clone https://github.com/danielballan/photomosaic
+<span class="nb">cd</span> photomosaic
+pip install -e .
+</pre></div>
+</div>
+<p>Or, to include the optional dependencies for the experimental parallelism
+features, install:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 -m pip install -U -e .<span class="o">[</span>parallel<span class="o">]</span>
+</pre></div>
+</div>
+</div>
+<div class="section" id="development">
+<h2>Development<a class="headerlink" href="#development" title="Permalink to this headline">¶</a></h2>
+<p>For development, you will also want the dependencies for running the tests and
+building the documentation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>python3 -m pip install -Ur requirements-dev.txt
+</pre></div>
+</div>
+<p>To run the tests:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pytest
+</pre></div>
+</div>
+<p>These <code class="docutils literal notranslate"><span class="pre">pytest</span></code> arguments are commonly useful:</p>
 <ul class="simple">
-<li><p>Implement histogram mapping to perform tiling in an adaptive color palette.</p></li>
-<li><p>Add ability to subdivide tiles based on local contrast.</p></li>
-<li><p>Add utilities to padding, translating, and randomly scattering tiles relative
-to their true position.</p></li>
-<li><p>Add a tool for downloading images from Flickr for use as tile pools.</p></li>
-<li><p>Add convenience functions for import/exporting tile pools, plotting palettes,
-and converting between color spaces.</p></li>
-<li><p>Add alternative implementation of <code class="docutils literal notranslate"><span class="pre">make_pool</span></code> that runs faster using dask.
-(More use of dask is planned.)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-v</span></code> verbose</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">--lf</span></code> Run only those tests which failed on the last run.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-s</span></code> Do not capture stdout/err per test.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">-k</span> <span class="pre">EXPRESSION</span></code> Filter tests by pattern-matching test name.</p></li>
 </ul>
+<p>To build the documentation:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>make -C doc pools  <span class="c1"># Generate tile pools used in documentation.</span>
+make -C doc images  <span class="c1"># Generate example images used in documentation.</span>
+make -C doc html  <span class="c1"># Build the documentation.</span>
+</pre></div>
 </div>
-<div class="section" id="api-changes">
-<h3>API Changes<a class="headerlink" href="#api-changes" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li><p>Renamed <code class="docutils literal notranslate"><span class="pre">generate_tile_pool</span></code> to <code class="docutils literal notranslate"><span class="pre">rainbow_of_squares</span></code>; there may be
-different tile pool generators in future.</p></li>
-<li><p>Change <code class="docutils literal notranslate"><span class="pre">SimpleMatcher</span></code> from a class to a closure, <code class="docutils literal notranslate"><span class="pre">simple_matcher</span></code>.</p></li>
-</ul>
-</div>
-<div class="section" id="other">
-<h3>Other<a class="headerlink" href="#other" title="Permalink to this headline">¶</a></h3>
-<ul class="simple">
-<li><p>Change license to 3-clause BSD (with signoff from both contributors).</p></li>
-<li><p>Publish sphinx documentation.</p></li>
-<li><p>Run automated unit tests on Travis-CI.</p></li>
-</ul>
-</div>
-</div>
-<div class="section" id="oct-2016">
-<h2>0.2.2 (5 Oct. 2016)<a class="headerlink" href="#oct-2016" title="Permalink to this headline">¶</a></h2>
-<p>This tag marks a nearly-total rewrite of the project. (Tags v0.2.0 and v0.2.1
-have the same code but some build problems with the package.)</p>
-</div>
-<div class="section" id="id1">
-<h2>0.1.0 (2012)<a class="headerlink" href="#id1" title="Permalink to this headline">¶</a></h2>
-<p>This tag is maintained for use with legacy scripts, but it is not recommended
-for new users.</p>
 </div>
 </div>
 
@@ -229,8 +230,10 @@ for new users.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
+        <a href="tutorial.html" class="btn btn-neutral float-right" title="Tutorial" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right"></span></a>
       
-        <a href="reference.html" class="btn btn-neutral float-left" title="Reference" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+        <a href="index.html" class="btn btn-neutral float-left" title="photomosaic" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left"></span> Previous</a>
       
     </div>
   

@@ -12,6 +12,7 @@ docs/_modules/photomosaic/flickr.html
 docs/_modules/photomosaic/photomosaic.html
 docs/_sources/getting-tiles.rst.txt
 docs/_sources/index.rst.txt
+docs/_sources/install.rst.txt
 docs/_sources/palette.rst.txt
 docs/_sources/reference.rst.txt
 docs/_sources/release-notes.rst.txt
@@ -82,6 +83,7 @@ docs/_static/underscore.js
 docs/genindex.html
 docs/getting-tiles.html
 docs/index.html
+docs/install.html
 docs/objects.inv
 docs/palette-1.hires.png
 docs/palette-1.pdf
