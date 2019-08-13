@@ -304,13 +304,13 @@ def make_pool(glob_string, *, pool=None, skip_read_failures=True,
     for filename in tqdm(filenames, desc='analyzing pool'):
         try:
             raw_image = imread(filename, **options['imread'])
+            image = standardize_image(raw_image)
         except Exception as err:
             if skip_read_failures:
                 warnings.warn("Skipping {}; raised exception:\n    {}"
                               "".format(filename, err))
                 continue
             raise
-        image = standardize_image(raw_image)
         # Subsample before doing expensive color space conversion.
         if sample_size is not None:
             sample = sample_pixels(image, sample_size)
