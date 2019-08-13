@@ -576,7 +576,7 @@ def partition(image, grid_dims, mask=None, depth=0, split_thresh=10):
     # If depth > 0, subdivide any tiles that straddle a mask edge or that
     # contain an image with high contrast.
     num_channels = image.shape[-1]
-    for d in range(depth):
+    for d in range(1, 1 + depth):
         new_tiles = []
         for tile in tqdm(tiles, desc='partitioning: depth %d' % d):
             if ((mask is not None) and
