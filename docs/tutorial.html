@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Tutorial &mdash; photomosaic 0.3.1+4.g2f30425 documentation</title>
+  <title>Tutorial &mdash; photomosaic 0.3.1+6.g8f765ee documentation</title>
   
 
   
@@ -63,7 +63,7 @@
             
             
               <div class="version">
-                0.3.1+4.g2f30425
+                0.3.1+6.g8f765ee
               </div>
             
           
@@ -371,11 +371,11 @@ for generating a “white” or “black” canvas of the right shape,</p>
 images from the pool to fit their assigned tile in the mosaic.  To speed up
 repeated draws, reuse the cache of resized pool images.</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="n">mos1</span> <span class="o">=</span> <span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas1</span><span class="p">,</span> <span class="n">tiles1</span><span class="p">,</span> <span class="n">matches1</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
+<span class="n">mos1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas1</span><span class="p">,</span> <span class="n">tiles1</span><span class="p">,</span> <span class="n">matches1</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
 <span class="c1"># Now cache is filled with resized copies of any images used in ``mos1``.</span>
 
 <span class="c1"># This will be faster:</span>
-<span class="n">mos2</span> <span class="o">=</span> <span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas2</span><span class="p">,</span> <span class="n">tiles2</span><span class="p">,</span> <span class="n">matches2</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
+<span class="n">mos2</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">draw_mosaic</span><span class="p">(</span><span class="n">canvas2</span><span class="p">,</span> <span class="n">tiles2</span><span class="p">,</span> <span class="n">matches2</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>

@@ -261,8 +261,8 @@ repeated draws, reuse the cache of resized pool images.
 .. code-block:: python
 
     cache = {}
-    mos1 = draw_mosaic(canvas1, tiles1, matches1, resized_copy_cache=cache)
+    mos1 = pm.draw_mosaic(canvas1, tiles1, matches1, resized_copy_cache=cache)
     # Now cache is filled with resized copies of any images used in ``mos1``.
 
     # This will be faster:
-    mos2 = draw_mosaic(canvas2, tiles2, matches2, resized_copy_cache=cache)
+    mos2 = pm.draw_mosaic(canvas2, tiles2, matches2, resized_copy_cache=cache)
