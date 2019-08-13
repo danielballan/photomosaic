@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.1+8.gde64ffa documentation</title>
+  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.1+10.g7d65b3f documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.3.1+8.gde64ffa
+                0.3.1+10.g7d65b3f
               </div>
             
           
@@ -461,13 +461,13 @@
     <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">filenames</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;analyzing pool&#39;</span><span class="p">):</span>
         <span class="k">try</span><span class="p">:</span>
             <span class="n">raw_image</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="o">**</span><span class="n">options</span><span class="p">[</span><span class="s1">&#39;imread&#39;</span><span class="p">])</span>
+            <span class="n">image</span> <span class="o">=</span> <span class="n">standardize_image</span><span class="p">(</span><span class="n">raw_image</span><span class="p">)</span>
         <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">skip_read_failures</span><span class="p">:</span>
                 <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;Skipping </span><span class="si">{}</span><span class="s2">; raised exception:</span><span class="se">\n</span><span class="s2">    </span><span class="si">{}</span><span class="s2">&quot;</span>
                               <span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">filename</span><span class="p">,</span> <span class="n">err</span><span class="p">))</span>
                 <span class="k">continue</span>
             <span class="k">raise</span>
-        <span class="n">image</span> <span class="o">=</span> <span class="n">standardize_image</span><span class="p">(</span><span class="n">raw_image</span><span class="p">)</span>
         <span class="c1"># Subsample before doing expensive color space conversion.</span>
         <span class="k">if</span> <span class="n">sample_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">sample</span> <span class="o">=</span> <span class="n">sample_pixels</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">sample_size</span><span class="p">)</span>
