@@ -8,7 +8,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.1+6.g8f765ee documentation</title>
+  <title>photomosaic.photomosaic &mdash; photomosaic 0.3.1+8.gde64ffa documentation</title>
   
 
   
@@ -61,7 +61,7 @@
             
             
               <div class="version">
-                0.3.1+6.g8f765ee
+                0.3.1+8.gde64ffa
               </div>
             
           
@@ -733,7 +733,7 @@
     <span class="c1"># If depth &gt; 0, subdivide any tiles that straddle a mask edge or that</span>
     <span class="c1"># contain an image with high contrast.</span>
     <span class="n">num_channels</span> <span class="o">=</span> <span class="n">image</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">depth</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">depth</span><span class="p">):</span>
         <span class="n">new_tiles</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">tile</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">tiles</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;partitioning: depth </span><span class="si">%d</span><span class="s1">&#39;</span> <span class="o">%</span> <span class="n">d</span><span class="p">):</span>
             <span class="k">if</span> <span class="p">((</span><span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span>
