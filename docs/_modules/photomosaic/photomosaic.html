@@ -160,18 +160,18 @@
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">import</span> <span class="nn">copy</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">functools</span> <span class="k">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">tqdm</span> <span class="k">import</span> <span class="n">tqdm</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">tqdm</span> <span class="kn">import</span> <span class="n">tqdm</span>
 <span class="kn">import</span> <span class="nn">colorspacious</span>
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
-<span class="kn">from</span> <span class="nn">skimage</span> <span class="k">import</span> <span class="n">draw</span><span class="p">,</span> <span class="n">img_as_float</span>
-<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="k">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">imsave</span>
-<span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="k">import</span> <span class="n">resize</span>
-<span class="kn">from</span> <span class="nn">skimage.color</span> <span class="k">import</span> <span class="n">gray2rgb</span>
-<span class="kn">from</span> <span class="nn">skimage.util</span> <span class="k">import</span> <span class="n">crop</span>
-<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="k">import</span> <span class="n">cKDTree</span>
-<span class="kn">from</span> <span class="nn">scipy.cluster</span> <span class="k">import</span> <span class="n">vq</span>
+<span class="kn">from</span> <span class="nn">skimage</span> <span class="kn">import</span> <span class="n">draw</span><span class="p">,</span> <span class="n">img_as_float</span>
+<span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">imsave</span>
+<span class="kn">from</span> <span class="nn">skimage.transform</span> <span class="kn">import</span> <span class="n">resize</span>
+<span class="kn">from</span> <span class="nn">skimage.color</span> <span class="kn">import</span> <span class="n">gray2rgb</span>
+<span class="kn">from</span> <span class="nn">skimage.util</span> <span class="kn">import</span> <span class="n">crop</span>
+<span class="kn">from</span> <span class="nn">scipy.spatial</span> <span class="kn">import</span> <span class="n">cKDTree</span>
+<span class="kn">from</span> <span class="nn">scipy.cluster</span> <span class="kn">import</span> <span class="n">vq</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
 

@@ -194,7 +194,7 @@ scikit-image library. We’ll go with the cat picture, <code class="docutils lit
 If you don’t have a large collection of images handy, you can generate a
 collection of solid-color squares. Real photos are more interesting, but
 solid-color squares are nice for experimentation.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">photomosaic</span> <span class="k">as</span> <span class="nn">pm</span>
 
 <span class="c1"># Generate a collection of solid-color square images.</span>
 <span class="n">pm</span><span class="o">.</span><span class="n">rainbow_of_squares</span><span class="p">(</span><span class="s1">&#39;pool/&#39;</span><span class="p">)</span>
@@ -219,7 +219,7 @@ tiles to divide the image into.</p>
 </pre></div>
 </div>
 <p>or plot it using matplotlib.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">mos</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -259,7 +259,7 @@ their perceived “difference” to the human vision system.</p>
 <p>(In the <a class="reference internal" href="#setup"><span class="std std-ref">Set Up</span></a> above, <a class="reference internal" href="reference.html#photomosaic.make_pool" title="photomosaic.make_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">make_pool()</span></code></a> automatically did this for all of
 the images in the pool before analyzing their colors.)</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use perceptually uniform colorspace for all analysis.</span>
-<span class="kn">import</span> <span class="nn">photomosaic</span> <span class="kn">as</span> <span class="nn">pm</span>
+<span class="kn">import</span> <span class="nn">photomosaic</span> <span class="k">as</span> <span class="nn">pm</span>
 <span class="n">converted_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -289,13 +289,13 @@ if necessary) so that it is evenly divisive. As in the basic example above, the
 </pre></div>
 </div>
 <p>The result is a list of (y, x) slices into the image.</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
- <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
- <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">144</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="p">[(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">48</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">48</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">96</span><span class="p">,</span> <span class="mi">144</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span>
  <span class="o">...&lt;</span><span class="n">snip</span><span class="o">&gt;...</span>
- <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">336</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
- <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">432</span><span class="p">,</span> <span class="bp">None</span><span class="p">)),</span>
- <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="bp">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">432</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="bp">None</span><span class="p">))</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">336</span><span class="p">,</span> <span class="mi">384</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">432</span><span class="p">,</span> <span class="kc">None</span><span class="p">)),</span>
+ <span class="p">(</span><span class="nb">slice</span><span class="p">(</span><span class="mi">288</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">432</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
 <span class="p">]</span>
 </pre></div>
 </div>
@@ -305,7 +305,7 @@ to RGB for visualization.)</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">annotated_img</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">draw_tile_layout</span><span class="p">(</span><span class="n">pm</span><span class="o">.</span><span class="n">rgb</span><span class="p">(</span><span class="n">scaled_img</span><span class="p">),</span> <span class="n">tiles</span><span class="p">)</span>
 
 <span class="c1"># Save the result with imsave, or plot with matplotlib:</span>
-<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">annotated_img</span><span class="p">)</span>
 </pre></div>
 </div>
