@@ -448,7 +448,7 @@ colorspace.</p>
 <p class="rubric">Examples</p>
 <p>If the image is RGB, first convert to perceptual space. Finally, before
 visualizing, convert back.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rgb</span><span class="p">(</span><span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">),</span> <span class="n">pool</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">rgb</span><span class="p">(</span><span class="n">adapt_to_pool</span><span class="p">(</span><span class="n">perceptual</span><span class="p">(</span><span class="n">image</span><span class="p">),</span> <span class="n">pool</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -734,16 +734,16 @@ contrast or along mask edges (if applicable). Default is 0.</p>
 <p>Before making the mosaic, you need a collection of images to use as tiles.
 A collection of analyzed images is a “pool”. Analyzing the images takes
 much more time that making the mosaic, so it is a separate step.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span> <span class="o">=</span> <span class="n">make_pool</span><span class="p">(</span><span class="s1">&#39;directory_of_images/*.jpg&#39;</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">pool</span> <span class="o">=</span> <span class="n">make_pool</span><span class="p">(</span><span class="s1">&#39;directory_of_images/*.jpg&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Load an image to turn into mosaic.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">imsave</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">from</span> <span class="nn">skimage.io</span> <span class="kn">import</span> <span class="n">imread</span><span class="p">,</span> <span class="n">imsave</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">my_image</span> <span class="o">=</span> <span class="n">imread</span><span class="p">(</span><span class="s1">&#39;my_image.jpg&#39;</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Make the mosaic and save it.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mosaic</span> <span class="o">=</span> <span class="n">basic_mosaic</span><span class="p">(</span><span class="n">my_image</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">mosaic</span> <span class="o">=</span> <span class="n">basic_mosaic</span><span class="p">(</span><span class="n">my_image</span><span class="p">,</span> <span class="n">pool</span><span class="p">,</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">))</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">imsave</span><span class="p">(</span><span class="s1">&#39;my_mosaic.jpg&#39;</span><span class="p">,</span> <span class="n">mosaic</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -779,18 +779,18 @@ entries look like: <code class="docutils literal notranslate"><span class="pre">
 </dl>
 <p class="rubric">Examples</p>
 <p>Basic usage:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">draw_mosaic</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">draw_mosaic</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Cache the resized pool images to speed up repeated drawings:</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># any mutable mapping</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">cache</span> <span class="o">=</span> <span class="p">{}</span>  <span class="c1"># any mutable mapping</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">draw_mosiac</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>The above populated <code class="docutils literal notranslate"><span class="pre">cache</span></code> with every resized pool image used in a tile.
 Now, <code class="docutils literal notranslate"><span class="pre">draw_mosaic</span></code> will check the cache before loading the pool image and
 resizing it, which is the most expensive step.</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">draw_mosiac</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">draw_mosiac</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="n">tiles</span><span class="p">,</span> <span class="n">matches</span><span class="p">,</span> <span class="n">resized_copy_cache</span><span class="o">=</span><span class="n">cache</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
