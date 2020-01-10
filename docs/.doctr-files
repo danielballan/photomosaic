@@ -18,6 +18,7 @@ docs/_sources/reference.rst.txt
 docs/_sources/release-notes.rst.txt
 docs/_sources/tutorial.rst.txt
 docs/_static/basic.css
+docs/_static/clipboard.min.js
 docs/_static/copy-button.svg
 docs/_static/copybutton.css
 docs/_static/copybutton.js
