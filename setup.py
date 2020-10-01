@@ -40,6 +40,7 @@ setup(
     ],
     keywords='art image color mosaic',
     packages=['photomosaic'],
+    python_requires=">=3.6",
     install_requires=requires,
     extras_require=extras_require
 )
